@@ -8,5 +8,11 @@ AppState appReducer(AppState state, dynamic action ) {
     );
   }
 
+  if (action is SetUser) {
+    return state.copyWith(
+      user: action.user,
+    );
+  }
+
   return state;
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:handball_flutter/containers/models/ProjectModel.dart';
+import 'package:handball_flutter/models/ProjectModel.dart';
 
 typedef OnSelectCallback = Function(String uid);
 

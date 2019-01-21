@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/containers/AppDrawerContainer.dart';
+import 'package:handball_flutter/redux/actions.dart';
+import 'package:redux/redux.dart';
 import './redux/appStore.dart';
 import './redux/appState.dart';
 
@@ -8,10 +10,27 @@ void main() {
   runApp(App(store: appStore));
 }
 
-class App extends StatelessWidget {
+class App extends StatefulWidget {
+  final Store<AppState> store;
   App({this.store});
-  final store;
 
+  _AppState createState() => _AppState(store: store);
+}
+
+class _AppState extends State<App> {
+  final Store<AppState> store;
+  _AppState({this.store});
+
+  @override
+  void initState() {
+    print('Init State');
+    super.initState();
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) {
+          store.dispatch(signInUser());
+        });
+  }
+  
   @override
   Widget build(BuildContext context) {
     return new StoreProvider<AppState>(
@@ -34,4 +53,5 @@ class App extends StatelessWidget {
         );
   }
 }
+
 

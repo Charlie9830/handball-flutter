@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:handball_flutter/containers/models/ProjectModel.dart';
+import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/presentation/ProjectList.dart';
 import 'package:handball_flutter/redux/actions.dart';
 import 'package:handball_flutter/redux/appState.dart';
