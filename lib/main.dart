@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/containers/AppDrawerContainer.dart';
-import 'package:redux/redux.dart';
 import './redux/appStore.dart';
 import './redux/appState.dart';
 
