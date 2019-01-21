@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "801359392837",
+    "firebase_url": "https://halo-todo.firebaseio.com",
+    "project_id": "halo-todo",
+    "storage_bucket": "halo-todo.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:801359392837:android:f080e299f09f2e69",
+        "android_client_info": {
+          "package_name": "com.charliehall.handballflutter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "801359392837-49karrdq1rga2v0vhest3e73i6q45ubc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCljUSB69LzAj_kET2BIR_VxNyFBd21ZDA"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
