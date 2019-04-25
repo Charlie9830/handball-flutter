@@ -17,7 +17,7 @@
 .idea/
 
 # Firebase
-android\app\google-services.json
+\android\app\google-services.json
 
 # Visual Studio Code related
 .vscode/
