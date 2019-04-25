@@ -6,6 +6,7 @@ import 'package:redux_thunk/redux_thunk.dart';
 import 'package:redux/redux.dart';
 import './appState.dart';
 import './appReducer.dart';
+import './middleware.dart';
 
 final initialAppState = AppState(
   tasks: <TaskModel>[],
@@ -25,5 +26,5 @@ final initialAppState = AppState(
 final appStore = new Store<AppState> (
   appReducer,
   initialState: initialAppState,
-  middleware: [thunkMiddleware]
+  middleware: [thunkMiddleware, navigationMiddleware]
 );

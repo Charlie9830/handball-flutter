@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/containers/AppDrawerContainer.dart';
 import 'package:handball_flutter/containers/ProjectScreenContainer.dart';
+import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/redux/actions.dart';
 import 'package:redux/redux.dart';
 import './redux/appStore.dart';
@@ -43,15 +44,8 @@ class _AppState extends State<App> {
             primarySwatch: Colors.blue,
             brightness: Brightness.dark,
           ),
-          home: new Scaffold(
-            appBar: new AppBar(
-              title: new Text(
-                'Handball',
-                style: Theme.of(context).textTheme.title,
-              )
-            ),
-            body: new ProjectScreenContainer()
-          )
+          navigatorKey: navigatorKey,
+          home: AppDrawerContainer(),
         )
         );
   }

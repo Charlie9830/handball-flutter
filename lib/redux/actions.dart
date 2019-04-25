@@ -40,6 +40,14 @@ class ReceiveLocalTaskLists {
   ReceiveLocalTaskLists({this.taskLists});
 }
 
+class NavigateToProject {
+
+}
+
+class NavigateToAppDrawer {
+  
+}
+
 // Thunks
 ThunkAction<AppState> updateTaskComplete(String taskId, bool newValue) {
   return (Store<AppState> store) async {

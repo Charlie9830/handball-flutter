@@ -20,7 +20,10 @@ class AppDrawerContainer extends StatelessWidget {
     return store.state.projects.map( (item) {
       return new ProjectViewModel(
         projectModel: item,
-        onSelect: ()  { store.dispatch(SelectProject(item.uid)); }
+        onSelect: () {
+           store.dispatch(SelectProject(item.uid));
+           store.dispatch(NavigateToProject());
+            }
       );
     }).toList();
   }

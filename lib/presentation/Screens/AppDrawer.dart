@@ -9,7 +9,7 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    new Scaffold(
+    return new Scaffold(
             appBar: new AppBar(
               title: new Text(
                 'Handball',
