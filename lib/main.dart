@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/containers/AppDrawerContainer.dart';
+import 'package:handball_flutter/containers/ProjectScreenContainer.dart';
 import 'package:handball_flutter/redux/actions.dart';
 import 'package:redux/redux.dart';
 import './redux/appStore.dart';
@@ -28,6 +29,7 @@ class _AppState extends State<App> {
     WidgetsBinding.instance
         .addPostFrameCallback((_) {
           store.dispatch(signInUser());
+          store.dispatch(SelectProject('toe5Cd3KIJDAB4dWA5so'));
         });
   }
   
@@ -39,6 +41,7 @@ class _AppState extends State<App> {
           title: 'Handball',
           theme: ThemeData(
             primarySwatch: Colors.blue,
+            brightness: Brightness.dark,
           ),
           home: new Scaffold(
             appBar: new AppBar(
@@ -47,7 +50,7 @@ class _AppState extends State<App> {
                 style: Theme.of(context).textTheme.title,
               )
             ),
-            body: new AppDrawerContainer(),
+            body: new ProjectScreenContainer()
           )
         )
         );
