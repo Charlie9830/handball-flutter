@@ -103,7 +103,7 @@ ThunkAction<AppState> subscribeToLocalProjects(String userId) {
     Firestore.instance.collection('users').document(userId).collection('projects').snapshots().listen((data) {
       var projects = <ProjectModel>[];
       data.documents.forEach( (doc) {
-        projects.add(ProjectModel(uid: doc['projectId'], name: doc['projectName']));
+        projects.add(ProjectModel(uid: doc['uid'], name: doc['projectName']));
       });
 
       store.dispatch(ReceiveLocalProjects(projects: projects));

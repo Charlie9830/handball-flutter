@@ -34,7 +34,7 @@ class ProjectScreenContainer extends StatelessWidget {
     var project = projects.firstWhere( (item) => item.uid == projectId, 
     orElse: () => null );
     
-    return project == null ? '' : project.name;
+    return project.name ?? '';
   }
 
   List<TaskViewModel> _buildTaskViewModels(Store<AppState> store) {
