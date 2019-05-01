@@ -37,6 +37,18 @@ AppState appReducer(AppState state, dynamic action ) {
     );
   }
 
+  if (action is SetFocusedTaskListId) {
+    return state.copyWith(
+      focusedTaskListId: action.taskListId,
+    );
+  }
+
+  if (action is SetTextInputDialog) {
+    return state.copyWith(
+      textInputDialog: action.dialog
+    );
+  }
+
   return state;
 }
 

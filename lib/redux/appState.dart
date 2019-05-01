@@ -1,6 +1,7 @@
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
+import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/models/User.dart';
 
 class AppState {
@@ -11,6 +12,9 @@ class AppState {
   final List<TaskModel> filteredTasks;
   final List<TaskListModel> taskLists;
   final List<TaskListModel> filteredTaskLists;
+  final String focusedTaskListId;
+
+  final TextInputDialogModel textInputDialog;
 
   AppState({
     this.projects,
@@ -19,7 +23,9 @@ class AppState {
     this.tasks,
     this.filteredTasks,
     this.taskLists,
-    this.filteredTaskLists
+    this.filteredTaskLists,
+    this.focusedTaskListId,
+    this.textInputDialog,
     });
 
   AppState copyWith({
@@ -30,6 +36,8 @@ class AppState {
     List<TaskModel> filteredTasks,
     List<TaskListModel> taskLists,
     List<TaskListModel> filteredTaskLists,
+    String focusedTaskListId,
+    TextInputDialogModel textInputDialog
   }) {
     return AppState(
       projects: projects ?? this.projects,
@@ -39,6 +47,8 @@ class AppState {
       filteredTasks: tasks ?? this.tasks,
       taskLists: taskLists ?? this.taskLists,
       filteredTaskLists: filteredTaskLists ?? this.filteredTaskLists,
+      focusedTaskListId: focusedTaskListId ?? this.focusedTaskListId,
+      textInputDialog: textInputDialog ?? this.textInputDialog,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
+import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:redux_thunk/redux_thunk.dart';
 import 'package:redux/redux.dart';
@@ -15,11 +16,18 @@ final initialAppState = AppState(
   filteredTaskLists: <TaskListModel>[],
   projects: [],
   selectedProjectId: '-1',
+  focusedTaskListId: '-1',
   user: new User(
     isLoggedIn: false,
     displayName: '',
     userId: '-1',
     email: '',
+  ),
+  textInputDialog: TextInputDialogModel(
+    isOpen: false,
+    text: '',
+    onOkay: (){},
+    onCancel: (){},
   )
 );
 

@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
+import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:redux/redux.dart';
@@ -40,47 +45,111 @@ class ReceiveLocalTaskLists {
   ReceiveLocalTaskLists({this.taskLists});
 }
 
-class NavigateToProject {
+class NavigateToProject {}
 
+class NavigateToAppDrawer {}
+
+class SetFocusedTaskListId {
+  final String taskListId;
+
+  SetFocusedTaskListId({this.taskListId});
 }
 
-class NavigateToAppDrawer {
-  
+class SetTextInputDialog {
+  final TextInputDialogModel dialog;
+
+  SetTextInputDialog({this.dialog});
+}
+
+Future<TextInputDialogResult> postTextInputDialog(
+    String text, Store<AppState> store) async {
+    var completer = new Completer<TextInputDialogResult>();
+
+    var onOkay = (String value) {
+            print("onOkay");
+      store.dispatch(SetTextInputDialog(
+          dialog: TextInputDialogModel(
+              isOpen: false, text: text, onOkay: (){}, onCancel: (){} )));
+
+      completer.complete(TextInputDialogResult(result: DialogResult.affirmative, value: value));
+    };
+
+    var onCancel = () {
+      print("onCancel");
+      store.dispatch(SetTextInputDialog(
+          dialog: TextInputDialogModel(
+              isOpen: false, text: text, onOkay: (){}, onCancel: (){} )));
+
+      completer.complete(TextInputDialogResult(result: DialogResult.negative));
+    };
+
+    store.dispatch(SetTextInputDialog(
+        dialog: TextInputDialogModel(
+            isOpen: true, text: text, onOkay: onOkay, onCancel: onCancel)));
+
+    return completer.future;
 }
 
 // Thunks
+ThunkAction<AppState> addNewTaskWithDialog(
+    String projectId, String taskListId) {
+  return (Store<AppState> store) async {
+    var result = await postTextInputDialog('', store);
+    print("Barreled right Through");
+    if (result.result == DialogResult.negative) {
+      return;
+    }
+
+    print(result.value);
+
+  };
+}
+
 ThunkAction<AppState> updateTaskComplete(String taskId, bool newValue) {
   return (Store<AppState> store) async {
     var userId = store.state.user.userId;
 
-    await Firestore.instance.collection('users').document(userId).collection('tasks').document(taskId).updateData({'isComplete': newValue});
+    await Firestore.instance
+        .collection('users')
+        .document(userId)
+        .collection('tasks')
+        .document(taskId)
+        .updateData({'isComplete': newValue});
   };
 }
 
 ThunkAction<AppState> subscribeToLocalTaskLists(String userId) {
   return (Store<AppState> store) async {
-    Firestore.instance.collection('users').document(userId).collection('taskLists').snapshots().listen( (data) {
+    Firestore.instance
+        .collection('users')
+        .document(userId)
+        .collection('taskLists')
+        .snapshots()
+        .listen((data) {
       var taskLists = <TaskListModel>[];
-      data.documents.forEach( (doc) {
-        taskLists.add(
-          TaskListModel(
-            uid: doc['uid'],
-            project: doc['project'],
-            taskListName: doc['taskListName'],
-          )
-        );
+      data.documents.forEach((doc) {
+        taskLists.add(TaskListModel(
+          uid: doc['uid'],
+          project: doc['project'],
+          taskListName: doc['taskListName'],
+        ));
       });
 
-      store.dispatch( ReceiveLocalTaskLists(taskLists: taskLists));
+      store.dispatch(ReceiveLocalTaskLists(taskLists: taskLists));
     });
   };
 }
 
 ThunkAction<AppState> subscribeToLocalTasks(String userId) {
   return (Store<AppState> store) async {
-    Firestore.instance.collection('users').document(userId).collection('tasks').snapshots().listen( (data) {
+    Firestore.instance
+        .collection('users')
+        .document(userId)
+        .collection('tasks')
+        .snapshots()
+        .listen((data) {
       var tasks = <TaskModel>[];
-      data.documents.forEach( (doc) {
+      data.documents.forEach((doc) {
         tasks.add(
           TaskModel(
             uid: doc['uid'],
@@ -89,7 +158,7 @@ ThunkAction<AppState> subscribeToLocalTasks(String userId) {
             taskName: doc['taskName'],
             dueDate: doc['dueDate'],
             isComplete: doc['isComplete'],
-            ),
+          ),
         );
       });
 
@@ -100,9 +169,14 @@ ThunkAction<AppState> subscribeToLocalTasks(String userId) {
 
 ThunkAction<AppState> subscribeToLocalProjects(String userId) {
   return (Store<AppState> store) async {
-    Firestore.instance.collection('users').document(userId).collection('projects').snapshots().listen((data) {
+    Firestore.instance
+        .collection('users')
+        .document(userId)
+        .collection('projects')
+        .snapshots()
+        .listen((data) {
       var projects = <ProjectModel>[];
-      data.documents.forEach( (doc) {
+      data.documents.forEach((doc) {
         projects.add(ProjectModel(uid: doc['uid'], name: doc['projectName']));
       });
 
@@ -124,12 +198,10 @@ ThunkAction<AppState> signInUser() {
             isLoggedIn: true,
             displayName: user.displayName,
             userId: user.uid,
-            email: user.email)
-            ));
+            email: user.email)));
 
     store.dispatch(subscribeToLocalProjects(user.uid));
     store.dispatch(subscribeToLocalTasks(user.uid));
     store.dispatch(subscribeToLocalTaskLists(user.uid));
-
   };
 }

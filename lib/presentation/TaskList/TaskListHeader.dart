@@ -2,12 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 
 class TaskListHeader extends StatelessWidget {
-  final TaskListViewModel viewModel;
+  final String name;
+  final bool isFocused;
 
-  TaskListHeader({Key key, this.viewModel});
+  TaskListHeader({
+    Key key,
+    this.name,
+    this.isFocused,
+  });
 
   @override
   Widget build(BuildContext context) {
+    Color backgroundColor = isFocused ? Theme.of(context).colorScheme.primary: Theme.of(context).colorScheme.primaryVariant;
+
     return new Container(
       child: Row(
         children: <Widget>[
@@ -16,13 +23,13 @@ class TaskListHeader extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              viewModel.data.taskListName,
+              name,
               textAlign: TextAlign.center,
               )
           )
         ],
       ),
-      color: Colors.deepOrange,
+      color: backgroundColor,
     );
   }
 }

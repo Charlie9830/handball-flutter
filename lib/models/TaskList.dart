@@ -13,6 +13,13 @@ class TaskListViewModel {
 
   TaskListModel data;
   List<TaskViewModel> childTaskViewModels = [];
+  bool isFocused;
 
-  TaskListViewModel({this.data});
+  final onTaskListFocus;
+
+  TaskListViewModel({
+    this.data,
+    this.onTaskListFocus,
+    this.isFocused,
+    });
 }

@@ -13,20 +13,22 @@ class ProjectScreenContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new StoreConnector<AppState, ProjectScreenViewModel> (
-      converter: _converter,
+      converter: (Store<AppState> store) => _converter(store, context),
       builder: ( context, projectScreenViewModel) {
         return new ProjectScreen(viewModel: projectScreenViewModel);
       }
     );
   }
 
-  ProjectScreenViewModel _converter(Store<AppState> store) {
+  ProjectScreenViewModel _converter(Store<AppState> store, BuildContext context) {
     var projectId = store.state.selectedProjectId;
+    var taskListId = store.state.focusedTaskListId;
 
     return ProjectScreenViewModel(
       projectId: projectId,
       projectName: _getProjectName(projectId, store.state.projects),
       taskListViewModels: _buildTaskListViewModels(store, _buildTaskViewModels(store)),
+      onAddNewTaskFabButtonPressed: () => store.dispatch(addNewTaskWithDialog(projectId, taskListId)),
     );
   }
 
@@ -53,6 +55,8 @@ class ProjectScreenContainer extends StatelessWidget {
     store.state.filteredTaskLists.forEach( (taskList) {
       taskListViewModelMap[taskList.uid] = TaskListViewModel(
         data: taskList,
+        isFocused: store.state.focusedTaskListId == taskList.uid,
+        onTaskListFocus: () => store.dispatch(SetFocusedTaskListId(taskListId: taskList.uid)),
         );
     });
 

@@ -3,6 +3,7 @@ import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/containers/AppDrawerContainer.dart';
 import 'package:handball_flutter/containers/ProjectScreenContainer.dart';
 import 'package:handball_flutter/keys.dart';
+import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/redux/actions.dart';
 import 'package:redux/redux.dart';
 import './redux/appStore.dart';
@@ -36,6 +37,7 @@ class _AppState extends State<App> {
   
   @override
   Widget build(BuildContext context) {
+    
     return new StoreProvider<AppState>(
         store: store,
         child: new MaterialApp(
@@ -49,6 +51,30 @@ class _AppState extends State<App> {
         )
         );
   }
+
+  // Route<dynamic> _generateRoute(RouteSettings settings) {
+  //   switch (settings.name) {
+  //     case 'home':
+  //     return MaterialPageRoute(
+  //       builder: (context) => AppDrawerContainer(),
+  //     );
+  //     break;
+
+  //     case 'project':
+  //     return MaterialPageRoute(
+  //       builder: (context) => ProjectScreenContainer(),
+  //     );
+
+  //     case 'dialog':
+  //     return MaterialPageRoute(
+  //       builder: (context) => settings.arguments,
+  //     );
+  //     break;
+
+  //     default:
+  //     return null;
+  //   }
+  // }
 }
 
 
