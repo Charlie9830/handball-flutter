@@ -8,7 +8,24 @@ class TaskModel {
     String dueDate;
     bool isComplete;
     
-    TaskModel({@required this.uid, this.taskName, this.dueDate, this.project, this.taskList, this.isComplete});
+    TaskModel({@required this.uid,
+      @required this.project,
+      @required this.taskList,
+      this.taskName = '',
+      this.dueDate = '',
+      this.isComplete = false
+      });
+
+    Map<String, dynamic> toMap() {
+      return {
+        'uid': this.uid,
+        'project': this.project,
+        'taskList': this.taskList,
+        'taskName': this.taskName,
+        'dueDate': this.dueDate,
+        'isComplete': this.isComplete,
+      };
+    }
 }
 
 class TaskViewModel {

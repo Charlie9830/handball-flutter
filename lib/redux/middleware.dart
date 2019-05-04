@@ -22,30 +22,4 @@ void navigationMiddleware(
   if (action is NavigateToAppDrawer) {
     navigatorKey.currentState.pop();
   }
-
-  if (action is SetTextInputDialog) {
-    if (action.dialog.isOpen) {
-      // Dialog Requested.
-      navigatorKey.currentState.push(new MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (context) {
-        return 
-        Dialog(
-          backgroundColor: Colors.transparent,
-          child: TextInputDialog(
-            isOpen: true,
-            text: action.dialog.text,
-            onOkay: action.dialog.onOkay,
-      )
-        );
-        
-      }));
-
-    }
-
-    else {
-      navigatorKey.currentState.pop();
-    }
-    
-  }
 }

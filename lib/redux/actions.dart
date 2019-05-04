@@ -9,6 +9,7 @@ import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/models/User.dart';
+import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:redux/redux.dart';
 import 'package:redux_thunk/redux_thunk.dart';
@@ -61,47 +62,45 @@ class SetTextInputDialog {
   SetTextInputDialog({this.dialog});
 }
 
-Future<TextInputDialogResult> postTextInputDialog(
-    String text, Store<AppState> store) async {
-    var completer = new Completer<TextInputDialogResult>();
-
-    var onOkay = (String value) {
-            print("onOkay");
-      store.dispatch(SetTextInputDialog(
-          dialog: TextInputDialogModel(
-              isOpen: false, text: text, onOkay: (){}, onCancel: (){} )));
-
-      completer.complete(TextInputDialogResult(result: DialogResult.affirmative, value: value));
-    };
-
-    var onCancel = () {
-      print("onCancel");
-      store.dispatch(SetTextInputDialog(
-          dialog: TextInputDialogModel(
-              isOpen: false, text: text, onOkay: (){}, onCancel: (){} )));
-
-      completer.complete(TextInputDialogResult(result: DialogResult.negative));
-    };
-
-    store.dispatch(SetTextInputDialog(
-        dialog: TextInputDialogModel(
-            isOpen: true, text: text, onOkay: onOkay, onCancel: onCancel)));
-
-    return completer.future;
+Future<TextInputDialogResult> postTextInputDialog(String text, BuildContext context) {
+    return showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => TextInputDialog(text: text),
+    );
 }
 
 // Thunks
 ThunkAction<AppState> addNewTaskWithDialog(
-    String projectId, String taskListId) {
+    String projectId, String taskListId, BuildContext context) {
   return (Store<AppState> store) async {
-    var result = await postTextInputDialog('', store);
-    print("Barreled right Through");
-    if (result.result == DialogResult.negative) {
-      return;
+    var result = await postTextInputDialog('', context);
+
+    if (result is TextInputDialogResult && result.result == DialogResult.affirmative) {
+      var userId = store.state.user.userId;
+
+      var ref = Firestore.instance.collection('users').document(userId).collection('tasks').document();
+      var task = TaskModel(
+        uid: ref.documentID,
+        taskList: taskListId,
+        project: projectId,
+        taskName: result.value,
+      );
+
+      try { 
+        await ref.setData(task.toMap());
+        print("Success");
+      }
+
+      catch(error) {
+        print(error.toString());
+      }
+
     }
 
-    print(result.value);
-
+    else {
+      print('Canceled');
+    }
   };
 }
 

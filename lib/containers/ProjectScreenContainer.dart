@@ -28,7 +28,7 @@ class ProjectScreenContainer extends StatelessWidget {
       projectId: projectId,
       projectName: _getProjectName(projectId, store.state.projects),
       taskListViewModels: _buildTaskListViewModels(store, _buildTaskViewModels(store)),
-      onAddNewTaskFabButtonPressed: () => store.dispatch(addNewTaskWithDialog(projectId, taskListId)),
+      onAddNewTaskFabButtonPressed: () => store.dispatch(addNewTaskWithDialog(projectId, taskListId, context)),
     );
   }
 
