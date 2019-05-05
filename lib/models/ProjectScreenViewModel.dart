@@ -7,11 +7,13 @@ class ProjectScreenViewModel {
   final String projectName;
   final List<TaskListViewModel> taskListViewModels;
   final onAddNewTaskFabButtonPressed;
+  final onAddNewTaskListFabButtonPressed;
 
   ProjectScreenViewModel({
     this.projectId,
     this.projectName,
     this.taskListViewModels,
     this.onAddNewTaskFabButtonPressed,
+    this.onAddNewTaskListFabButtonPressed,
     });
 }

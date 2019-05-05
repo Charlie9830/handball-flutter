@@ -27,8 +27,9 @@ class ProjectScreenContainer extends StatelessWidget {
     return ProjectScreenViewModel(
       projectId: projectId,
       projectName: _getProjectName(projectId, store.state.projects),
-      taskListViewModels: _buildTaskListViewModels(store, _buildTaskViewModels(store)),
+      taskListViewModels: _buildTaskListViewModels(store, _buildTaskViewModels(store, context), context),
       onAddNewTaskFabButtonPressed: () => store.dispatch(addNewTaskWithDialog(projectId, taskListId, context)),
+      onAddNewTaskListFabButtonPressed: () => store.dispatch(addNewTaskListWithDialog(projectId, context)),
     );
   }
 
@@ -36,20 +37,21 @@ class ProjectScreenContainer extends StatelessWidget {
     var project = projects.firstWhere( (item) => item.uid == projectId, 
     orElse: () => null );
     
-    return project.name ?? '';
+    return project.projectName ?? '';
   }
 
-  List<TaskViewModel> _buildTaskViewModels(Store<AppState> store) {
+  List<TaskViewModel> _buildTaskViewModels(Store<AppState> store, BuildContext context) {
     return store.state.filteredTasks.map( (task) {
       return TaskViewModel(
         data: task,
         onCheckboxChanged: (newValue) => store.dispatch(updateTaskComplete(task.uid, newValue )),
         onSelect: (stumped) {},
+        onDelete: () => store.dispatch(deleteTaskWithDialog(task.uid, context))
       );
     }).toList();
   }
 
-  List<TaskListViewModel> _buildTaskListViewModels(Store<AppState> store, List<TaskViewModel> taskViewModels) {
+  List<TaskListViewModel> _buildTaskListViewModels(Store<AppState> store, List<TaskViewModel> taskViewModels, BuildContext context) {
     // Builds TaskListModels into TaskListViewModels and store them to a Map.
     var taskListViewModelMap = <String, TaskListViewModel>{};
     store.state.filteredTaskLists.forEach( (taskList) {
@@ -57,6 +59,8 @@ class ProjectScreenContainer extends StatelessWidget {
         data: taskList,
         isFocused: store.state.focusedTaskListId == taskList.uid,
         onTaskListFocus: () => store.dispatch(SetFocusedTaskListId(taskListId: taskList.uid)),
+        onDelete: () => store.dispatch(deleteTaskListWithDialog(taskList.uid, taskList.taskListName, context)),
+        onRename: () => store.dispatch(renameTaskListWithDialog(taskList.uid, taskList.taskListName, context)),
         );
     });
 

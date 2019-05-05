@@ -1,3 +1,4 @@
+import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
@@ -30,6 +31,9 @@ class AppState {
 
   AppState copyWith({
     List<ProjectModel> projects,
+    List<ProjectModel> localProjects,
+    List<ProjectModel> remoteProjects,
+    Map<String, ProjectType> projectTypeLookup,
     String selectedProjectId,
     User user,
     List<TaskModel> tasks,

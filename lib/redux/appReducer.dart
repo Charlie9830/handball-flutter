@@ -8,8 +8,8 @@ AppState appReducer(AppState state, dynamic action ) {
   if (action is SelectProject) {
     return state.copyWith(
       selectedProjectId: action.uid,
-      filteredTasks: _filterTasks( state.selectedProjectId, state.tasks),
-      filteredTaskLists: _filterTaskLists(state.selectedProjectId, state.taskLists)
+      filteredTasks: _filterTasks( action.uid, state.tasks),
+      filteredTaskLists: _filterTaskLists(action.uid, state.taskLists)
     );
   }
 

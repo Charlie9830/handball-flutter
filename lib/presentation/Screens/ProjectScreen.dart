@@ -22,7 +22,13 @@ class ProjectScreen extends StatelessWidget {
         ),
         floatingActionButton:
             Column(mainAxisAlignment: MainAxisAlignment.end, children: <Widget>[
+              FloatingActionButton(
+                heroTag: 'addTaskListFab',
+                onPressed: () => viewModel.onAddNewTaskListFabButtonPressed(),
+                child: Icon(Icons.playlist_add),
+              ),
           FloatingActionButton(
+            heroTag: 'mainFab',
             onPressed: () => viewModel.onAddNewTaskFabButtonPressed(),
             child: Icon(Icons.add),
           )
@@ -38,6 +44,8 @@ class ProjectScreen extends StatelessWidget {
           header: TaskListHeader(
             name: vm.data.taskListName,
             isFocused: vm.isFocused,
+            onDelete: vm.onDelete,
+            onRename: vm.onRename,
           ),
           children: vm.childTaskViewModels.map((taskVm) => Task(key: Key(taskVm.data.uid), model: taskVm)).toList());
     }).toList();

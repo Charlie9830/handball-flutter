@@ -3,9 +3,13 @@ import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
 
 class TextInputDialog extends StatefulWidget {
+  final String title;
   final String text;
-  TextInputDialog({this.text});
-  
+  TextInputDialog({
+    this.title,
+    this.text,
+  });
+
   @override
   _TextInputDialogState createState() => _TextInputDialogState();
 }
@@ -21,12 +25,20 @@ class _TextInputDialogState extends State<TextInputDialog> {
 
   @override
   Widget build(BuildContext context) {
-          return Material(
-                      type: MaterialType.transparency,
-                      child: Container(
-                child: Padding(
-                padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-                child: Row(
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
+            color: Theme.of(context).dialogBackgroundColor,
+            padding: EdgeInsets.all(16),
+            child: Column(
+              children: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    Text(widget.title, style: Theme.of(context).textTheme.subtitle),
+                  ],
+                ),
+                Row(
                   children: <Widget>[
                     Expanded(
                       child: TextField(
@@ -35,18 +47,20 @@ class _TextInputDialogState extends State<TextInputDialog> {
                       ),
                     ),
                     IconButton(
-                          icon: Icon(Icons.add),
-                          onPressed: () => _submit(_controller.text, context),
-                        ),
+                      icon: Icon(Icons.add),
+                      onPressed: () => _submit(_controller.text, context),
+                    ),
                   ],
                 ),
-              )
+              ],
             ),
-          );
+          ),
+    );
   }
 
   void _submit(String value, BuildContext context) {
-    Navigator.of(context).pop(TextInputDialogResult(result: DialogResult.affirmative, value: value));
+    Navigator.of(context).pop(
+        TextInputDialogResult(result: DialogResult.affirmative, value: value));
   }
 
   @override
