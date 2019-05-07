@@ -31,7 +31,7 @@ class _AppState extends State<App> {
     WidgetsBinding.instance
         .addPostFrameCallback((_) {
           store.dispatch(signInUser());
-          store.dispatch(SelectProject('toe5Cd3KIJDAB4dWA5so'));
+          
         });
   }
   
@@ -44,6 +44,8 @@ class _AppState extends State<App> {
           title: 'Handball',
           theme: ThemeData(
             primarySwatch: Colors.blue,
+            accentColor: Colors.deepOrangeAccent,
+            accentColorBrightness: Brightness.dark,
             brightness: Brightness.dark,
           ),
           navigatorKey: navigatorKey,
