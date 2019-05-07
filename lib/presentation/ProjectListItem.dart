@@ -15,6 +15,7 @@ class ProjectListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Slidable(
+          closeOnScroll: true,
           delegate: new SlidableDrawerDelegate(),
           actionExtentRatio: 0.25,
           child: ListTile(
