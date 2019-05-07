@@ -8,6 +8,8 @@ import 'package:handball_flutter/models/User.dart';
 class AppState {
   final List<ProjectModel> projects;
   final String selectedProjectId;
+  final String selectedTaskId;
+  final TaskModel selectedTaskEntity;
   final User user;
   final List<TaskModel> tasks;
   final List<TaskModel> filteredTasks;
@@ -20,6 +22,8 @@ class AppState {
   AppState({
     this.projects,
     this.selectedProjectId,
+    this.selectedTaskId,
+    this.selectedTaskEntity,
     this.user,
     this.tasks,
     this.filteredTasks,
@@ -35,6 +39,7 @@ class AppState {
     List<ProjectModel> remoteProjects,
     Map<String, ProjectType> projectTypeLookup,
     String selectedProjectId,
+    TaskModel selectedTaskEntity,
     User user,
     List<TaskModel> tasks,
     List<TaskModel> filteredTasks,
@@ -46,6 +51,7 @@ class AppState {
     return AppState(
       projects: projects ?? this.projects,
       selectedProjectId: selectedProjectId ?? this.selectedProjectId,
+      selectedTaskEntity: selectedTaskEntity ?? this.selectedTaskEntity,
       user: user ?? this.user,
       tasks: tasks ?? this.tasks,
       filteredTasks: tasks ?? this.tasks,

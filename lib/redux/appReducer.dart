@@ -26,7 +26,8 @@ AppState appReducer(AppState state, dynamic action ) {
   if (action is ReceiveLocalTasks) {
     return state.copyWith(
       tasks: action.tasks,
-      filteredTasks: _filterTasks( state.selectedProjectId, action.tasks)
+      filteredTasks: _filterTasks( state.selectedProjectId, action.tasks),
+      selectedTaskEntity: _updateSelectedTaskEntity(state.selectedTaskEntity, action.tasks)
       );
   }
 
@@ -49,6 +50,12 @@ AppState appReducer(AppState state, dynamic action ) {
     );
   }
 
+  if (action is SetSelectedTaskEntity) {
+    return state.copyWith(
+      selectedTaskEntity: action.taskEntity
+    );
+  }
+
   return state;
 }
 
@@ -59,3 +66,14 @@ AppState appReducer(AppState state, dynamic action ) {
   _filterTasks(String projectId, List<TaskModel> tasks) {
       return tasks.where( (task) => task.project == projectId).toList();
   }
+
+TaskModel _updateSelectedTaskEntity(TaskModel originalEntity, List<TaskModel> tasks) {
+  if (originalEntity == null) {
+    // No need to update.
+    return null;
+  }
+
+  return tasks.firstWhere(
+    (task) => task.uid == originalEntity.uid,
+    orElse: () => null);
+}

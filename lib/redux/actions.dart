@@ -56,6 +56,20 @@ class SetFocusedTaskListId {
   SetFocusedTaskListId({this.taskListId});
 }
 
+class SetSelectedTaskEntity {
+  final taskEntity;
+
+  SetSelectedTaskEntity({this.taskEntity});
+}
+
+class OpenTaskInspector {
+  final TaskModel taskEntity;
+
+  OpenTaskInspector({this.taskEntity});
+}
+
+class CloseTaskInspector {}
+
 class SetTextInputDialog {
   final TextInputDialogModel dialog;
 
@@ -92,6 +106,22 @@ Future<DialogResult> postConfirmationDialog(String title, String text, String af
     }
   );
 }
+
+ThunkAction<AppState> updateTaskDueDate(String taskId, DateTime newValue) {
+return (Store<AppState> store) async {
+    var ref = _getTasksCollectionRef(store.state.selectedProjectId, store).document(taskId);
+    String coercedValue = newValue == null ? '' : newValue.toIso8601String();
+
+    try {
+      await ref.updateData({'dueDate': coercedValue});
+    }
+
+    catch(error) {
+      throw error;
+    }
+  };
+}
+
 
 ThunkAction<AppState> deleteProjectWithDialog(String projectId, String projectName, BuildContext context) {
   return (Store<AppState> store) async {

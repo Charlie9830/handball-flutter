@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:handball_flutter/containers/ProjectScreenContainer.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
+import 'package:handball_flutter/containers/TaskInspectorScreenContainer.dart';
 import 'package:handball_flutter/redux/actions.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:redux/redux.dart';
@@ -20,6 +21,24 @@ void navigationMiddleware(
   }
 
   if (action is NavigateToAppDrawer) {
+    navigatorKey.currentState.pop();
+  }
+
+  if (action is OpenTaskInspector) {
+    store.dispatch(SetSelectedTaskEntity(taskEntity: action.taskEntity));
+
+    navigatorKey.currentState.push(
+      new MaterialPageRoute(
+        builder: (context) {
+          return new TaskInspectorScreenContainer();
+        }
+      )
+    );
+  }
+
+  if (action is CloseTaskInspector) {
+    store.dispatch(SetSelectedTaskEntity(taskEntity: null));
+
     navigatorKey.currentState.pop();
   }
 }

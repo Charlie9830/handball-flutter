@@ -16,6 +16,7 @@ final initialAppState = AppState(
   filteredTaskLists: <TaskListModel>[],
   projects: [],
   selectedProjectId: '-1',
+  selectedTaskEntity: null,
   focusedTaskListId: '-1',
   user: new User(
     isLoggedIn: false,

@@ -35,6 +35,7 @@ class Task extends StatelessWidget {
             ),
             childIfFalse: IconButton(
               icon: Icon(Icons.edit),
+              onPressed: model.onTaskInspectorOpen,
             )
           )
         ],

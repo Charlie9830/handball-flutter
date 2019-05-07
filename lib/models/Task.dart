@@ -53,6 +53,7 @@ class TaskViewModel {
   final dynamic onSelect;
   final dynamic onCheckboxChanged;
   final dynamic onDelete;
+  final dynamic onTaskInspectorOpen;
 
   TaskModel data;
 
@@ -60,5 +61,6 @@ class TaskViewModel {
       {@required this.data,
       this.onSelect,
       this.onCheckboxChanged,
-      this.onDelete});
+      this.onDelete,
+      this.onTaskInspectorOpen});
 }
