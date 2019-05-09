@@ -4,6 +4,7 @@ import 'package:handball_flutter/containers/AppDrawerContainer.dart';
 import 'package:handball_flutter/containers/ProjectScreenContainer.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
+import 'package:handball_flutter/presentation/EditableTextInput.dart';
 import 'package:handball_flutter/redux/actions.dart';
 import 'package:redux/redux.dart';
 import './redux/appStore.dart';

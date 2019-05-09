@@ -47,7 +47,7 @@ class ProjectScreenContainer extends StatelessWidget {
         onCheckboxChanged: (newValue) => store.dispatch(updateTaskComplete(task.uid, newValue )),
         onSelect: (stumped) {},
         onDelete: () => store.dispatch(deleteTaskWithDialog(task.uid, context)),
-        onTaskInspectorOpen: () => store.dispatch(OpenTaskInspector(taskEntity: task))
+        onTaskInspectorOpen: () => store.dispatch(OpenTaskInspector(taskEntity: task)),
       );
     }).toList();
   }

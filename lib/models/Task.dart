@@ -8,6 +8,7 @@ class TaskModel {
   String taskName;
   DateTime dueDate;
   bool isComplete;
+  String note;
 
   TaskModel(
       {@required this.uid,
@@ -15,16 +16,19 @@ class TaskModel {
       @required this.taskList,
       this.taskName = '',
       this.dueDate,
-      this.isComplete = false});
+      this.isComplete = false,
+      this.note = '',
+      });
 
   TaskModel.fromDoc(DocumentSnapshot doc) {
     print(doc);
     this.uid = doc['uid'];
     this.project = doc['project'];
     this.taskList = doc['taskList'];
-    this.taskName = doc['taskName'];
+    this.taskName = doc['taskName'] ?? '';
     this.dueDate = _coerceDueDate(doc['dueDate']);
-    this.isComplete = doc['isComplete'];
+    this.isComplete = doc['isComplete'] ?? false;
+    this.note = doc['note'] ?? '';
   }
 
   Map<String, dynamic> toMap() {
@@ -35,6 +39,7 @@ class TaskModel {
       'taskName': this.taskName,
       'dueDate': this.dueDate == null ? '' : this.dueDate.toIso8601String(),
       'isComplete': this.isComplete,
+      'note': this.note,
     };
   }
 
@@ -57,10 +62,11 @@ class TaskViewModel {
 
   TaskModel data;
 
-  TaskViewModel(
-      {@required this.data,
+  TaskViewModel({
+      @required this.data,
       this.onSelect,
       this.onCheckboxChanged,
       this.onDelete,
-      this.onTaskInspectorOpen});
+      this.onTaskInspectorOpen,
+      });
 }

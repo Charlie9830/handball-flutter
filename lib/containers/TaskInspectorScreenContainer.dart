@@ -23,7 +23,9 @@ class TaskInspectorScreenContainer extends StatelessWidget {
     return new TaskInspectorScreenViewModel(
       onClose: () => store.dispatch(CloseTaskInspector()),
       taskEntity: store.state.selectedTaskEntity,
-      onDueDateChange: (newValue) => store.dispatch(updateTaskDueDate(store.state.selectedTaskEntity.uid, newValue))
+      onDueDateChange: (newValue) => store.dispatch(updateTaskDueDate(store.state.selectedTaskEntity.uid, newValue)),
+      onNoteChange: (newValue) => store.dispatch(updateTaskNote(newValue, store.state.selectedTaskEntity.uid, store.state.selectedTaskEntity.project)),
+      onTaskNameChange: (newValue) => store.dispatch(updateTaskName(newValue, store.state.selectedTaskEntity.uid, store.state.selectedTaskEntity.project))
     );
   }
 }

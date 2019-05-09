@@ -39,14 +39,17 @@ class TaskInspectorScreen extends StatelessWidget {
                           padding: const EdgeInsets.only(left: 8, top: 24, right: 8, bottom: 24),
                           child: EditableTextInput(
                               text: viewModel.taskEntity.taskName,
-                              multiline: true,
-                              onChanged: (newValue) => print(newValue)),
+                              hintText: 'Task Name',
+                              onChanged: viewModel.onTaskNameChange),
                         ),
                       ),
                     ]),
                 TaskPropertiesCard(
                   dueDate: viewModel.taskEntity.dueDate,
                   onDueDateChange: viewModel.onDueDateChange,
+                  note: viewModel.taskEntity.note,
+                  onNoteChange: viewModel.onNoteChange,
+                  taskName: viewModel.taskEntity.taskName,
                 )
               ])),
               childIfFalse: NoTaskEntityFallback(),

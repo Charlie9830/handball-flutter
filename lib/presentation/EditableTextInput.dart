@@ -5,13 +5,17 @@ import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 
 class EditableTextInput extends StatefulWidget {
   final String text;
-  final bool multiline;
+  final String hintText;
+  final bool isMultiline;
+  final bool autofocus;
   final dynamic onChanged;
 
   EditableTextInput({
-    this.text,
-    this.multiline = false,
+    this.text = '',
+    this.hintText = '',
     this.onChanged,
+    this.isMultiline,
+    this.autofocus,
   });
 
   @override
@@ -21,47 +25,46 @@ class EditableTextInput extends StatefulWidget {
 class _EditableTextInputState extends State<EditableTextInput> {
   bool isOpen = false;
   TextEditingController _controller;
-  FocusNode _focusNode = FocusNode();
+  FocusNode _focusNode = new FocusNode();
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.text);
     _focusNode.addListener(_handleFocusChange);
+    
   }
 
   @override
   Widget build(BuildContext context) {
-    return PredicateBuilder(
-      predicate: () => isOpen == true,
-      childIfTrue: TextField(
+      return TextField(
         controller: _controller,
         focusNode: _focusNode,
-        autofocus: true,
+        decoration: isOpen ? InputDecoration() : InputDecoration.collapsed(hintText: widget.hintText),
         autocorrect: true,
-        maxLines: widget.multiline ? null : 1,
+        autofocus: widget.autofocus ?? false,
+        keyboardType: widget.isMultiline == null || widget.isMultiline == false ?
+         TextInputType.text : TextInputType.multiline, // Allows for Wrapping without becoming truly multiline, ie: Swapping the done button for the Carriage Return
+        maxLines: null,
         textCapitalization: TextCapitalization.sentences,
         onEditingComplete: () => _submit(_controller.text),
-      ),
-      childIfFalse: InkWell(
-          child: Text(widget.text), onTap: () => setState(() => isOpen = true)),
-    );
+      );
   }
 
   void _handleFocusChange() {
-    if (_focusNode.hasFocus != isOpen) {
       setState(() => isOpen = _focusNode.hasFocus);
-    }
   }
 
   void _submit(String value) {
-    setState(() => isOpen = false);
+    // setState(() => isOpen = false);
+    _focusNode.unfocus();
     widget.onChanged(value);
   }
 
   @override
   dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 }
