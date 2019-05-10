@@ -1,3 +1,4 @@
+import 'package:handball_flutter/models/IndicatorGroup.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
@@ -15,6 +16,7 @@ final initialAppState = AppState(
   taskLists: <TaskListModel>[],
   filteredTaskLists: <TaskListModel>[],
   projects: [],
+  projectIndicatorGroups: <String, IndicatorGroup>{},
   selectedProjectId: '-1',
   selectedTaskEntity: null,
   focusedTaskListId: '-1',

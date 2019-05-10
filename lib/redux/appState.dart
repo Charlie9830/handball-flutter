@@ -1,4 +1,5 @@
 import 'package:handball_flutter/enums.dart';
+import 'package:handball_flutter/models/IndicatorGroup.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
@@ -15,6 +16,7 @@ class AppState {
   final List<TaskModel> filteredTasks;
   final List<TaskListModel> taskLists;
   final List<TaskListModel> filteredTaskLists;
+  final Map<String, IndicatorGroup> projectIndicatorGroups;
   final String focusedTaskListId;
 
   final TextInputDialogModel textInputDialog;
@@ -31,6 +33,7 @@ class AppState {
     this.filteredTaskLists,
     this.focusedTaskListId,
     this.textInputDialog,
+    this.projectIndicatorGroups
     });
 
   AppState copyWith({
@@ -46,7 +49,8 @@ class AppState {
     List<TaskListModel> taskLists,
     List<TaskListModel> filteredTaskLists,
     String focusedTaskListId,
-    TextInputDialogModel textInputDialog
+    TextInputDialogModel textInputDialog,
+    Map<String,IndicatorGroup> projectIndicatorGroups,
   }) {
     return AppState(
       projects: projects ?? this.projects,
@@ -59,6 +63,7 @@ class AppState {
       filteredTaskLists: filteredTaskLists ?? this.filteredTaskLists,
       focusedTaskListId: focusedTaskListId ?? this.focusedTaskListId,
       textInputDialog: textInputDialog ?? this.textInputDialog,
+      projectIndicatorGroups: projectIndicatorGroups ?? this.projectIndicatorGroups,
     );
   }
 }

@@ -32,6 +32,7 @@ class Task extends StatelessWidget {
               color: parsedDueDate.type,
               text: parsedDueDate.text,
               size: DueDateChitSize.standard,
+              onTap: model.onTaskInspectorOpen,
             ),
             childIfFalse: IconButton(
               icon: Icon(Icons.edit),

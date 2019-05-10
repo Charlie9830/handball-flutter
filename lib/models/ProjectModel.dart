@@ -34,11 +34,21 @@ class ProjectModel {
 
 class ProjectViewModel {
   final String projectName;
+  final bool hasUnreadComments;
+  final int laterDueDates;
+  final int soonDueDates;
+  final int todayDueDates;
+  final int overdueDueDates;
   final dynamic onSelect;
   final dynamic onDelete;
 
   ProjectViewModel({
     this.projectName,
+    this.hasUnreadComments,
+    this.laterDueDates,
+    this.soonDueDates,
+    this.todayDueDates,
+    this.overdueDueDates,
     this.onSelect,
     this.onDelete,
     });

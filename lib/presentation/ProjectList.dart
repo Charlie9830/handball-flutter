@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
-import 'package:handball_flutter/presentation/ProjectListItem.dart';
+import 'package:handball_flutter/presentation/ProjectListItem/ProjectListItem.dart';
 
 class ProjectList extends StatelessWidget {
   ProjectList({Key key,  this.projectViewModels});

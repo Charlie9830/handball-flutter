@@ -1,5 +1,6 @@
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
+import 'package:handball_flutter/utilities/getProjectIndicatorGroups.dart';
 
 import './appState.dart';
 import './actions.dart';
@@ -27,7 +28,8 @@ AppState appReducer(AppState state, dynamic action ) {
     return state.copyWith(
       tasks: action.tasks,
       filteredTasks: _filterTasks( state.selectedProjectId, action.tasks),
-      selectedTaskEntity: _updateSelectedTaskEntity(state.selectedTaskEntity, action.tasks)
+      selectedTaskEntity: _updateSelectedTaskEntity(state.selectedTaskEntity, action.tasks),
+      projectIndicatorGroups: getProjectIndicatorGroups(action.tasks)
       );
   }
 
