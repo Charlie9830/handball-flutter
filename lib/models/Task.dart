@@ -60,6 +60,10 @@ class TaskViewModel {
   final dynamic onDelete;
   final dynamic onTaskInspectorOpen;
 
+  bool get hasNote {
+    return data.note.trim().isNotEmpty;
+  } 
+
   TaskModel data;
 
   TaskViewModel({

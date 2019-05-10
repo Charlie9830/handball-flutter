@@ -18,8 +18,8 @@ class NoteInputListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-        leading: Icon(Icons.edit),
-        title: Text(note),
+        leading: Icon(Icons.note_add),
+        title: note.trim().isEmpty ? Text('Add details') : Text(note),
         onTap: () => _handleTap(context));
   }
 

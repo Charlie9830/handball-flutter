@@ -19,25 +19,41 @@ class Task extends StatelessWidget {
       delegate: new SlidableDrawerDelegate(),
       actionExtentRatio: 0.25,
       child: Container(
-          child: Row(
+          child: Column(
         children: <Widget>[
-          Checkbox(
-              value: model.data.isComplete, onChanged: model.onCheckboxChanged),
-          Expanded(
-            child: Text(model.data.taskName),
+          Row(
+            children: <Widget>[
+              Checkbox(
+                  value: model.data.isComplete,
+                  onChanged: model.onCheckboxChanged),
+              Expanded(
+                child: Text(model.data.taskName),
+              ),
+              PredicateBuilder(
+                  predicate: () => parsedDueDate.type != DueDateType.unset,
+                  childIfTrue: DueDateChit(
+                    color: parsedDueDate.type,
+                    text: parsedDueDate.text,
+                    size: DueDateChitSize.standard,
+                    onTap: model.onTaskInspectorOpen,
+                  ),
+                  childIfFalse: IconButton(
+                    icon: Icon(Icons.edit),
+                    onPressed: model.onTaskInspectorOpen,
+                  ))
+            ],
           ),
-          PredicateBuilder(
-            predicate: () => parsedDueDate.type != DueDateType.unset,
-            childIfTrue: DueDateChit(
-              color: parsedDueDate.type,
-              text: parsedDueDate.text,
-              size: DueDateChitSize.standard,
-              onTap: model.onTaskInspectorOpen,
+          Padding(
+            padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
+            child: Row(
+              children: <Widget>[
+                PredicateBuilder(
+                  predicate: () => model.hasNote,
+                  childIfTrue: Icon(Icons.note, color: Theme.of(context).disabledColor),
+                  childIfFalse: SizedBox(width: 0, height: 0),
+                )
+              ],
             ),
-            childIfFalse: IconButton(
-              icon: Icon(Icons.edit),
-              onPressed: model.onTaskInspectorOpen,
-            )
           )
         ],
       )),
