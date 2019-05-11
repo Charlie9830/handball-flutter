@@ -8,6 +8,7 @@ class TaskModel {
   String taskName;
   DateTime dueDate;
   bool isComplete;
+  bool isHighPriority;
   String note;
 
   TaskModel(
@@ -29,6 +30,7 @@ class TaskModel {
     this.dueDate = _coerceDueDate(doc['dueDate']);
     this.isComplete = doc['isComplete'] ?? false;
     this.note = doc['note'] ?? '';
+    this.isHighPriority = doc['isHighPriority'] ?? false;
   }
 
   Map<String, dynamic> toMap() {
@@ -40,6 +42,7 @@ class TaskModel {
       'dueDate': this.dueDate == null ? '' : this.dueDate.toIso8601String(),
       'isComplete': this.isComplete,
       'note': this.note,
+      'isHighPriority': this.isHighPriority,
     };
   }
 

@@ -4,6 +4,7 @@ import 'package:handball_flutter/models/Task.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:handball_flutter/presentation/DueDateChit.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
+import 'package:handball_flutter/presentation/Task/PriorityIndicator.dart';
 import 'package:handball_flutter/utilities/ParseDueDate.dart';
 
 class Task extends StatelessWidget {
@@ -19,42 +20,50 @@ class Task extends StatelessWidget {
       delegate: new SlidableDrawerDelegate(),
       actionExtentRatio: 0.25,
       child: Container(
-          child: Column(
+          child: Row(
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Checkbox(
-                  value: model.data.isComplete,
-                  onChanged: model.onCheckboxChanged),
-              Expanded(
-                child: Text(model.data.taskName),
-              ),
-              PredicateBuilder(
-                  predicate: () => parsedDueDate.type != DueDateType.unset,
-                  childIfTrue: DueDateChit(
-                    color: parsedDueDate.type,
-                    text: parsedDueDate.text,
-                    size: DueDateChitSize.standard,
-                    onTap: model.onTaskInspectorOpen,
-                  ),
-                  childIfFalse: IconButton(
-                    icon: Icon(Icons.edit),
-                    onPressed: model.onTaskInspectorOpen,
-                  ))
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
-            child: Row(
+          Expanded(
+            child: Column(
               children: <Widget>[
-                PredicateBuilder(
-                  predicate: () => model.hasNote,
-                  childIfTrue: Icon(Icons.note, color: Theme.of(context).disabledColor),
-                  childIfFalse: SizedBox(width: 0, height: 0),
+                Row(
+                  children: <Widget>[
+                    Checkbox(
+                        value: model.data.isComplete,
+                        onChanged: model.onCheckboxChanged),
+                    Expanded(
+                      child: Text(model.data.taskName),
+                    ),
+                    PredicateBuilder(
+                        predicate: () =>
+                            parsedDueDate.type != DueDateType.unset,
+                        childIfTrue: DueDateChit(
+                          color: parsedDueDate.type,
+                          text: parsedDueDate.text,
+                          size: DueDateChitSize.standard,
+                          onTap: model.onTaskInspectorOpen,
+                        ),
+                        childIfFalse: IconButton(
+                          icon: Icon(Icons.edit),
+                          onPressed: model.onTaskInspectorOpen,
+                        ))
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
+                  child: Row(
+                    children: <Widget>[
+                      PredicateBuilder(
+                        predicate: () => model.hasNote,
+                        childIfTrue: Icon(Icons.note,
+                            color: Theme.of(context).disabledColor),
+                        childIfFalse: SizedBox(width: 0, height: 0),
+                      )
+                    ],
+                  ),
                 )
               ],
             ),
-          )
+          ),
         ],
       )),
       actions: <Widget>[

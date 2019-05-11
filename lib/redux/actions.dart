@@ -109,6 +109,18 @@ Future<DialogResult> postConfirmationDialog(String title, String text,
       });
 }
 
+ThunkAction<AppState> updateTaskPriority(bool newValue, String taskId, String projectId) {
+return (Store<AppState> store) async {
+    var ref = _getTasksCollectionRef(projectId, store).document(taskId);
+
+    try {
+      await ref.updateData({'isHighPriority': newValue});
+    } catch (error) {
+      throw error;
+    }
+  };
+}
+
 ThunkAction<AppState> updateTaskNote(
     String newValue, String taskId, String projectId) {
   return (Store<AppState> store) async {
@@ -406,6 +418,7 @@ ThunkAction<AppState> subscribeToLocalTasks(String userId) {
         .snapshots()
         .listen((data) {
       var tasks = <TaskModel>[];
+
       data.documents.forEach((doc) {
         tasks.add(TaskModel.fromDoc(doc));
       });

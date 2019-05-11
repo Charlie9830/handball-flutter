@@ -28,8 +28,12 @@ class TaskInspectorScreen extends StatelessWidget {
                     children: <Widget>[
                       IconButton(
                         icon: Icon(Icons.arrow_back),
+                        onPressed: viewModel.onClose
                       ),
-                      IconButton(icon: Icon(Icons.star_border))
+                      IconButton(
+                        icon: viewModel.taskEntity.isHighPriority ? Icon(Icons.star) : Icon(Icons.star_border),
+                        onPressed: viewModel.onIsHighPriorityChange
+                        )
                     ]),
                 Row(
                     mainAxisAlignment: MainAxisAlignment.start,

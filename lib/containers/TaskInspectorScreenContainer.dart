@@ -25,7 +25,12 @@ class TaskInspectorScreenContainer extends StatelessWidget {
       taskEntity: store.state.selectedTaskEntity,
       onDueDateChange: (newValue) => store.dispatch(updateTaskDueDate(store.state.selectedTaskEntity.uid, newValue)),
       onNoteChange: (newValue) => store.dispatch(updateTaskNote(newValue, store.state.selectedTaskEntity.uid, store.state.selectedTaskEntity.project)),
-      onTaskNameChange: (newValue) => store.dispatch(updateTaskName(newValue, store.state.selectedTaskEntity.uid, store.state.selectedTaskEntity.project))
+      onTaskNameChange: (newValue) => store.dispatch(updateTaskName(newValue, store.state.selectedTaskEntity.uid, store.state.selectedTaskEntity.project)),
+      onIsHighPriorityChange: () => store.dispatch(updateTaskPriority(
+        !store.state.selectedTaskEntity.isHighPriority,
+        store.state.selectedTaskEntity.uid,
+        store.state.selectedTaskEntity.project
+      )),
     );
   }
 }
