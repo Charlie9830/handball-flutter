@@ -18,21 +18,13 @@ class ProjectScreen extends StatelessWidget {
           title: Text(viewModel.projectName),
         ),
         body: ListView(
-          children: _buildTaskLists(context, viewModel.taskListViewModels)
-        ),
-        floatingActionButton:
-            Column(mainAxisAlignment: MainAxisAlignment.end, children: <Widget>[
-              FloatingActionButton(
-                heroTag: 'addTaskListFab',
-                onPressed: () => viewModel.onAddNewTaskListFabButtonPressed(),
-                child: Icon(Icons.playlist_add),
-              ),
-          FloatingActionButton(
-            heroTag: 'mainFab',
-            onPressed: () => viewModel.onAddNewTaskFabButtonPressed(),
-            child: Icon(Icons.add),
-          )
-        ]));
+            children: _buildTaskLists(context, viewModel.taskListViewModels)),
+        floatingActionButton: FloatingActionButton(
+            heroTag: 'addTaskListFab',
+            onPressed: () => viewModel.onAddNewTaskListFabButtonPressed(),
+            child: Icon(Icons.playlist_add),
+          ),
+        );
   }
 
   List<Widget> _buildTaskLists(
@@ -43,11 +35,13 @@ class ProjectScreen extends StatelessWidget {
           onTap: vm.onTaskListFocus,
           header: TaskListHeader(
             name: vm.data.taskListName,
-            isFocused: vm.isFocused,
             onDelete: vm.onDelete,
             onRename: vm.onRename,
+            onAddTaskButtonPressed: vm.onAddNewTaskButtonPressed,
           ),
-          children: vm.childTaskViewModels.map((taskVm) => Task(key: Key(taskVm.data.uid), model: taskVm)).toList());
+          children: vm.childTaskViewModels
+              .map((taskVm) => Task(key: Key(taskVm.data.uid), model: taskVm))
+              .toList());
     }).toList();
   }
 }

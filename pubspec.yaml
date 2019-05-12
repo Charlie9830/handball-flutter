@@ -18,12 +18,13 @@ dependencies:
   redux: ^3.0.0
   redux_thunk: ^0.2.1
   flutter_redux: ^0.5.3
-  firebase_core: ^0.2.5
+  firebase_core: ^0.2.5+1
   cloud_firestore: ^0.8.2+3
   cloud_functions: ^0.0.5
   firebase_auth: ^0.6.6
   flutter_slidable: ^0.4.9
   intl: ^0.15.8
+  sticky_headers: ^0.1.7
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

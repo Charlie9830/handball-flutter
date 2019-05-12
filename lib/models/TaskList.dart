@@ -36,6 +36,7 @@ class TaskListViewModel {
   bool isFocused;
   final onDelete;
   final onRename;
+  final onAddNewTaskButtonPressed;
 
   final onTaskListFocus;
 
@@ -45,5 +46,6 @@ class TaskListViewModel {
     this.isFocused,
     this.onDelete,
     this.onRename,
+    this.onAddNewTaskButtonPressed,
     });
 }

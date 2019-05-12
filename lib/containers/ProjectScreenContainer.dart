@@ -62,6 +62,7 @@ class ProjectScreenContainer extends StatelessWidget {
         onTaskListFocus: () => store.dispatch(SetFocusedTaskListId(taskListId: taskList.uid)),
         onDelete: () => store.dispatch(deleteTaskListWithDialog(taskList.uid, taskList.taskListName, context)),
         onRename: () => store.dispatch(renameTaskListWithDialog(taskList.uid, taskList.taskListName, context)),
+        onAddNewTaskButtonPressed: () => store.dispatch(addNewTaskWithDialog(taskList.project, taskList.uid, context))
         );
     });
 

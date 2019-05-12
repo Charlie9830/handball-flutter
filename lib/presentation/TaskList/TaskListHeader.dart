@@ -4,21 +4,21 @@ import 'package:handball_flutter/presentation/TaskList/TaskListSettingsMenu.dart
 
 class TaskListHeader extends StatelessWidget {
   final String name;
-  final bool isFocused;
   final onDelete;
   final onRename;
+  final onAddTaskButtonPressed;
 
   TaskListHeader({
     Key key,
     this.name,
-    this.isFocused,
     this.onDelete,
     this.onRename,
+    this.onAddTaskButtonPressed,
   });
 
   @override
   Widget build(BuildContext context) {
-    Color backgroundColor = isFocused ? Theme.of(context).colorScheme.primary: Theme.of(context).colorScheme.primaryVariant;
+    Color backgroundColor = Theme.of(context).colorScheme.secondary;
 
     return new Container(
       child: Row(
@@ -32,6 +32,10 @@ class TaskListHeader extends StatelessWidget {
               name,
               textAlign: TextAlign.center,
               )
+          ),
+          IconButton(
+            icon: Icon(Icons.add_circle),
+            onPressed: onAddTaskButtonPressed,
           )
         ],
       ),
