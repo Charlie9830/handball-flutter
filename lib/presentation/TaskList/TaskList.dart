@@ -17,7 +17,6 @@ class TaskList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new StickyHeader(
-      callback: (value) => print(value),
       header: header,
       content: Column(
         children: children,
