@@ -4,12 +4,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
+import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
+import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:redux/redux.dart';
 import 'package:redux_thunk/redux_thunk.dart';
@@ -109,8 +111,9 @@ Future<DialogResult> postConfirmationDialog(String title, String text,
       });
 }
 
-ThunkAction<AppState> updateTaskPriority(bool newValue, String taskId, String projectId) {
-return (Store<AppState> store) async {
+ThunkAction<AppState> updateTaskPriority(
+    bool newValue, String taskId, String projectId) {
+  return (Store<AppState> store) async {
     var ref = _getTasksCollectionRef(projectId, store).document(taskId);
 
     try {
@@ -342,7 +345,8 @@ ThunkAction<AppState> addNewTaskListWithDialog(
   };
 }
 
-ThunkAction<AppState> updateTaskName(String newValue, String taskId, String projectId) {
+ThunkAction<AppState> updateTaskName(
+    String newValue, String taskId, String projectId) {
   return (Store<AppState> store) async {
     var ref = _getTasksCollectionRef(projectId, store).document(taskId);
     try {
@@ -353,7 +357,8 @@ ThunkAction<AppState> updateTaskName(String newValue, String taskId, String proj
   };
 }
 
-ThunkAction<AppState> addNewTaskWithDialog(String projectId, String taskListId, BuildContext context) {
+ThunkAction<AppState> addNewTaskWithDialog(
+    String projectId, String taskListId, BuildContext context) {
   return (Store<AppState> store) async {
     var result = await postTextInputDialog('Task Name', '', context);
 
@@ -416,14 +421,62 @@ ThunkAction<AppState> subscribeToLocalTasks(String userId) {
         .document(userId)
         .collection('tasks')
         .snapshots()
-        .listen((data) {
+        .listen((snapshot) {
       var tasks = <TaskModel>[];
 
-      data.documents.forEach((doc) {
+      snapshot.documents.forEach((doc) {
         tasks.add(TaskModel.fromDoc(doc));
       });
 
+      // Animation.
+      // In order for the correct Index to be found within state.taskIndicies, we have to Process the animation for any removals,
+      // then dispatch the changes to the store (So that Task Indices gets reprocsed), then process the additions.
+      if (store.state.inflatedProject != null) {
+        for (var docChange in snapshot.documentChanges) {
+          if (docChange.type == DocumentChangeType.removed) {
+            // Determine Index.
+            var uid = docChange.document.documentID;
+            var taskListId = docChange.document['taskList'];
+            var index = store.state.inflatedProject?.taskIndices[uid];
+            var animatedListStateKey =
+                taskListAnimatedListStateKeys[taskListId];
+
+            if (index != null && animatedListStateKey != null) {
+              var task = TaskModel.fromDoc(docChange.document);
+
+              animatedListStateKey.currentState.removeItem(index,
+                  (context, animation) {
+                return SizeTransition(
+                    sizeFactor: animation.drive(Tween(begin: 1, end: 0)),
+                    axis: Axis.vertical,
+                    child: Task(
+                      key: Key(task.uid),
+                      model: TaskViewModel(data: task),
+                    ));
+              });
+            }
+          }
+        }
+      }
+
       store.dispatch(ReceiveLocalTasks(tasks: tasks));
+
+      if (store.state.inflatedProject != null) {
+        for (var docChange in snapshot.documentChanges) {
+          if (docChange.type == DocumentChangeType.added) {
+            // Determine Index.
+            var uid = docChange.document.documentID;
+            var taskListId = docChange.document['taskList'];
+            var index = store.state.inflatedProject?.taskIndices[uid];
+            var animatedListStateKey =
+                taskListAnimatedListStateKeys[taskListId];
+
+            if (index != null && animatedListStateKey != null) {
+              animatedListStateKey.currentState.insertItem(index);
+            }
+          }
+        }
+      }
     });
   };
 }

@@ -18,6 +18,7 @@ final initialAppState = AppState(
   projects: [],
   projectIndicatorGroups: <String, IndicatorGroup>{},
   selectedProjectId: '-1',
+  inflatedProject: null,
   selectedTaskEntity: null,
   focusedTaskListId: '-1',
   user: new User(

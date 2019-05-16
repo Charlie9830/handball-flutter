@@ -27,7 +27,7 @@ class ProjectScreenContainer extends StatelessWidget {
     return ProjectScreenViewModel(
       projectId: projectId,
       projectName: _getProjectName(projectId, store.state.projects),
-      taskListViewModels: _buildTaskListViewModels(store, _buildTaskViewModels(store, context), context),
+      taskListViewModels: _buildTaskListViewModels(store, context),
       onAddNewTaskFabButtonPressed: () => store.dispatch(addNewTaskWithDialog(projectId, taskListId, context)),
       onAddNewTaskListFabButtonPressed: () => store.dispatch(addNewTaskListWithDialog(projectId, context)),
     );
@@ -40,8 +40,8 @@ class ProjectScreenContainer extends StatelessWidget {
     return project.projectName ?? '';
   }
 
-  List<TaskViewModel> _buildTaskViewModels(Store<AppState> store, BuildContext context) {
-    return store.state.filteredTasks.map( (task) {
+  List<TaskViewModel> _buildTaskViewModels(List<TaskModel> tasks, Store<AppState> store, BuildContext context) {
+    return tasks.map( (task) {
       return TaskViewModel(
         data: task,
         onCheckboxChanged: (newValue) => store.dispatch(updateTaskComplete(task.uid, newValue )),
@@ -52,7 +52,24 @@ class ProjectScreenContainer extends StatelessWidget {
     }).toList();
   }
 
-  List<TaskListViewModel> _buildTaskListViewModels(Store<AppState> store, List<TaskViewModel> taskViewModels, BuildContext context) {
+  List<TaskListViewModel> _buildTaskListViewModels(Store<AppState> store, BuildContext context) {
+    if (store.state.inflatedProject == null) {
+      return List<TaskListViewModel>();
+    }
+
+    return store.state.inflatedProject.inflatedTaskLists.map( (taskList) {
+      return TaskListViewModel(
+        data: taskList.data,
+        childTaskViewModels: _buildTaskViewModels(taskList.tasks, store, context),
+        isFocused: store.state.focusedTaskListId == taskList.data.uid,
+        onTaskListFocus: () => store.dispatch(SetFocusedTaskListId(taskListId: taskList.data.uid)),
+        onDelete: () => store.dispatch(deleteTaskListWithDialog(taskList.data.uid, taskList.data.taskListName, context)),
+        onRename: () => store.dispatch(renameTaskListWithDialog(taskList.data.uid, taskList.data.taskListName, context)),
+        onAddNewTaskButtonPressed: () => store.dispatch(addNewTaskWithDialog(taskList.data.project, taskList.data.uid, context))
+      );
+    }).toList();
+
+
     // Builds TaskListModels into TaskListViewModels and store them to a Map.
     var taskListViewModelMap = <String, TaskListViewModel>{};
     store.state.filteredTaskLists.forEach( (taskList) {
@@ -65,17 +82,6 @@ class ProjectScreenContainer extends StatelessWidget {
         onAddNewTaskButtonPressed: () => store.dispatch(addNewTaskWithDialog(taskList.project, taskList.uid, context))
         );
     });
-
-    // Iterate through TaskViewModels and add them to each TaskList in the Map.
-    taskViewModels.forEach( (taskViewModel) {
-      var taskListId = taskViewModel.data.taskList;
-      if (taskListViewModelMap[taskListId] != null) {
-        taskListViewModelMap[taskListId].childTaskViewModels.add(taskViewModel);
-      }
-    });
-
-    // Flatten TaskListViewModel Map into a List.
-    return taskListViewModelMap.values.toList();
   }
 }
 

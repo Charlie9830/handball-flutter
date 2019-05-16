@@ -1,5 +1,6 @@
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/IndicatorGroup.dart';
+import 'package:handball_flutter/models/InflatedProject.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
@@ -9,6 +10,7 @@ import 'package:handball_flutter/models/User.dart';
 class AppState {
   final List<ProjectModel> projects;
   final String selectedProjectId;
+  final InflatedProjectModel inflatedProject;
   final String selectedTaskId;
   final TaskModel selectedTaskEntity;
   final User user;
@@ -24,6 +26,7 @@ class AppState {
   AppState({
     this.projects,
     this.selectedProjectId,
+    this.inflatedProject,
     this.selectedTaskId,
     this.selectedTaskEntity,
     this.user,
@@ -51,6 +54,7 @@ class AppState {
     String focusedTaskListId,
     TextInputDialogModel textInputDialog,
     Map<String,IndicatorGroup> projectIndicatorGroups,
+    InflatedProjectModel inflatedProject,
   }) {
     return AppState(
       projects: projects ?? this.projects,
@@ -64,6 +68,7 @@ class AppState {
       focusedTaskListId: focusedTaskListId ?? this.focusedTaskListId,
       textInputDialog: textInputDialog ?? this.textInputDialog,
       projectIndicatorGroups: projectIndicatorGroups ?? this.projectIndicatorGroups,
+      inflatedProject: inflatedProject ?? this.inflatedProject,
     );
   }
 }

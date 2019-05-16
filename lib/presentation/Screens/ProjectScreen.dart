@@ -31,6 +31,7 @@ class ProjectScreen extends StatelessWidget {
       BuildContext context, List<TaskListViewModel> viewModels) {
     return viewModels.map((vm) {
       return TaskList(
+          uid: vm.data.uid,
           isFocused: vm.isFocused,
           onTap: vm.onTaskListFocus,
           header: TaskListHeader(

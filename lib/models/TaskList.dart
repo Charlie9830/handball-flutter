@@ -42,6 +42,7 @@ class TaskListViewModel {
 
   TaskListViewModel({
     this.data,
+    this.childTaskViewModels,
     this.onTaskListFocus,
     this.isFocused,
     this.onDelete,
