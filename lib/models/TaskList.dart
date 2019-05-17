@@ -1,16 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:handball_flutter/enums.dart';
+import 'package:handball_flutter/models/ChecklistSettings.dart';
 import 'package:handball_flutter/models/Task.dart';
+import 'package:handball_flutter/models/TaskListSettings.dart';
 import 'package:meta/meta.dart';
 
 class TaskListModel {
   String uid;
   String project;
   String taskListName;
+  TaskListSettingsModel settings;
 
   TaskListModel({
     @required this.uid,
     @required this.project,
     this.taskListName = '',
+    this.settings,
   });
 
   TaskListModel.fromDoc(DocumentSnapshot doc) {
@@ -18,6 +23,7 @@ class TaskListModel {
     this.uid = doc['uid'];
     this.project = doc['project'];
     this.taskListName = doc['taskListName'];
+    this.settings = TaskListSettingsModel.fromDocMap(doc['settings']);
   }
 
   Map<String,dynamic> toMap() {
@@ -25,6 +31,7 @@ class TaskListModel {
       'uid': this.uid,
       'project': this.project,
       'taskListName': this.taskListName,
+      'settings': this.settings?.toMap() ?? TaskListSettingsModel().toMap(),
     };
   }
 }
@@ -37,6 +44,7 @@ class TaskListViewModel {
   final onDelete;
   final onRename;
   final onAddNewTaskButtonPressed;
+  final onSortingChange;
 
   final onTaskListFocus;
 
@@ -48,5 +56,6 @@ class TaskListViewModel {
     this.onDelete,
     this.onRename,
     this.onAddNewTaskButtonPressed,
+    this.onSortingChange,
     });
 }

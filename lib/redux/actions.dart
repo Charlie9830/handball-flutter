@@ -8,6 +8,7 @@ import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
+import 'package:handball_flutter/models/TaskListSettings.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
@@ -294,6 +295,20 @@ ThunkAction<AppState> deleteTaskWithDialog(
   };
 }
 
+ThunkAction<AppState> updateTaskSorting(String projectId, String taskListId,
+    TaskListSettingsModel existingSettings, TaskSorting sorting) {
+  return (Store<AppState> store) async {
+    var ref = _getTaskListsCollectionRef(projectId, store).document(taskListId);
+    var newSettings = existingSettings?.copyWith(sortBy: sorting);
+
+    try {
+      await ref.updateData({'settings': newSettings.toMap()});
+    } catch(error) {
+      throw error;
+    }
+  };
+}
+
 ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
   return (Store<AppState> store) async {
     var result = await postTextInputDialog('Add new Project', '', context);
@@ -372,11 +387,11 @@ ThunkAction<AppState> addNewTaskWithDialog(
         taskList: taskListId,
         project: projectId,
         taskName: result.value,
+        dateAdded: DateTime.now(),
       );
 
       try {
         await ref.setData(task.toMap());
-        print("Success");
       } catch (error) {
         print(error.toString());
       }

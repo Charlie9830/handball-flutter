@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/ProjectScreenViewModel.dart';
 import 'package:handball_flutter/models/Task.dart';
@@ -65,23 +66,10 @@ class ProjectScreenContainer extends StatelessWidget {
         onTaskListFocus: () => store.dispatch(SetFocusedTaskListId(taskListId: taskList.data.uid)),
         onDelete: () => store.dispatch(deleteTaskListWithDialog(taskList.data.uid, taskList.data.taskListName, context)),
         onRename: () => store.dispatch(renameTaskListWithDialog(taskList.data.uid, taskList.data.taskListName, context)),
-        onAddNewTaskButtonPressed: () => store.dispatch(addNewTaskWithDialog(taskList.data.project, taskList.data.uid, context))
+        onAddNewTaskButtonPressed: () => store.dispatch(addNewTaskWithDialog(taskList.data.project, taskList.data.uid, context)),
+        onSortingChange: (sorting) => store.dispatch(updateTaskSorting(taskList.data.project, taskList.data.uid, taskList.data.settings, sorting)),
       );
     }).toList();
-
-
-    // Builds TaskListModels into TaskListViewModels and store them to a Map.
-    var taskListViewModelMap = <String, TaskListViewModel>{};
-    store.state.filteredTaskLists.forEach( (taskList) {
-      taskListViewModelMap[taskList.uid] = TaskListViewModel(
-        data: taskList,
-        isFocused: store.state.focusedTaskListId == taskList.uid,
-        onTaskListFocus: () => store.dispatch(SetFocusedTaskListId(taskListId: taskList.uid)),
-        onDelete: () => store.dispatch(deleteTaskListWithDialog(taskList.uid, taskList.taskListName, context)),
-        onRename: () => store.dispatch(renameTaskListWithDialog(taskList.uid, taskList.taskListName, context)),
-        onAddNewTaskButtonPressed: () => store.dispatch(addNewTaskWithDialog(taskList.project, taskList.uid, context))
-        );
-    });
   }
 }
 

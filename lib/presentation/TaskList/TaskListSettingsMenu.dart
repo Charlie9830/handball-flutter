@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/enums.dart';
 
 class TaskListSettingsMenu extends StatelessWidget {
+  TaskSorting sorting;
   final onSortingChange;
   final onRename;
   final onOpenChecklistSettings;
@@ -9,6 +11,7 @@ class TaskListSettingsMenu extends StatelessWidget {
 
   TaskListSettingsMenu({
     Key key,
+    this.sorting,
     this.onSortingChange,
     this.onRename,
     this.onOpenChecklistSettings,
@@ -27,29 +30,35 @@ class TaskListSettingsMenu extends StatelessWidget {
             child: Text('Sorting', style: Theme.of(context).textTheme.subtitle),
           ),
           PopupMenuDivider(),
-          PopupMenuItem(
+          CheckedPopupMenuItem(
             child: Text('Completed'),
-            value: 'completed',
+            value: TaskSorting.completed,
+            checked: sorting == TaskSorting.completed,
           ),
-          PopupMenuItem(
+          CheckedPopupMenuItem(
             child: Text('Priority'),
-            value: 'priority',
+            value: TaskSorting.priority,
+            checked: sorting == TaskSorting.priority,
           ),
-          PopupMenuItem(
+          CheckedPopupMenuItem(
             child: Text('Due Date'),
-            value: 'due date',
+            value: TaskSorting.dueDate,
+            checked: sorting == TaskSorting.dueDate,
           ),
-          PopupMenuItem(
+          CheckedPopupMenuItem(
             child: Text('Date Added'),
-            value: 'date added',
+            value: TaskSorting.dateAdded,
+            checked: sorting == TaskSorting.dateAdded,
           ),
-          PopupMenuItem(
+          CheckedPopupMenuItem(
             child: Text('Assignee'),
-            value: 'assignee',
+            value: TaskSorting.assignee,
+            checked: sorting == TaskSorting.assignee,
           ),
-          PopupMenuItem(
+          CheckedPopupMenuItem(
             child: Text('Alphabetically'),
-            value: 'alphabetically',
+            value: TaskSorting.alphabetically,
+            checked: sorting == TaskSorting.alphabetically,
           ),
           PopupMenuDivider(),
           PopupMenuItem(

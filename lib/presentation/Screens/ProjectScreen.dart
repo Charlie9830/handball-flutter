@@ -39,6 +39,8 @@ class ProjectScreen extends StatelessWidget {
             onDelete: vm.onDelete,
             onRename: vm.onRename,
             onAddTaskButtonPressed: vm.onAddNewTaskButtonPressed,
+            onSortingChange: vm.onSortingChange,
+            sorting: vm.data.settings.sortBy,
           ),
           children: vm.childTaskViewModels
               .map((taskVm) => Task(key: Key(taskVm.data.uid), model: taskVm))

@@ -112,7 +112,7 @@ InflatedProjectModel _buildInflatedProject(List<TaskModel> tasks, List<TaskListM
   var inflatedTaskLists = taskLists.where( (taskList) => taskList.project == project.uid).map( (taskList) {
     return InflatedTaskListModel(
       data: taskList,
-      tasks: _sortTasks(tasks.where( (task) => task.taskList == taskList.uid).toList(), TaskSorting.alphabetically ),
+      tasks: _sortTasks(tasks.where( (task) => task.taskList == taskList.uid), taskList.settings.sortBy ),
     );
   }).toList();
 
@@ -135,6 +135,80 @@ Map<String, int> _buildTaskIndices(List<InflatedTaskListModel> inflatedTaskListM
   return map;
 }
 
-List<TaskModel> _sortTasks(List<TaskModel> tasks, TaskSorting sorting) {
-  return tasks;
+List<TaskModel> _sortTasks(Iterable<TaskModel> tasks, TaskSorting sorting) {
+  switch(sorting) {
+    case TaskSorting.completed:
+      return List.from(tasks)..sort(_taskSorterCompleted);
+
+    case TaskSorting.priority:
+      return List.from(tasks)..sort(_taskSorterPriority);
+
+    case TaskSorting.dueDate:
+      return List.from(tasks)..sort(_taskDueDateSorter);
+
+    case TaskSorting.dateAdded:
+      return List.from(tasks)..sort(_taskDateAddedSorter);
+
+    case TaskSorting.assignee:
+      return List.from(tasks)..sort(_taskAssigneeSorter);
+
+    case TaskSorting.alphabetically:
+      return List.from(tasks)..sort(_taskSorterAlphabetical); 
+    
+    default:
+      return List.from(tasks);
+  }
+}
+
+int _taskSorterAlphabetical(TaskModel a, TaskModel b) {
+  return a.taskName.toUpperCase().compareTo(b.taskName.toUpperCase());
+}
+
+int _taskSorterCompleted(TaskModel a, TaskModel b) {
+  if (a.isComplete) { return 1; }
+  if (b.isComplete) { return -1; }
+  else { return _taskDateAddedSorter(a, b); }
+}
+
+int _taskSorterPriority(TaskModel a, TaskModel b) {
+  if (a.isHighPriority) { return -1; }
+  if (b.isHighPriority) { return 1; }
+  else { return _taskDateAddedSorter(a, b); }
+}
+
+int _taskDueDateSorter(TaskModel a, TaskModel b) {
+  var dueDateA = a.dueDate == null ? 0 : a.dueDate.millisecondsSinceEpoch;
+  var dueDateB = b.dueDate == null ? 0 : b.dueDate.millisecondsSinceEpoch;
+
+  if (dueDateA < dueDateB) {
+    return -1;
+  }
+
+  if (dueDateA > dueDateB) {
+    return 1;
+  }
+
+  return _taskDateAddedSorter(a, b);
+}
+
+int _taskDateAddedSorter(TaskModel a, TaskModel b) {
+  var dateAddedA = a.dateAdded == null ? 0 : a.dateAdded.millisecondsSinceEpoch;
+  var dateAddedB = b.dateAdded == null ? 0 : b.dateAdded.millisecondsSinceEpoch;
+
+  if (dateAddedA < dateAddedB) {
+    return -1;
+  }
+
+  if (dateAddedA > dateAddedB) {
+    return 0;
+  }
+
+  return 0;
+}
+
+int _taskAssigneeSorter(TaskModel a, TaskModel b) {
+  var coercedA = a.assignedTo ?? '';
+  var coercedB = b.assignedTo ?? '';
+
+  return coercedA.compareTo(coercedB);
 }

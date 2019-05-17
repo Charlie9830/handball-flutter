@@ -7,9 +7,11 @@ class TaskModel {
   String taskList;
   String taskName;
   DateTime dueDate;
+  DateTime dateAdded;
   bool isComplete;
   bool isHighPriority;
   String note;
+  String assignedTo;
 
   TaskModel(
       {@required this.uid,
@@ -17,20 +19,23 @@ class TaskModel {
       @required this.taskList,
       this.taskName = '',
       this.dueDate,
+      this.dateAdded,
       this.isComplete = false,
       this.note = '',
+      this.assignedTo = '-1',
       });
 
   TaskModel.fromDoc(DocumentSnapshot doc) {
-    print(doc);
     this.uid = doc['uid'];
     this.project = doc['project'];
     this.taskList = doc['taskList'];
     this.taskName = doc['taskName'] ?? '';
     this.dueDate = _coerceDueDate(doc['dueDate']);
+    this.dateAdded = _coerceDateAdded(doc['dateAdded']);
     this.isComplete = doc['isComplete'] ?? false;
     this.note = doc['note'] ?? '';
     this.isHighPriority = doc['isHighPriority'] ?? false;
+    this.assignedTo = doc['assignedTo'] ?? '-1';
   }
 
   Map<String, dynamic> toMap() {
@@ -40,9 +45,11 @@ class TaskModel {
       'taskList': this.taskList,
       'taskName': this.taskName,
       'dueDate': this.dueDate == null ? '' : this.dueDate.toIso8601String(),
+      'dateAdded': this.dateAdded == null ? '' : this.dateAdded.toIso8601String(),
       'isComplete': this.isComplete,
       'note': this.note,
       'isHighPriority': this.isHighPriority,
+      'assignedTo': this.assignedTo,
     };
   }
 
@@ -54,6 +61,10 @@ class TaskModel {
     }
 
     return dirtyDueDate.subtract(Duration(hours: dirtyDueDate.hour - 1, minutes: dirtyDueDate.minute));
+  }
+
+  DateTime _coerceDateAdded(String dateAdded) {
+      return dateAdded == null || dateAdded == '' ? null : DateTime.parse(dateAdded);
   }
 }
 
