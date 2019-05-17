@@ -25,36 +25,55 @@ class _TextInputDialogState extends State<TextInputDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      type: MaterialType.transparency,
-      child: Container(
-            color: Theme.of(context).dialogBackgroundColor,
-            padding: EdgeInsets.all(16),
-            child: Column(
-              children: <Widget>[
-                Row(
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Container(
+              color: Theme.of(context).dialogBackgroundColor,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: <Widget>[
-                    Text(widget.title, style: Theme.of(context).textTheme.subtitle),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: <Widget>[
+                        Text(widget.title,
+                            style: Theme.of(context).textTheme.subtitle),
+                      ],
+                    ),
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: TextField(
+                            controller: _controller,
+                            autofocus: true,
+                            keyboardType: TextInputType.text,
+                            maxLines: null,
+                            keyboardAppearance: Theme.of(context).brightness,
+                            onEditingComplete: () => _submit(_controller.text, context),
+                            textCapitalization: TextCapitalization.sentences,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.add),
+                          onPressed: () => _submit(_controller.text, context),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: TextField(
-                        controller: _controller,
-                        autofocus: true,
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.add),
-                      onPressed: () => _submit(_controller.text, context),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
+        ),
+      ),
     );
   }
 
