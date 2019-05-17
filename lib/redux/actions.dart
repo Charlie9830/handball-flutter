@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/keys.dart';
+import 'package:handball_flutter/models/GroupedDocumentChanges.dart';
+import 'package:handball_flutter/models/InflatedProject.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
@@ -303,7 +305,7 @@ ThunkAction<AppState> updateTaskSorting(String projectId, String taskListId,
 
     try {
       await ref.updateData({'settings': newSettings.toMap()});
-    } catch(error) {
+    } catch (error) {
       throw error;
     }
   };
@@ -445,56 +447,19 @@ ThunkAction<AppState> subscribeToLocalTasks(String userId) {
 
       // Animation.
       // In order for the correct Index to be found within state.taskIndicies, we have to Process the animation for any removals,
-      // then dispatch the changes to the store (So that Task Indices gets reprocsed), then process the additions.
-      if (store.state.inflatedProject != null) {
-        for (var docChange in snapshot.documentChanges) {
-          if (docChange.type == DocumentChangeType.removed) {
-            // Determine Index.
-            var uid = docChange.document.documentID;
-            var taskListId = docChange.document['taskList'];
-            var index = store.state.inflatedProject?.taskIndices[uid];
-            var animatedListStateKey =
-                taskListAnimatedListStateKeys[taskListId];
+      // then dispatch the changes to the store (So that Task Indices gets reprocessed), then process the additions.
+      var groupedDocumentChanges =
+          _getGroupedDocumentChanges(snapshot.documentChanges);
 
-            if (index != null && animatedListStateKey != null) {
-              var task = TaskModel.fromDoc(docChange.document);
-
-              animatedListStateKey.currentState.removeItem(index,
-                  (context, animation) {
-                return SizeTransition(
-                    sizeFactor: animation.drive(Tween(begin: 1, end: 0)),
-                    axis: Axis.vertical,
-                    child: Task(
-                      key: Key(task.uid),
-                      model: TaskViewModel(data: task),
-                    ));
-              });
-            }
-          }
-        }
-      }
+      _driveTaskRemovalAnimations(store.state.inflatedProject, groupedDocumentChanges.removed);
 
       store.dispatch(ReceiveLocalTasks(tasks: tasks));
 
-      if (store.state.inflatedProject != null) {
-        for (var docChange in snapshot.documentChanges) {
-          if (docChange.type == DocumentChangeType.added) {
-            // Determine Index.
-            var uid = docChange.document.documentID;
-            var taskListId = docChange.document['taskList'];
-            var index = store.state.inflatedProject?.taskIndices[uid];
-            var animatedListStateKey =
-                taskListAnimatedListStateKeys[taskListId];
-
-            if (index != null && animatedListStateKey != null) {
-              animatedListStateKey.currentState.insertItem(index);
-            }
-          }
-        }
-      }
+      _driveTaskAdditionAnimations(store.state.inflatedProject, groupedDocumentChanges.added);
     });
   };
 }
+
 
 ThunkAction<AppState> subscribeToLocalProjects(String userId) {
   return (Store<AppState> store) async {
@@ -572,3 +537,83 @@ CollectionReference _getProjectsCollectionRef(Store<AppState> store) {
       .document(store.state.user.userId)
       .collection('projects');
 }
+
+GroupedDocumentChanges _getGroupedDocumentChanges(
+    List<DocumentChange> docChanges) {
+  var groupedChanges = GroupedDocumentChanges();
+
+  for (var change in docChanges) {
+    if (change.type == DocumentChangeType.removed) {
+      groupedChanges.removed.add(change);
+    }
+
+    if (change.type == DocumentChangeType.modified) {
+      groupedChanges.modified.add(change);
+    }
+
+    if (change.type == DocumentChangeType.added) {
+      groupedChanges.added.add(change);
+    }
+  }
+
+  return groupedChanges;
+}
+
+void _driveTaskAdditionAnimations(InflatedProjectModel inflatedProject,
+    List<DocumentChange> addedDocChanges) {
+  if (inflatedProject == null) {
+    return;
+  }
+
+  for (var docChange in addedDocChanges) {
+    if (docChange.type == DocumentChangeType.added) {
+      // Determine Destination Index.
+      var index = _getTaskAnimationIndex(inflatedProject.taskIndices, docChange.document);
+      var animatedListStateKey = _getAnimatedListStateKey(docChange.document['taskList']);
+
+      if (index == null || animatedListStateKey == null) {
+        return;
+      }
+
+      animatedListStateKey.currentState.insertItem(index);
+    }
+  }
+}
+
+
+void _driveTaskRemovalAnimations(InflatedProjectModel inflatedProject,
+    List<DocumentChange> removalDocChanges) {
+  if (inflatedProject == null) {
+    return;
+  }
+
+  for (var docChange in removalDocChanges) {
+    // Determine Index.
+    var task = TaskModel.fromDoc(docChange.document);
+    var index = _getTaskAnimationIndex(inflatedProject.taskIndices, docChange.document);
+    var animatedListStateKey = _getAnimatedListStateKey(task.taskList);
+
+    if (index == null || animatedListStateKey == null) {
+      return;
+    }
+
+    animatedListStateKey.currentState.removeItem(index, (context, animation) {
+      return SizeTransition(
+          sizeFactor: animation.drive(Tween(begin: 1, end: 0)),
+          axis: Axis.vertical,
+          child: Task(
+            key: Key(task.uid),
+            model: TaskViewModel(data: task),
+          ));
+    });
+  }
+}
+
+int _getTaskAnimationIndex(Map<String, int> indices, DocumentSnapshot doc) {
+  return indices[doc.documentID];
+}
+
+GlobalKey<AnimatedListState> _getAnimatedListStateKey(String taskListId) {
+  return taskListAnimatedListStateKeys[taskListId];
+}
+
