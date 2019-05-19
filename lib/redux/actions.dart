@@ -13,6 +13,7 @@ import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/TaskListSettings.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/models/User.dart';
+import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/redux/appState.dart';
@@ -87,6 +88,19 @@ Future<TextInputDialogResult> postTextInputDialog(
     context: context,
     barrierDismissible: true,
     builder: (context) => TextInputDialog(title: title, text: text),
+  );
+}
+
+Future<AddTaskDialogResult> postAddTaskDialog(
+    BuildContext context, TaskListModel selectedTaskList,
+    {List<TaskListModel> taskLists}) {
+  return showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder: (context) => AddTaskDialog(
+          selectedTaskList: selectedTaskList,
+          taskLists: taskLists,
+        ),
   );
 }
 
@@ -341,8 +355,6 @@ ThunkAction<AppState> addNewTaskListWithDialog(
 
     if (result is TextInputDialogResult &&
         result.result == DialogResult.affirmative) {
-      var userId = store.state.user.userId;
-
       var ref = _getTaskListsCollectionRef(projectId, store).document();
       var taskList = TaskListModel(
         uid: ref.documentID,
@@ -375,30 +387,75 @@ ThunkAction<AppState> updateTaskName(
 }
 
 ThunkAction<AppState> addNewTaskWithDialog(
-    String projectId, String taskListId, BuildContext context) {
+    String projectId, BuildContext context,
+    {String taskListId}) {
   return (Store<AppState> store) async {
-    var result = await postTextInputDialog('Task Name', '', context);
+    var selectedTaskList = taskListId == null || taskListId == '-1'
+        ? null
+        : store.state.filteredTaskLists
+            .firstWhere((item) => item.uid == taskListId, orElse: () => null);
 
-    if (result is TextInputDialogResult &&
+    var result = await postAddTaskDialog(
+      context,
+      selectedTaskList,
+      taskLists: store.state.filteredTaskLists,
+    );
+
+    if (result == null) {
+      return;
+    }
+
+    if (result is AddTaskDialogResult &&
         result.result == DialogResult.affirmative) {
-      var userId = store.state.user.userId;
+      if (result.isNewTaskList == true) {
+        // User has elected to create a new TaskList
+        var batch = Firestore.instance.batch();
+        var taskListRef =
+            _getTaskListsCollectionRef(projectId, store).document();
+        var newTaskList = TaskListModel(
+          uid: taskListRef.documentID,
+          project: projectId,
+          taskListName: result.taskListName,
+        );
 
-      var ref = _getTasksCollectionRef(projectId, store).document();
-      var task = TaskModel(
-        uid: ref.documentID,
-        taskList: taskListId,
-        project: projectId,
-        taskName: result.value,
-        dateAdded: DateTime.now(),
-      );
+        var taskRef = _getTasksCollectionRef(projectId, store).document();
+        var task = TaskModel(
+          uid: taskRef.documentID,
+          taskList: newTaskList.uid,
+          project: projectId,
+          taskName: result.taskName,
+          dueDate: result.selectedDueDate,
+          isHighPriority: result.isHighPriority,
+          dateAdded: DateTime.now(),
+        );
 
-      try {
-        await ref.setData(task.toMap());
-      } catch (error) {
-        print(error.toString());
+        batch.setData(taskRef, task.toMap());
+        batch.setData(taskListRef, newTaskList.toMap());
+
+        try {
+          await batch.commit();
+        } catch (error) {
+          throw error;
+        }
+      } else {
+        // User selected an existing TaskList.
+        var taskRef = _getTasksCollectionRef(projectId, store).document();
+        var task = TaskModel(
+          uid: taskRef.documentID,
+          taskList: result.taskListId ?? taskListId, // Use the taskListId parameter if Dialog returns a null taskListId.
+          project: projectId,
+          taskName: result.taskName,
+          dueDate: result.selectedDueDate,
+          isHighPriority: result.isHighPriority,
+          dateAdded: DateTime.now(),
+        );
+
+        try {
+          await taskRef.setData(task.toMap());
+        } catch (error) {
+          throw error;
+        }
       }
-    } else {
-      print('Canceled');
     }
   };
 }
@@ -451,15 +508,16 @@ ThunkAction<AppState> subscribeToLocalTasks(String userId) {
       var groupedDocumentChanges =
           _getGroupedDocumentChanges(snapshot.documentChanges);
 
-      _driveTaskRemovalAnimations(store.state.inflatedProject, groupedDocumentChanges.removed);
+      _driveTaskRemovalAnimations(
+          store.state.inflatedProject, groupedDocumentChanges.removed);
 
       store.dispatch(ReceiveLocalTasks(tasks: tasks));
 
-      _driveTaskAdditionAnimations(store.state.inflatedProject, groupedDocumentChanges.added);
+      _driveTaskAdditionAnimations(
+          store.state.inflatedProject, groupedDocumentChanges.added);
     });
   };
 }
-
 
 ThunkAction<AppState> subscribeToLocalProjects(String userId) {
   return (Store<AppState> store) async {
@@ -568,8 +626,10 @@ void _driveTaskAdditionAnimations(InflatedProjectModel inflatedProject,
   for (var docChange in addedDocChanges) {
     if (docChange.type == DocumentChangeType.added) {
       // Determine Destination Index.
-      var index = _getTaskAnimationIndex(inflatedProject.taskIndices, docChange.document);
-      var animatedListStateKey = _getAnimatedListStateKey(docChange.document['taskList']);
+      var index = _getTaskAnimationIndex(
+          inflatedProject.taskIndices, docChange.document);
+      var animatedListStateKey =
+          _getAnimatedListStateKey(docChange.document['taskList']);
 
       if (index == null || animatedListStateKey == null) {
         return;
@@ -580,7 +640,6 @@ void _driveTaskAdditionAnimations(InflatedProjectModel inflatedProject,
   }
 }
 
-
 void _driveTaskRemovalAnimations(InflatedProjectModel inflatedProject,
     List<DocumentChange> removalDocChanges) {
   if (inflatedProject == null) {
@@ -590,7 +649,8 @@ void _driveTaskRemovalAnimations(InflatedProjectModel inflatedProject,
   for (var docChange in removalDocChanges) {
     // Determine Index.
     var task = TaskModel.fromDoc(docChange.document);
-    var index = _getTaskAnimationIndex(inflatedProject.taskIndices, docChange.document);
+    var index =
+        _getTaskAnimationIndex(inflatedProject.taskIndices, docChange.document);
     var animatedListStateKey = _getAnimatedListStateKey(task.taskList);
 
     if (index == null || animatedListStateKey == null) {
@@ -616,4 +676,3 @@ int _getTaskAnimationIndex(Map<String, int> indices, DocumentSnapshot doc) {
 GlobalKey<AnimatedListState> _getAnimatedListStateKey(String taskListId) {
   return taskListAnimatedListStateKeys[taskListId];
 }
-

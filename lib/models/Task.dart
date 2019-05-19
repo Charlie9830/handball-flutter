@@ -23,6 +23,7 @@ class TaskModel {
       this.isComplete = false,
       this.note = '',
       this.assignedTo = '-1',
+      this.isHighPriority = false,
       });
 
   TaskModel.fromDoc(DocumentSnapshot doc) {

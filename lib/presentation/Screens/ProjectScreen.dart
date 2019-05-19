@@ -21,7 +21,7 @@ class ProjectScreen extends StatelessWidget {
             children: _buildTaskLists(context, viewModel.taskListViewModels)),
         floatingActionButton: FloatingActionButton(
             heroTag: 'addTaskListFab',
-            onPressed: () => viewModel.onAddNewTaskListFabButtonPressed(),
+            onPressed: () => viewModel.onAddNewTaskFabButtonPressed(),
             child: Icon(Icons.playlist_add),
           ),
         );

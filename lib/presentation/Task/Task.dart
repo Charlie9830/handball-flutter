@@ -19,6 +19,7 @@ class Task extends StatelessWidget {
     return new Slidable(
       delegate: new SlidableDrawerDelegate(),
       actionExtentRatio: 0.25,
+
       child: Container(
           child: Row(
         children: <Widget>[

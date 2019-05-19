@@ -29,8 +29,8 @@ class DueDateListItem extends StatelessWidget {
 
   void handleTap(BuildContext context) async {
     var result = await showDatePicker(
-      firstDate: DateTime.now().subtract(Duration(days: 14)),
-      lastDate: DateTime.now().add(Duration(days: 14)),
+      firstDate: DateTime.now().subtract(Duration(days: 360)),
+      lastDate: DateTime.now().add(Duration(days: 360)),
       context: context,
       initialDate: dueDate == null ? DateTime.now() : dueDate,
     );

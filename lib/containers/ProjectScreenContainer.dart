@@ -23,13 +23,12 @@ class ProjectScreenContainer extends StatelessWidget {
 
   ProjectScreenViewModel _converter(Store<AppState> store, BuildContext context) {
     var projectId = store.state.selectedProjectId;
-    var taskListId = store.state.focusedTaskListId;
 
     return ProjectScreenViewModel(
       projectId: projectId,
       projectName: _getProjectName(projectId, store.state.projects),
       taskListViewModels: _buildTaskListViewModels(store, context),
-      onAddNewTaskFabButtonPressed: () => store.dispatch(addNewTaskWithDialog(projectId, taskListId, context)),
+      onAddNewTaskFabButtonPressed: () => store.dispatch(addNewTaskWithDialog(projectId, context, taskListId: null)),
       onAddNewTaskListFabButtonPressed: () => store.dispatch(addNewTaskListWithDialog(projectId, context)),
     );
   }
@@ -66,7 +65,7 @@ class ProjectScreenContainer extends StatelessWidget {
         onTaskListFocus: () => store.dispatch(SetFocusedTaskListId(taskListId: taskList.data.uid)),
         onDelete: () => store.dispatch(deleteTaskListWithDialog(taskList.data.uid, taskList.data.taskListName, context)),
         onRename: () => store.dispatch(renameTaskListWithDialog(taskList.data.uid, taskList.data.taskListName, context)),
-        onAddNewTaskButtonPressed: () => store.dispatch(addNewTaskWithDialog(taskList.data.project, taskList.data.uid, context)),
+        onAddNewTaskButtonPressed: () => store.dispatch(addNewTaskWithDialog(taskList.data.project, context, taskListId: taskList.data.uid)),
         onSortingChange: (sorting) => store.dispatch(updateTaskSorting(taskList.data.project, taskList.data.uid, taskList.data.settings, sorting)),
       );
     }).toList();
