@@ -94,9 +94,8 @@ Future<TextInputDialogResult> postTextInputDialog(
 Future<AddTaskDialogResult> postAddTaskDialog(
     BuildContext context, TaskListModel selectedTaskList,
     {List<TaskListModel> taskLists}) {
-  return showDialog(
+  return showModalBottomSheet(
     context: context,
-    barrierDismissible: true,
     builder: (context) => AddTaskDialog(
           selectedTaskList: selectedTaskList,
           taskLists: taskLists,

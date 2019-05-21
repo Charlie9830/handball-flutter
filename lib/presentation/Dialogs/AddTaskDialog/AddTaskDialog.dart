@@ -43,86 +43,80 @@ class _AddTaskDialog extends State<AddTaskDialog> {
     return Padding(
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: GestureDetector(
-        onTap: () => _cancel(context),
-        child: Material(
-          type: MaterialType.transparency,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Container(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: <Widget>[
-                      Container(
-                        height: 48,
-                        child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: <Widget>[
-                              PredicateBuilder(
-                                predicate: () =>
-                                    widget.selectedTaskList == null,
-                                childIfTrue: TaskListSelectChip(
-                                  backgroundColor: isListSelected
-                                      ? Theme.of(context)
-                                          .chipTheme
-                                          .backgroundColor
-                                      : Theme.of(context).accentColor,
-                                  selectedTaskList: _selectedTaskList ??
-                                      widget.selectedTaskList,
-                                  taskLists: _isTaskListNew == true
-                                      ? (List.from(widget.taskLists)
-                                        ..add(_selectedTaskList))
-                                      : widget.taskLists,
-                                  onChanged: (newValue) =>
-                                      _handleTaskListSelectChanged(
-                                          newValue, context),
-                                ),
-                                childIfFalse:
-                                    SizedBox.fromSize(size: Size.zero),
-                              ),
-                              DueDateShortcutChip(
-                                dueDate: _dueDate,
-                                onChanged: (newDate) =>
-                                    setState(() => _dueDate = newDate),
-                              ),
-                              PriorityShortcutChip(
-                                  isHighPriority: _isHighPriority,
-                                  onChanged: (newValue) => setState(
-                                      () => _isHighPriority = newValue)),
-                            ]),
-                      ),
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: TextField(
-                              controller: _controller,
-                              autofocus: true,
-                              keyboardType: TextInputType.text,
-                              maxLines: null,
-                              keyboardAppearance: Theme.of(context).brightness,
-                              onEditingComplete: () =>
-                                  _submit(_controller.text, context),
-                              textCapitalization: TextCapitalization.sentences,
-                            ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Container(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    Container(
+                      height: 48,
+                      child:
+                          ListView(scrollDirection: Axis.horizontal, children: <
+                              Widget>[
+                        PredicateBuilder(
+                          predicate: () => widget.selectedTaskList == null,
+                          childIfTrue: TaskListSelectChip(
+                            backgroundColor: isListSelected
+                                ? Theme.of(context).chipTheme.backgroundColor
+                                : Theme.of(context).accentColor,
+                            selectedTaskList:
+                                _selectedTaskList ?? widget.selectedTaskList,
+                            taskLists: _isTaskListNew == true
+                                ? (List.from(widget.taskLists)
+                                  ..add(_selectedTaskList))
+                                : widget.taskLists,
+                            onChanged: (newValue) =>
+                                _handleTaskListSelectChanged(newValue, context),
                           ),
-                          IconButton(
-                            icon: Icon(Icons.add),
-                            onPressed: () => _submit(_controller.text, context),
+                          childIfFalse: SizedBox.fromSize(size: Size.zero),
+                        ),
+                        DueDateShortcutChip(
+                          dueDate: _dueDate,
+                          onChanged: (newDate) =>
+                              setState(() => _dueDate = newDate),
+                        ),
+                        PriorityShortcutChip(
+                            isHighPriority: _isHighPriority,
+                            onChanged: (newValue) =>
+                                setState(() => _isHighPriority = newValue)),
+                      ]),
+                    ),
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: TextField(
+                            controller: _controller,
+                            autofocus: true,
+                            keyboardType: TextInputType.text,
+                            maxLines: null,
+                            keyboardAppearance: Theme.of(context).brightness,
+                            onEditingComplete: () =>
+                                _submit(_controller.text, context),
+                            textCapitalization: TextCapitalization.sentences,
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.add),
+                          onPressed: isValid()
+                              ? () => _submit(_controller.text, context)
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -168,11 +162,16 @@ class _AddTaskDialog extends State<AddTaskDialog> {
   }
 
   bool isValid() {
-    return _selectedTaskList != null;
+    return _selectedTaskList != null || widget.selectedTaskList != null;
   }
 
   void _submit(String taskName, BuildContext context) {
-    Navigator.of(context).pop(_constructResult(DialogResult.affirmative, taskName: taskName));
+    if (isValid() == false) {
+      return;
+    }
+
+    Navigator.of(context)
+        .pop(_constructResult(DialogResult.affirmative, taskName: taskName));
   }
 
   void _cancel(BuildContext context) {
