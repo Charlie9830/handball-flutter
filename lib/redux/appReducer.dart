@@ -81,6 +81,14 @@ AppState appReducer(AppState state, dynamic action ) {
     );
   }
 
+  if (action is PushLastUsedTaskList) {
+    var newMap = Map<String, String>.from(state.lastUsedTaskLists);
+    newMap[action.projectId] = action.taskListId;
+    return state.copyWith(
+      lastUsedTaskLists: newMap,
+    );
+  }
+
   return state;
 }
 

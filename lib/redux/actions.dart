@@ -40,6 +40,16 @@ class ReceiveLocalProjects {
   ReceiveLocalProjects({this.projects});
 }
 
+class PushLastUsedTaskList {
+  final String projectId;
+  final String taskListId;
+
+  PushLastUsedTaskList({
+    this.projectId,
+    this.taskListId,
+  });
+}
+
 class ReceiveLocalTasks {
   final List<TaskModel> tasks;
 
@@ -93,12 +103,16 @@ Future<TextInputDialogResult> postTextInputDialog(
 
 Future<AddTaskDialogResult> postAddTaskDialog(
     BuildContext context, TaskListModel selectedTaskList,
-    {List<TaskListModel> taskLists}) {
-  return showModalBottomSheet(
+    {List<TaskListModel> taskLists,
+    bool allowTaskListChange
+    }) {
+  return showDialog(
+    barrierDismissible: true,
     context: context,
     builder: (context) => AddTaskDialog(
-          selectedTaskList: selectedTaskList,
+          preselectedTaskList: selectedTaskList,
           taskLists: taskLists,
+          allowTaskListChange: allowTaskListChange,
         ),
   );
 }
@@ -389,15 +403,14 @@ ThunkAction<AppState> addNewTaskWithDialog(
     String projectId, BuildContext context,
     {String taskListId}) {
   return (Store<AppState> store) async {
-    var selectedTaskList = taskListId == null || taskListId == '-1'
-        ? null
-        : store.state.filteredTaskLists
-            .firstWhere((item) => item.uid == taskListId, orElse: () => null);
+    var preselectedTaskList =
+        _getAddTaskDialogPreselectedTaskList(projectId, taskListId, store.state);
 
     var result = await postAddTaskDialog(
       context,
-      selectedTaskList,
+      preselectedTaskList,
       taskLists: store.state.filteredTaskLists,
+      allowTaskListChange: taskListId == null, // No taskListId provided. So allow the user to choose one.
     );
 
     if (result == null) {
@@ -409,14 +422,18 @@ ThunkAction<AppState> addNewTaskWithDialog(
       if (result.isNewTaskList == true) {
         // User has elected to create a new TaskList
         var batch = Firestore.instance.batch();
+
+        // New TaskList
         var taskListRef =
             _getTaskListsCollectionRef(projectId, store).document();
+
         var newTaskList = TaskListModel(
           uid: taskListRef.documentID,
           project: projectId,
           taskListName: result.taskListName,
         );
 
+        // New Task
         var taskRef = _getTasksCollectionRef(projectId, store).document();
         var task = TaskModel(
           uid: taskRef.documentID,
@@ -431,6 +448,12 @@ ThunkAction<AppState> addNewTaskWithDialog(
         batch.setData(taskRef, task.toMap());
         batch.setData(taskListRef, newTaskList.toMap());
 
+        // Push the new value to lastUsedTaskLists
+        store.dispatch(PushLastUsedTaskList(
+          projectId: projectId,
+          taskListId: newTaskList.uid,
+        ));
+
         try {
           await batch.commit();
         } catch (error) {
@@ -439,15 +462,23 @@ ThunkAction<AppState> addNewTaskWithDialog(
       } else {
         // User selected an existing TaskList.
         var taskRef = _getTasksCollectionRef(projectId, store).document();
+        var targetTaskListId = result.taskListId ?? taskListId; // Use the taskListId parameter if Dialog returns a null taskListId.
+        
         var task = TaskModel(
           uid: taskRef.documentID,
-          taskList: result.taskListId ?? taskListId, // Use the taskListId parameter if Dialog returns a null taskListId.
+          taskList: targetTaskListId, 
           project: projectId,
           taskName: result.taskName,
           dueDate: result.selectedDueDate,
           isHighPriority: result.isHighPriority,
           dateAdded: DateTime.now(),
         );
+
+        // Push the new value to lastUsedTaskLists
+        store.dispatch(PushLastUsedTaskList(
+          projectId: projectId,
+          taskListId: targetTaskListId,
+        ));
 
         try {
           await taskRef.setData(task.toMap());
@@ -457,6 +488,42 @@ ThunkAction<AppState> addNewTaskWithDialog(
       }
     }
   };
+}
+
+TaskListModel _getAddTaskDialogPreselectedTaskList(
+    String projectId, String taskListId, AppState state) {
+  // Try to retreive a Tasklist to become the Preselected List for the AddTaskDialog.
+  // Honor these rules in order.
+  // 1. Try and retrieve Tasklist directly using provided taskListId (if provided). This indicates the user has 
+  //  used the TaskList addTask button instead of the Fab.
+  // 2. Try and retreive using the Users elected Faviroute Task List: TODO: Implement This.
+  // 3. Try and retreive using the lastUsedTaskLists Map. (Most recent addition).
+
+
+  // First try and retrieve directly.
+  if (taskListId != null && taskListId != '-1') {
+    var extractedTaskList = state.filteredTaskLists
+        .firstWhere((item) => item.uid == taskListId, orElse: () => null);
+    if (extractedTaskList != null) {
+      return extractedTaskList;
+    }
+  }
+
+  // Retreiving directly failed, probably because no taskListId was provided to begin with.
+  // So now try and retrieve from lastUsedTaskLists.
+  var lastUsedTaskListId = state.lastUsedTaskLists[projectId];
+  if (lastUsedTaskListId != null) {
+    var extractedTaskList = state.filteredTaskLists.firstWhere(
+        (item) => item.uid == lastUsedTaskListId,
+        orElse: () => null);
+
+    if (extractedTaskList != null) {
+      return extractedTaskList;
+    }
+  }
+
+  // Everything has Failed. TaskList could not be retrieved.
+  return null;
 }
 
 ThunkAction<AppState> updateTaskComplete(String taskId, bool newValue) {

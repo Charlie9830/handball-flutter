@@ -5,10 +5,12 @@ import 'package:intl/intl.dart';
 
 class DueDateShortcutChip extends StatefulWidget {
   final DateTime dueDate;
+  EdgeInsets padding;
   final onChanged;
 
   DueDateShortcutChip({
     this.dueDate,
+    this.padding,
     this.onChanged,
   });
 
@@ -21,14 +23,17 @@ class _DueDateShortcutChipState extends State<DueDateShortcutChip> {
 
   @override
   Widget build(BuildContext context) {
-    return ActionChip(
-      key: _actionChipKey,
-      avatar: Icon(
-        Icons.calendar_today,
-        size: 18,
+    return Padding(
+      padding: widget.padding,
+      child: ActionChip(
+        key: _actionChipKey,
+        avatar: Icon(
+          Icons.calendar_today,
+          size: 18,
+        ),
+        label: Text(_parseDueDate(widget.dueDate)),
+        onPressed: () => _handlePressed(context),
       ),
-      label: Text(_parseDueDate(widget.dueDate)),
-      onPressed: () => _handlePressed(context),
     );
   }
 
@@ -36,7 +41,7 @@ class _DueDateShortcutChipState extends State<DueDateShortcutChip> {
     var position = getPositionFromGlobalKey(_actionChipKey);
 
     var result = await showMenu(
-        position: RelativeRect.fromLTRB(0, position.top, position.right, 0),
+        position: RelativeRect.fromLTRB(0, position.top - 48, position.right, 0),
         context: context,
         items: <PopupMenuEntry>[
           PopupMenuItem(

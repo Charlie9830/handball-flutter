@@ -6,13 +6,17 @@ class TaskListSelectChip extends StatefulWidget {
   final List<TaskListModel> taskLists;
   final TaskListModel selectedTaskList;
   Color backgroundColor;
+  EdgeInsets padding;
   final onChanged;
+  final onPressed;
 
   TaskListSelectChip({
     this.taskLists,
     this.selectedTaskList,
     this.backgroundColor,
+    this.padding,
     this.onChanged,
+    this.onPressed,
   });
 
   @override
@@ -29,15 +33,21 @@ class _TaskListSelectChipState extends State<TaskListSelectChip> {
     var text =
         isListSelected ? widget.selectedTaskList.taskListName : 'Choose list';
 
-    return ActionChip(
-      key: _actionChipKey,
-      backgroundColor: widget.backgroundColor,
-      avatar: Icon(
-        Icons.list,
-        size: 18,
+    return Padding(
+      padding: widget.padding,
+      child: GestureDetector(
+        onTapDown: (details) => widget.onPressed(),
+        child: ActionChip(
+          key: _actionChipKey,
+          backgroundColor: widget.backgroundColor,
+          avatar: Icon(
+            Icons.list,
+            size: 18,
+          ),
+          label: Text(text),
+          onPressed: () => _handlePressed(context),
+        ),
       ),
-      label: Text(text),
-      onPressed: () => _handlePressed(context),
     );
   }
 

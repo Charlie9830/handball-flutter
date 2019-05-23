@@ -27,6 +27,7 @@ final initialAppState = AppState(
     userId: '-1',
     email: '',
   ),
+  lastUsedTaskLists: <String, String>{},
   textInputDialog: TextInputDialogModel(
     isOpen: false,
     text: '',

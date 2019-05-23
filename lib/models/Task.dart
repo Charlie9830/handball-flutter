@@ -45,13 +45,21 @@ class TaskModel {
       'project': this.project,
       'taskList': this.taskList,
       'taskName': this.taskName,
-      'dueDate': this.dueDate == null ? '' : this.dueDate.toIso8601String(),
+      'dueDate': this.dueDate == null ? '' : _normalizeDate(this.dueDate).toIso8601String(),
       'dateAdded': this.dateAdded == null ? '' : this.dateAdded.toIso8601String(),
       'isComplete': this.isComplete,
       'note': this.note,
       'isHighPriority': this.isHighPriority,
       'assignedTo': this.assignedTo,
     };
+  }
+
+  DateTime _normalizeDate(DateTime date) {
+    if (date == null) {
+      return null;
+    }
+
+    return date.subtract(Duration(hours: date.hour - 1, minutes: date.minute));
   }
 
   DateTime _coerceDueDate(String dueDate) {
@@ -61,7 +69,7 @@ class TaskModel {
       return null;
     }
 
-    return dirtyDueDate.subtract(Duration(hours: dirtyDueDate.hour - 1, minutes: dirtyDueDate.minute));
+    return _normalizeDate(dirtyDueDate);
   }
 
   DateTime _coerceDateAdded(String dateAdded) {

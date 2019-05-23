@@ -14,6 +14,7 @@ class AppState {
   final String selectedTaskId;
   final TaskModel selectedTaskEntity;
   final User user;
+  final Map<String, String> lastUsedTaskLists;
   final List<TaskModel> tasks;
   final List<TaskModel> filteredTasks;
   final List<TaskListModel> taskLists;
@@ -30,6 +31,7 @@ class AppState {
     this.selectedTaskId,
     this.selectedTaskEntity,
     this.user,
+    this.lastUsedTaskLists,
     this.tasks,
     this.filteredTasks,
     this.taskLists,
@@ -55,6 +57,7 @@ class AppState {
     TextInputDialogModel textInputDialog,
     Map<String,IndicatorGroup> projectIndicatorGroups,
     InflatedProjectModel inflatedProject,
+    Map<String, String> lastUsedTaskLists,
   }) {
     return AppState(
       projects: projects ?? this.projects,
@@ -62,6 +65,7 @@ class AppState {
       selectedTaskEntity: selectedTaskEntity ?? this.selectedTaskEntity,
       user: user ?? this.user,
       tasks: tasks ?? this.tasks,
+      lastUsedTaskLists: lastUsedTaskLists ?? this.lastUsedTaskLists,
       filteredTasks: tasks ?? this.tasks,
       taskLists: taskLists ?? this.taskLists,
       filteredTaskLists: filteredTaskLists ?? this.filteredTaskLists,
