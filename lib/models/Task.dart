@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:handball_flutter/utilities/normalizeDate.dart';
 import 'package:meta/meta.dart';
 
 class TaskModel {
@@ -45,7 +46,7 @@ class TaskModel {
       'project': this.project,
       'taskList': this.taskList,
       'taskName': this.taskName,
-      'dueDate': this.dueDate == null ? '' : _normalizeDate(this.dueDate).toIso8601String(),
+      'dueDate': this.dueDate == null ? '' : normalizeDate(this.dueDate).toIso8601String(),
       'dateAdded': this.dateAdded == null ? '' : this.dateAdded.toIso8601String(),
       'isComplete': this.isComplete,
       'note': this.note,
@@ -54,13 +55,7 @@ class TaskModel {
     };
   }
 
-  DateTime _normalizeDate(DateTime date) {
-    if (date == null) {
-      return null;
-    }
-
-    return date.subtract(Duration(hours: date.hour - 1, minutes: date.minute));
-  }
+  
 
   DateTime _coerceDueDate(String dueDate) {
     DateTime dirtyDueDate = dueDate == '' ? null : DateTime.parse(dueDate);
@@ -69,7 +64,7 @@ class TaskModel {
       return null;
     }
 
-    return _normalizeDate(dirtyDueDate);
+    return normalizeDate(dirtyDueDate);
   }
 
   DateTime _coerceDateAdded(String dateAdded) {

@@ -6,19 +6,23 @@ import 'package:handball_flutter/presentation/TaskList/TaskListSettingsMenu.dart
 class TaskListHeader extends StatelessWidget {
   final String name;
   final TaskSorting sorting;
+  final bool isChecklist;
   final onDelete;
   final onRename;
   final onAddTaskButtonPressed;
   final onSortingChange;
+  final onOpenChecklistSettings;
 
   TaskListHeader({
     Key key,
     this.name,
+    this.isChecklist,
     this.sorting,
     this.onDelete,
     this.onRename,
     this.onAddTaskButtonPressed,
     this.onSortingChange,
+    this.onOpenChecklistSettings,
   });
 
   @override
@@ -32,14 +36,18 @@ class TaskListHeader extends StatelessWidget {
             onDelete: onDelete,
             onRename: onRename,
             onSortingChange: onSortingChange,
+            onOpenChecklistSettings: onOpenChecklistSettings,
             sorting: sorting,
           ),
+          if (isChecklist == true)
+            IconButton(
+              icon: Icon(Icons.playlist_add_check),
+              onPressed: () => onOpenChecklistSettings()),
           Expanded(
-            child: Text(
-              name,
-              textAlign: TextAlign.center,
-              )
-          ),
+              child: Text(
+            name,
+            textAlign: TextAlign.center,
+          )),
           IconButton(
             icon: Icon(Icons.add_circle),
             onPressed: onAddTaskButtonPressed,

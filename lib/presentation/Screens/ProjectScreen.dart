@@ -36,11 +36,13 @@ class ProjectScreen extends StatelessWidget {
           onTap: vm.onTaskListFocus,
           header: TaskListHeader(
             name: vm.data.taskListName,
+            isChecklist: vm.data.settings.checklistSettings.isChecklist,
             onDelete: vm.onDelete,
             onRename: vm.onRename,
             onAddTaskButtonPressed: vm.onAddNewTaskButtonPressed,
             onSortingChange: vm.onSortingChange,
             sorting: vm.data.settings.sortBy,
+            onOpenChecklistSettings: vm.onOpenChecklistSettings,
           ),
           children: vm.childTaskViewModels
               .map((taskVm) => Task(key: Key(taskVm.data.uid), model: taskVm))

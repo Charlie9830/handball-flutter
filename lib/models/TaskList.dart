@@ -19,7 +19,6 @@ class TaskListModel {
   });
 
   TaskListModel.fromDoc(DocumentSnapshot doc) {
-    print("Constructing");
     this.uid = doc['uid'];
     this.project = doc['project'];
     this.taskListName = doc['taskListName'];
@@ -45,6 +44,7 @@ class TaskListViewModel {
   final onRename;
   final onAddNewTaskButtonPressed;
   final onSortingChange;
+  final onOpenChecklistSettings;
 
   final onTaskListFocus;
 
@@ -57,5 +57,6 @@ class TaskListViewModel {
     this.onRename,
     this.onAddNewTaskButtonPressed,
     this.onSortingChange,
+    this.onOpenChecklistSettings,
     });
 }

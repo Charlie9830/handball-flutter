@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/DueDateListItem.dart';
+import 'package:handball_flutter/presentation/DateSelectListTile.dart';
 import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/NoteInputListItem.dart';
 
 class TaskPropertiesCard extends StatelessWidget {
@@ -23,9 +23,12 @@ class TaskPropertiesCard extends StatelessWidget {
       color: Theme.of(context).cardColor,
       child: Column(
         children: <Widget>[
-          DueDateListItem(
-            dueDate: dueDate,
-            onDueDateChange: onDueDateChange,
+          DateSelectListTile(
+            firstDate: DateTime.now().subtract(Duration(days: 360)),
+            lastDate: DateTime.now().add(Duration(days: 360)),
+            initialDate: dueDate ?? DateTime.now(),
+            onChange: onDueDateChange,
+            hintText: 'Pick due date',
           ),
           NoteInputListItem(
             note: note,

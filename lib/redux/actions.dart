@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/keys.dart';
+import 'package:handball_flutter/models/ChecklistSettings.dart';
 import 'package:handball_flutter/models/GroupedDocumentChanges.dart';
 import 'package:handball_flutter/models/InflatedProject.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
@@ -14,9 +15,11 @@ import 'package:handball_flutter/models/TaskListSettings.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialog.dart';
+import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/redux/appState.dart';
+import 'package:handball_flutter/utilities/normalizeDate.dart';
 import 'package:redux/redux.dart';
 import 'package:redux_thunk/redux_thunk.dart';
 
@@ -103,9 +106,7 @@ Future<TextInputDialogResult> postTextInputDialog(
 
 Future<AddTaskDialogResult> postAddTaskDialog(
     BuildContext context, TaskListModel selectedTaskList,
-    {List<TaskListModel> taskLists,
-    bool allowTaskListChange
-    }) {
+    {List<TaskListModel> taskLists, bool allowTaskListChange}) {
   return showDialog(
     barrierDismissible: true,
     context: context,
@@ -403,14 +404,15 @@ ThunkAction<AppState> addNewTaskWithDialog(
     String projectId, BuildContext context,
     {String taskListId}) {
   return (Store<AppState> store) async {
-    var preselectedTaskList =
-        _getAddTaskDialogPreselectedTaskList(projectId, taskListId, store.state);
+    var preselectedTaskList = _getAddTaskDialogPreselectedTaskList(
+        projectId, taskListId, store.state);
 
     var result = await postAddTaskDialog(
       context,
       preselectedTaskList,
       taskLists: store.state.filteredTaskLists,
-      allowTaskListChange: taskListId == null, // No taskListId provided. So allow the user to choose one.
+      allowTaskListChange: taskListId ==
+          null, // No taskListId provided. So allow the user to choose one.
     );
 
     if (result == null) {
@@ -462,11 +464,12 @@ ThunkAction<AppState> addNewTaskWithDialog(
       } else {
         // User selected an existing TaskList.
         var taskRef = _getTasksCollectionRef(projectId, store).document();
-        var targetTaskListId = result.taskListId ?? taskListId; // Use the taskListId parameter if Dialog returns a null taskListId.
-        
+        var targetTaskListId = result.taskListId ??
+            taskListId; // Use the taskListId parameter if Dialog returns a null taskListId.
+
         var task = TaskModel(
           uid: taskRef.documentID,
-          taskList: targetTaskListId, 
+          taskList: targetTaskListId,
           project: projectId,
           taskName: result.taskName,
           dueDate: result.selectedDueDate,
@@ -494,11 +497,10 @@ TaskListModel _getAddTaskDialogPreselectedTaskList(
     String projectId, String taskListId, AppState state) {
   // Try to retreive a Tasklist to become the Preselected List for the AddTaskDialog.
   // Honor these rules in order.
-  // 1. Try and retrieve Tasklist directly using provided taskListId (if provided). This indicates the user has 
+  // 1. Try and retrieve Tasklist directly using provided taskListId (if provided). This indicates the user has
   //  used the TaskList addTask button instead of the Fab.
   // 2. Try and retreive using the Users elected Faviroute Task List: TODO: Implement This.
   // 3. Try and retreive using the lastUsedTaskLists Map. (Most recent addition).
-
 
   // First try and retrieve directly.
   if (taskListId != null && taskListId != '-1') {
@@ -545,13 +547,92 @@ ThunkAction<AppState> subscribeToLocalTaskLists(String userId) {
         .snapshots()
         .listen((data) {
       var taskLists = <TaskListModel>[];
+      var checklists = <TaskListModel>[];
+
       data.documents.forEach((doc) {
-        taskLists.add(TaskListModel.fromDoc(doc));
+        var taskList = TaskListModel.fromDoc(doc);
+        taskLists.add(taskList);
+
+        if (taskList.settings?.checklistSettings?.isChecklist == true) {
+          checklists.add(taskList);
+        }
       });
 
       store.dispatch(ReceiveLocalTaskLists(taskLists: taskLists));
+      store.dispatch(processChecklists(checklists));
     });
   };
+}
+
+ThunkAction<AppState> processChecklists(List<TaskListModel> checklists) {
+  return (Store<AppState> store) async {
+    for (var taskList in checklists) {
+      renewChecklist(taskList, store);
+    }
+  };
+}
+
+void renewChecklist(TaskListModel checklist, Store<AppState> store,
+    {bool isManuallyInitiated = false}) async {
+  if (checklist.settings.checklistSettings.isDueForRenew == false &&
+      isManuallyInitiated == false) {
+    return;
+  }
+
+  print('Renewing ${checklist.taskListName}');
+
+  // 'unComplete' related Tasks.
+  var batch = Firestore.instance.batch();
+  var snapshot = await _getTasksCollectionRef(checklist.project, store)
+      .where('taskList', isEqualTo: checklist.uid)
+      .getDocuments();
+
+  snapshot.documents
+      .forEach((doc) => batch.updateData(doc.reference, {'isComplete': false}));
+
+  try {
+    batch.commit();
+  } catch (error) {
+    throw error;
+  }
+
+  // Update TaskList.
+  if (isManuallyInitiated == false) {
+    var currentChecklistSettings = checklist.settings.checklistSettings;
+    var newSettings = checklist.settings.copyWith(
+        checklistSettings: currentChecklistSettings.copyWith(
+            lastRenewDate: determineNextRenewDate(
+                currentChecklistSettings.lastRenewDate ??
+                    currentChecklistSettings.initialStartDate,
+                currentChecklistSettings.renewInterval)));
+
+    var ref = _getTaskListsCollectionRef(checklist.project, store)
+        .document(checklist.uid);
+
+    try {
+      ref.updateData({'settings': newSettings.toMap()});
+    } catch (error) {
+      throw error;
+    }
+  }
+}
+
+DateTime determineNextRenewDate(DateTime lastRenewDate, int renewInterval) {
+  assert(lastRenewDate != null);
+
+  var now = normalizeDate(DateTime.now());
+  var projectedRenewDate = lastRenewDate.add(Duration(days: renewInterval));
+  if (projectedRenewDate.isAfter(now)) {
+    return projectedRenewDate;
+  }
+
+  // The next projectedRenewDate is still behind Today's Date. We have to play catchup. In other words, wind the date forward
+  // honoring the renewInterval until we find a date in the Future.
+  while (now.isAfter(projectedRenewDate)) {
+    projectedRenewDate = projectedRenewDate.add(Duration(days: renewInterval));
+  }
+
+  return projectedRenewDate;
 }
 
 ThunkAction<AppState> subscribeToLocalTasks(String userId) {
@@ -621,6 +702,50 @@ ThunkAction<AppState> signInUser() {
     store.dispatch(subscribeToLocalProjects(user.uid));
     store.dispatch(subscribeToLocalTasks(user.uid));
     store.dispatch(subscribeToLocalTaskLists(user.uid));
+  };
+}
+
+ThunkAction<AppState> openChecklistSettings(
+    TaskListModel taskList, BuildContext context) {
+  return (Store<AppState> store) async {
+    var currentSettings = taskList.settings.checklistSettings;
+
+    var result = await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ChecklistSettingsDialog(
+            renewDate: currentSettings.nextRenewDate ?? currentSettings.initialStartDate,
+            isChecklist: currentSettings.isChecklist,
+            renewInterval: currentSettings.renewInterval,
+          ),
+    );
+
+    if (result != null && result is ChecklistSettingsDialogResult) {
+      if (result.renewNow == true) {
+        // Renew Now
+        renewChecklist(taskList, store, isManuallyInitiated: true);
+
+        return;
+      } else {
+        var ref = _getTaskListsCollectionRef(taskList.project, store)
+            .document(taskList.uid);
+        var newTaskListSettings = taskList.settings.copyWith(
+            checklistSettings: ChecklistSettingsModel(
+          isChecklist: result.isChecklist,
+          initialStartDate: result.renewDate,
+          lastRenewDate:
+              null, // If we got here, the user changed a setting, therefore reset lastRenewDate so checklist will be
+          // auto renewed as we would expect.
+          renewInterval: result.renewInterval,
+        ));
+
+        try {
+          await ref.updateData({'settings': newTaskListSettings.toMap()});
+        } catch (error) {
+          throw error;
+        }
+      }
+    }
   };
 }
 

@@ -2,11 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/ChecklistSettings.dart';
 
-
 class TaskListSettingsModel {
   TaskSorting sortBy;
   ChecklistSettingsModel checklistSettings;
-  
 
   TaskListSettingsModel({
     this.sortBy = defaultTaskSorting,
@@ -15,17 +13,22 @@ class TaskListSettingsModel {
 
   TaskListSettingsModel.fromDocMap(Map<dynamic, dynamic> docMap) {
     if (docMap == null) {
+      this.sortBy = defaultTaskSorting;
+      this.checklistSettings = ChecklistSettingsModel();
       return;
     }
 
     this.sortBy = _parseSortBy(docMap['sortBy']);
-    this.checklistSettings = docMap['checklistSettings'] == null ? null : ChecklistSettingsModel.fromDocMap(docMap['checklistSettings']);
+    this.checklistSettings = docMap['checklistSettings'] == null
+        ? ChecklistSettingsModel()
+        : ChecklistSettingsModel.fromDocMap(docMap['checklistSettings']);
   }
 
   Map<String, dynamic> toMap() {
     return {
       'sortBy': _convertSortByToString(this.sortBy),
-      'checklistSettings': this.checklistSettings?.toMap() ?? ChecklistSettingsModel().toMap(),
+      'checklistSettings':
+          this.checklistSettings?.toMap() ?? ChecklistSettingsModel().toMap(),
     };
   }
 
@@ -40,7 +43,7 @@ class TaskListSettingsModel {
   }
 
   String _convertSortByToString(TaskSorting sortBy) {
-    switch(sortBy) {
+    switch (sortBy) {
       case TaskSorting.completed:
         return 'completed';
 
@@ -60,7 +63,7 @@ class TaskListSettingsModel {
         return 'alphabetically';
 
       default:
-      return 'dateAdded';
+        return 'dateAdded';
     }
   }
 
@@ -69,30 +72,30 @@ class TaskListSettingsModel {
       return defaultTaskSorting;
     }
 
-    switch(sortBy) {
+    switch (sortBy) {
       case '':
-      return defaultTaskSorting;
+        return defaultTaskSorting;
 
       case 'completed':
-      return TaskSorting.completed;
+        return TaskSorting.completed;
 
       case 'dateAdded':
-      return TaskSorting.dateAdded;
+        return TaskSorting.dateAdded;
 
       case 'dueDate':
-      return TaskSorting.dueDate;
+        return TaskSorting.dueDate;
 
       case 'assignee':
-      return TaskSorting.assignee;
+        return TaskSorting.assignee;
 
       case 'alphabetically':
-      return TaskSorting.alphabetically;
+        return TaskSorting.alphabetically;
 
       case 'priority':
-      return TaskSorting.priority;
+        return TaskSorting.priority;
 
       default:
-      return TaskSorting.dateAdded;
+        return TaskSorting.dateAdded;
     }
   }
 }

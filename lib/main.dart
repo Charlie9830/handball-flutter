@@ -21,24 +21,22 @@ class App extends StatefulWidget {
   _AppState createState() => _AppState(store: store);
 }
 
-class _AppState extends State<App> {
+class _AppState extends State<App> with WidgetsBindingObserver {
   final Store<AppState> store;
   _AppState({this.store});
 
   @override
   void initState() {
-    print('Init State');
     super.initState();
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) {
-          store.dispatch(signInUser());
-          
-        });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      store.dispatch(signInUser());
+    });
+
+    WidgetsBinding.instance.addObserver(this);
   }
-  
+
   @override
   Widget build(BuildContext context) {
-    
     return new StoreProvider<AppState>(
         store: store,
         child: new MaterialApp(
@@ -51,33 +49,31 @@ class _AppState extends State<App> {
           ),
           navigatorKey: navigatorKey,
           home: AppDrawerContainer(),
-        )
-        );
+        ));
   }
 
-  // Route<dynamic> _generateRoute(RouteSettings settings) {
-  //   switch (settings.name) {
-  //     case 'home':
-  //     return MaterialPageRoute(
-  //       builder: (context) => AppDrawerContainer(),
-  //     );
-  //     break;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch(state) {
+      case AppLifecycleState.resumed:
+        store.dispatch(processChecklists(store.state.taskLists));
+        break;
+      case AppLifecycleState.inactive:
+        // TODO: Handle this case.
+        break;
+      case AppLifecycleState.paused:
+        // TODO: Handle this case.
+        break;
+      case AppLifecycleState.suspending:
+        // TODO: Handle this case.
+        break;
+    }
+    super.didChangeAppLifecycleState(state);
+  }
 
-  //     case 'project':
-  //     return MaterialPageRoute(
-  //       builder: (context) => ProjectScreenContainer(),
-  //     );
-
-  //     case 'dialog':
-  //     return MaterialPageRoute(
-  //       builder: (context) => settings.arguments,
-  //     );
-  //     break;
-
-  //     default:
-  //     return null;
-  //   }
-  // }
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 }
-
-
