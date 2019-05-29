@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/AppSettingsViewModel.dart';
+import 'package:handball_flutter/presentation/Screens/AppSettings/AccountTab/AboutTab.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/AccountTab/AccountTab.dart';
 
 class AppSettings extends StatelessWidget {
@@ -34,7 +35,7 @@ class AppSettings extends StatelessWidget {
           children: <Widget>[
             Text('General'),
             AccountTab(),
-            Text('About'),
+            AboutTab(),
           ],
         ),
       ),
