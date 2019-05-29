@@ -25,6 +25,16 @@ import 'package:redux_thunk/redux_thunk.dart';
 
 final FirebaseAuth auth = FirebaseAuth.instance;
 
+class OpenAppSettings {
+  final AppSettingsTabs tab;
+
+  OpenAppSettings({
+    this.tab,
+  });
+}
+
+class CloseAppSettings {}
+
 class SelectProject {
   final String uid;
 

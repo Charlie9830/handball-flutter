@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/containers/AppSettingsContainer.dart';
 import 'package:handball_flutter/containers/ProjectScreenContainer.dart';
+import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/containers/TaskInspectorScreenContainer.dart';
@@ -21,6 +23,22 @@ void navigationMiddleware(
   }
 
   if (action is NavigateToAppDrawer) {
+    navigatorKey.currentState.pop();
+  }
+
+  if (action is OpenAppSettings) {
+    navigatorKey.currentState.push(
+      new MaterialPageRoute(
+        builder: (context) {
+          return new AppSettingsContainer(
+            initialTab: action.tab ?? AppSettingsTabs.general,
+          );
+        }
+      )
+    );
+  }
+
+  if (action is CloseAppSettings) {
     navigatorKey.currentState.pop();
   }
 

@@ -5,3 +5,5 @@ enum DueDateChitSize { standard, small }
 
 enum TaskSorting { completed, priority, dueDate, dateAdded, assignee, alphabetically }
 const defaultTaskSorting = TaskSorting.dateAdded;
+
+enum AppSettingsTabs { general, account, about }

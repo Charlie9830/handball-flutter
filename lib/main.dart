@@ -43,9 +43,8 @@ class _AppState extends State<App> with WidgetsBindingObserver {
           title: 'Handball',
           theme: ThemeData(
             primarySwatch: Colors.blue,
-            accentColor: Colors.deepOrangeAccent,
-            accentColorBrightness: Brightness.dark,
-            brightness: Brightness.dark,
+            accentColor: Colors.orangeAccent,
+            brightness: Brightness.light,
           ),
           navigatorKey: navigatorKey,
           home: AppDrawerContainer(),
