@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 class LoggedIn extends StatelessWidget {
   final String displayName;
   final String email;
+  final onSignOut;
 
   LoggedIn({
     this.displayName,
     this.email,
+    this.onSignOut,
   });
 
   @override
@@ -15,26 +17,24 @@ class LoggedIn extends StatelessWidget {
       padding: EdgeInsets.only(top: 32),
       child: Column(
         children: <Widget>[
-          Icon(Icons.person_outline,
-          size: 40),
+          Icon(Icons.person_outline, size: 40),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Text('Signed In', style: Theme.of(context).textTheme.headline),
+            child:
+                Text('Signed In', style: Theme.of(context).textTheme.headline),
           ),
           Padding(
-            padding: EdgeInsets.symmetric(vertical: 24),
-            child: Column(
-              children: <Widget>[
-                Text(displayName),
-                Text(email),
-              ],
-            )
-          ),
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Column(
+                children: <Widget>[
+                  Text(displayName),
+                  Text(email),
+                ],
+              )),
           RaisedButton(
             child: Text('Sign Out'),
-            onPressed: (){},
+            onPressed: () => onSignOut(),
           ),
-
           Column(
             children: <Widget>[
               FlatButton(

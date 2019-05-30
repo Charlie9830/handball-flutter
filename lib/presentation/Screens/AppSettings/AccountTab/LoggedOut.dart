@@ -101,7 +101,7 @@ class _LoggedOutState extends State<LoggedOut> with TickerProviderStateMixin {
           ),
           RaisedButton(
             child: Text('Sign In'),
-            onPressed: () {},
+            onPressed: _handleSignInButtonPress,
             color: Theme.of(context).accentColor,
           ),
           Column(
@@ -119,6 +119,13 @@ class _LoggedOutState extends State<LoggedOut> with TickerProviderStateMixin {
     );
   }
 
+  void _handleSignInButtonPress() {
+    widget.onSignIn(
+      _emailController.text,
+      _passwordController.text,
+    );
+  }
+ 
   String _validateEmail(String email) {
     return isValidEmail(email) ? null : 'Invalid email';
   }

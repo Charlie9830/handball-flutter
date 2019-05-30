@@ -1,3 +1,4 @@
+import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/IndicatorGroup.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
@@ -33,7 +34,8 @@ final initialAppState = AppState(
     text: '',
     onOkay: (){},
     onCancel: (){},
-  )
+  ),
+  accountState: AccountState.loggedOut,
 );
 
 final appStore = new Store<AppState> (

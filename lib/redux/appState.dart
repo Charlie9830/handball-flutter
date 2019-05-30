@@ -21,6 +21,7 @@ class AppState {
   final List<TaskListModel> filteredTaskLists;
   final Map<String, IndicatorGroup> projectIndicatorGroups;
   final String focusedTaskListId;
+  final AccountState accountState;
 
   final TextInputDialogModel textInputDialog;
 
@@ -38,7 +39,8 @@ class AppState {
     this.filteredTaskLists,
     this.focusedTaskListId,
     this.textInputDialog,
-    this.projectIndicatorGroups
+    this.projectIndicatorGroups,
+    this.accountState,
     });
 
   AppState copyWith({
@@ -58,6 +60,7 @@ class AppState {
     Map<String,IndicatorGroup> projectIndicatorGroups,
     InflatedProjectModel inflatedProject,
     Map<String, String> lastUsedTaskLists,
+    AccountState accountState,
   }) {
     return AppState(
       projects: projects ?? this.projects,
@@ -73,6 +76,7 @@ class AppState {
       textInputDialog: textInputDialog ?? this.textInputDialog,
       projectIndicatorGroups: projectIndicatorGroups ?? this.projectIndicatorGroups,
       inflatedProject: inflatedProject ?? this.inflatedProject,
+      accountState: accountState ?? this.accountState,
     );
   }
 }

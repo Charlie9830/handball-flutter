@@ -31,6 +31,10 @@ class AppSettingsContainer extends StatelessWidget {
   _converter(Store<AppState> store, BuildContext context) {
     return new AppSettingsViewModel(
       initialTab: initialTab,
+      user: store.state.user,
+      accountState: store.state.accountState,
+      onSignIn: (email, password) => store.dispatch(signInUser(email, password, context)),
+      onSignOut: () => store.dispatch(signOutUser()),
       onClose: () => store.dispatch(CloseAppSettings()),
     );
   }

@@ -29,7 +29,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      store.dispatch(signInUser());
+      store.dispatch(initializeApp());
     });
 
     WidgetsBinding.instance.addObserver(this);

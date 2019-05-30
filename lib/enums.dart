@@ -7,3 +7,4 @@ enum TaskSorting { completed, priority, dueDate, dateAdded, assignee, alphabetic
 const defaultTaskSorting = TaskSorting.dateAdded;
 
 enum AppSettingsTabs { general, account, about }
+enum AccountState { loggedOut, loggingIn, loggedIn, registering }

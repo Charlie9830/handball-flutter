@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/FirestoreStreamsContainer.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/ChecklistSettings.dart';
@@ -25,6 +27,8 @@ import 'package:redux_thunk/redux_thunk.dart';
 
 final FirebaseAuth auth = FirebaseAuth.instance;
 
+final FirestoreStreamsContainer _firestoreStreams = FirestoreStreamsContainer();
+
 class OpenAppSettings {
   final AppSettingsTabs tab;
 
@@ -41,10 +45,18 @@ class SelectProject {
   SelectProject(this.uid);
 }
 
-class SetUser {
+class SetAccountState {
+  final AccountState accountState;
+
+  SetAccountState({this.accountState});
+}
+
+class SignOut {}
+
+class SignIn {
   final User user;
 
-  SetUser({this.user});
+  SignIn({this.user});
 }
 
 class ReceiveLocalProjects {
@@ -150,6 +162,61 @@ Future<DialogResult> postConfirmationDialog(String title, String text,
               ),
             ]);
       });
+}
+
+ThunkAction<AppState> initializeApp() {
+  return (Store<AppState> store) async {
+    FirebaseAuth.instance.onAuthStateChanged
+        .listen((user) => onAuthStateChanged(store, user));
+  };
+}
+
+void onAuthStateChanged(Store<AppState> store, FirebaseUser user) {
+  if (user == null) {
+    store.dispatch(SignOut());
+    _firestoreStreams.cancelAll();
+    return;
+  }
+
+  store.dispatch(SignIn(
+      user: new User(
+          isLoggedIn: true,
+          displayName: user.displayName,
+          userId: user.uid,
+          email: user.email)));
+
+  subscribeToDatabase(store, user.uid);
+}
+
+void subscribeToDatabase(Store<AppState> store, String userId) {
+  _firestoreStreams.localProjects = _subscribeToLocalProjects(userId, store);
+  _firestoreStreams.localTaskLists = _subscribeToLocalTaskLists(userId, store);
+  _firestoreStreams.localIncompletedTasks =
+      _subscribeToLocalIncompletedTasks(userId, store);
+}
+
+ThunkAction<AppState> signInUser(String email, String password, BuildContext context) {
+  return (Store<AppState> store) async {
+    store.dispatch(SetAccountState(accountState: AccountState.loggingIn));
+    
+    try {
+      await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
+    } catch (error) {
+      store.dispatch(SetAccountState(accountState: AccountState.loggedOut));
+      throw error;
+    }
+  };
+}
+
+ThunkAction<AppState> signOutUser() {
+  return (Store<AppState> store) async {
+    try {
+      FirebaseAuth.instance.signOut();
+    } catch (error) {
+      throw error;
+    }
+  };
 }
 
 ThunkAction<AppState> updateTaskPriority(
@@ -548,30 +615,36 @@ ThunkAction<AppState> updateTaskComplete(String taskId, bool newValue) {
   };
 }
 
+StreamSubscription<QuerySnapshot> _subscribeToLocalTaskLists(
+    String userId, Store<AppState> store) {
+  return Firestore.instance
+      .collection('users')
+      .document(userId)
+      .collection('taskLists')
+      .snapshots()
+      .listen((snapshot) => _handleLocalTaskListsSnapshot(snapshot, store));
+}
+
+void _handleLocalTaskListsSnapshot(
+    QuerySnapshot snapshot, Store<AppState> store) {
+  var taskLists = <TaskListModel>[];
+  var checklists = <TaskListModel>[];
+
+  snapshot.documents.forEach((doc) {
+    var taskList = TaskListModel.fromDoc(doc);
+    taskLists.add(taskList);
+
+    if (taskList.settings?.checklistSettings?.isChecklist == true) {
+      checklists.add(taskList);
+    }
+  });
+
+  store.dispatch(ReceiveLocalTaskLists(taskLists: taskLists));
+  store.dispatch(processChecklists(checklists));
+}
+
 ThunkAction<AppState> subscribeToLocalTaskLists(String userId) {
-  return (Store<AppState> store) async {
-    Firestore.instance
-        .collection('users')
-        .document(userId)
-        .collection('taskLists')
-        .snapshots()
-        .listen((data) {
-      var taskLists = <TaskListModel>[];
-      var checklists = <TaskListModel>[];
-
-      data.documents.forEach((doc) {
-        var taskList = TaskListModel.fromDoc(doc);
-        taskLists.add(taskList);
-
-        if (taskList.settings?.checklistSettings?.isChecklist == true) {
-          checklists.add(taskList);
-        }
-      });
-
-      store.dispatch(ReceiveLocalTaskLists(taskLists: taskLists));
-      store.dispatch(processChecklists(checklists));
-    });
-  };
+  return (Store<AppState> store) async {};
 }
 
 ThunkAction<AppState> processChecklists(List<TaskListModel> checklists) {
@@ -645,74 +718,54 @@ DateTime determineNextRenewDate(DateTime lastRenewDate, int renewInterval) {
   return projectedRenewDate;
 }
 
-ThunkAction<AppState> subscribeToLocalTasks(String userId) {
-  return (Store<AppState> store) async {
-    Firestore.instance
-        .collection('users')
-        .document(userId)
-        .collection('tasks')
-        .snapshots()
-        .listen((snapshot) {
-      var tasks = <TaskModel>[];
-
-      snapshot.documents.forEach((doc) {
-        tasks.add(TaskModel.fromDoc(doc));
-      });
-
-      // Animation.
-      // In order for the correct Index to be found within state.taskIndicies, we have to Process the animation for any removals,
-      // then dispatch the changes to the store (So that Task Indices gets reprocessed), then process the additions.
-      var groupedDocumentChanges =
-          _getGroupedDocumentChanges(snapshot.documentChanges);
-
-      _driveTaskRemovalAnimations(
-          store.state.inflatedProject, groupedDocumentChanges.removed);
-
-      store.dispatch(ReceiveLocalTasks(tasks: tasks));
-
-      _driveTaskAdditionAnimations(
-          store.state.inflatedProject, groupedDocumentChanges.added);
-    });
-  };
+StreamSubscription<QuerySnapshot> _subscribeToLocalIncompletedTasks(
+    String userId, Store<AppState> store) {
+  return Firestore.instance
+      .collection('users')
+      .document(userId)
+      .collection('tasks')
+      .where('isComplete', isEqualTo: false)
+      .snapshots()
+      .listen((snapshot) => _handleTasksSnapshot(snapshot, store));
 }
 
-ThunkAction<AppState> subscribeToLocalProjects(String userId) {
-  return (Store<AppState> store) async {
-    Firestore.instance
-        .collection('users')
-        .document(userId)
-        .collection('projects')
-        .snapshots()
-        .listen((data) {
-      var projects = <ProjectModel>[];
-      data.documents.forEach((doc) {
-        projects.add(ProjectModel.fromDoc(doc));
-      });
+void _handleTasksSnapshot(QuerySnapshot snapshot, Store<AppState> store) {
+  var tasks = <TaskModel>[];
 
-      store.dispatch(ReceiveLocalProjects(projects: projects));
-    });
-  };
+  snapshot.documents.forEach((doc) {
+    tasks.add(TaskModel.fromDoc(doc));
+  });
+
+  // Animation.
+  // In order for the correct Index to be found within state.taskIndicies, we have to Process the animation for any removals,
+  // then dispatch the changes to the store (So that Task Indices gets reprocessed), then process the additions.
+  var groupedDocumentChanges =
+      _getGroupedDocumentChanges(snapshot.documentChanges);
+
+  _driveTaskRemovalAnimations(
+      store.state.inflatedProject, groupedDocumentChanges.removed);
+
+  store.dispatch(ReceiveLocalTasks(tasks: tasks));
+
+  _driveTaskAdditionAnimations(
+      store.state.inflatedProject, groupedDocumentChanges.added);
 }
 
-ThunkAction<AppState> signInUser() {
-  return (Store<AppState> store) async {
-    print('Signing in User');
-    final FirebaseUser user = await auth.signInWithEmailAndPassword(
-        email: 'a@test.com', password: 'adingusshrew');
+StreamSubscription<QuerySnapshot> _subscribeToLocalProjects(
+    String userId, Store<AppState> store) {
+  return Firestore.instance
+      .collection('users')
+      .document(userId)
+      .collection('projects')
+      .snapshots()
+      .listen((data) {
+    var projects = <ProjectModel>[];
+    data.documents.forEach((doc) {
+      projects.add(ProjectModel.fromDoc(doc));
+    });
 
-    print('Logged in');
-
-    store.dispatch(SetUser(
-        user: new User(
-            isLoggedIn: true,
-            displayName: user.displayName,
-            userId: user.uid,
-            email: user.email)));
-
-    store.dispatch(subscribeToLocalProjects(user.uid));
-    store.dispatch(subscribeToLocalTasks(user.uid));
-    store.dispatch(subscribeToLocalTaskLists(user.uid));
-  };
+    store.dispatch(ReceiveLocalProjects(projects: projects));
+  });
 }
 
 ThunkAction<AppState> openChecklistSettings(
@@ -724,7 +777,8 @@ ThunkAction<AppState> openChecklistSettings(
       context: context,
       barrierDismissible: false,
       builder: (context) => ChecklistSettingsDialog(
-            renewDate: currentSettings.nextRenewDate ?? currentSettings.initialStartDate,
+            renewDate: currentSettings.nextRenewDate ??
+                currentSettings.initialStartDate,
             isChecklist: currentSettings.isChecklist,
             renewInterval: currentSettings.renewInterval,
           ),

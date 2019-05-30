@@ -34,7 +34,12 @@ class AppSettings extends StatelessWidget {
         body: TabBarView(
           children: <Widget>[
             Text('General'),
-            AccountTab(),
+            AccountTab(
+              accountState: viewModel.accountState,
+              user: viewModel.user,
+              onSignIn: viewModel.onSignIn,
+              onSignOut: viewModel.onSignOut,
+            ),
             AboutTab(),
           ],
         ),
