@@ -32,6 +32,7 @@ class AppSettings extends StatelessWidget {
               ],
             )),
         body: TabBarView(
+          physics: NeverScrollableScrollPhysics(),
           children: <Widget>[
             Text('General'),
             AccountTab(

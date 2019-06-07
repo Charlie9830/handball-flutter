@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/presentation/Screens/SignUp/SignUpBase.dart';
 import 'package:handball_flutter/utilities/isValidEmail.dart';
 
 class LoggedOut extends StatefulWidget {
@@ -108,6 +109,7 @@ class _LoggedOutState extends State<LoggedOut> with TickerProviderStateMixin {
             children: <Widget>[
               FlatButton(
                 child: Text("Don't have an account? Sign Up"),
+                onPressed: () => _handleSignUpButtonPress(context),
               ),
               FlatButton(
                 child: Text("Forgot password?"),
@@ -116,6 +118,16 @@ class _LoggedOutState extends State<LoggedOut> with TickerProviderStateMixin {
           ),
         ],
       ),
+    );
+  }
+
+  void _handleSignUpButtonPress(BuildContext context) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return SignUpBase();
+      }
     );
   }
 
