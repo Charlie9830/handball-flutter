@@ -11,11 +11,11 @@ class DirectoryListing {
     @required this.userId
   });
 
-  Map<dynamic, dynamic> toMap() {
+  Map<String, dynamic> toMap() {
     return {
-      email: this.email,
-      displayName: this.displayName,
-      userId: this.userId,
+      'email': this.email,
+      'displayName': this.displayName,
+      'userId': this.userId,
     };
   }
 }

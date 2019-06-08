@@ -8,10 +8,14 @@ enum SignUpResult { indeterminate, success, error }
 class Result extends StatelessWidget {
   final SignUpResult result;
   final String message;
+  final dynamic onBackButtonPressed;
+  final dynamic onStartButtonPressed;
 
   Result({
     this.result,
     this.message,
+    this.onBackButtonPressed,
+    this.onStartButtonPressed,
   });
 
   @override
@@ -29,11 +33,13 @@ class Result extends StatelessWidget {
       case SignUpResult.error:
         return Failure(
           message: message,
+          onBackButtonPressed: onBackButtonPressed,
       );
 
       case SignUpResult.success:
         return Success(
           message: message,
+          onStartButtonPressed: onStartButtonPressed,
         );
 
       default:

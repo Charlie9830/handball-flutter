@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 class Failure extends StatelessWidget {
   final String message;
+  final dynamic onBackButtonPressed;
 
   Failure({
-    this.message
+    this.message,
+    this.onBackButtonPressed,
   });
 
   @override
@@ -14,6 +16,10 @@ class Failure extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Text(message),
+          RaisedButton(
+            child: Text('Go back'),
+            onPressed: onBackButtonPressed,
+          )
         ],
       )
     );

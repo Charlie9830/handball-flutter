@@ -3,20 +3,26 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:handball_flutter/models/DirectoryListing.dart';
+import 'package:handball_flutter/presentation/Nothing.dart';
+import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/Screens/SignUp/DecorationPainter.dart';
 import 'package:handball_flutter/presentation/Screens/SignUp/NavigationButtons.dart';
 import 'package:handball_flutter/presentation/Screens/SignUp/Result.dart';
 import 'package:handball_flutter/utilities/isValidEmail.dart';
 
-const int maxIndex = 3;
-const int maxUserIndex =
-    2; // Max Index user can reach, above this it is programatically controlled.
-const int minStep = 0;
-const int resultIndex = 3;
+// Be very careful about reordering these Enums. This widget should honor the order of this enum, but there is still
+// something somewhere that doesn't honor it correctly.
+// TODO: Fix above. Start with maxUserIndex referenceing displayName directly instead of result.index - 1.
+enum SignUpSteps { email, password, displayName, result }
+
+final int maxIndex = SignUpSteps.values.length - 1;
+final SignUpSteps maxUserStep = SignUpSteps
+    .displayName; // Max Index user can reach, above this it is programatically controlled.
+final int resultIndex = SignUpSteps.result.index;
 
 class SignUpBase extends StatefulWidget {
-  FirebaseAuth firebaseAuth;
-  Firestore firestore;
+  final FirebaseAuth firebaseAuth;
+  final Firestore firestore;
 
   SignUpBase({
     @required this.firebaseAuth,
@@ -37,6 +43,8 @@ class _SignUpBaseState extends State<SignUpBase> with TickerProviderStateMixin {
   FocusNode _displayNameFocusNode;
 
   String _emailErrorText;
+  String _passwordErrorText;
+  String _displayNameErrorText;
 
   TabController _tabController;
 
@@ -56,7 +64,7 @@ class _SignUpBaseState extends State<SignUpBase> with TickerProviderStateMixin {
     _tabController = TabController(
       length: maxIndex + 1,
       vsync: this,
-      initialIndex: 0,
+      initialIndex: SignUpSteps.values[0].index,
     );
 
     _tabController.addListener(() {
@@ -95,47 +103,21 @@ class _SignUpBaseState extends State<SignUpBase> with TickerProviderStateMixin {
                       child: TabBarView(
                         controller: _tabController,
                         physics: NeverScrollableScrollPhysics(),
-                        children: <Widget>[
-                          TextField(
-                            decoration: InputDecoration(
-                              labelText: 'Email address',
-                              errorText: _emailErrorText,
-                            ),
-                            controller: _emailController,
-                            focusNode: _emailFocusNode,
-                            keyboardType: TextInputType.emailAddress,
-                            autofocus: true,
-                          ),
-                          TextField(
-                            decoration: InputDecoration(
-                              labelText: 'Password',
-                            ),
-                            controller: _passwordController,
-                            focusNode: _passwordFocusNode,
-                            obscureText: true,
-                            keyboardType: TextInputType.text,
-                          ),
-                          TextField(
-                            controller: _displayNameController,
-                            focusNode: _displayNameFocusNode,
-                            decoration: InputDecoration(
-                              labelText: 'Display name',
-                            ),
-                          ),
-                          Result(
-                            result: result,
-                            message: resultMessage,
-                          ),
-                        ],
+                        children: _getStepContents(context),
                       ),
                     ),
                   ),
-                  NavigationButtons(
-                    leftButtonText: 'Back',
-                    rightButtonText: 'Next',
-                    onRightButtonPressed: () => _moveNext(context),
-                    onLeftButtonPressed: () => _movePrev(context),
-                  )
+                  PredicateBuilder(
+                    predicate: () =>
+                        _tabController.index != SignUpSteps.result.index,
+                    childIfTrue: NavigationButtons(
+                      leftButtonText: 'Back',
+                      rightButtonText: 'Next',
+                      onRightButtonPressed: () => _moveNext(context),
+                      onLeftButtonPressed: () => _movePrev(context),
+                    ),
+                    childIfFalse: Nothing(),
+                  ),
                 ],
               ),
             ),
@@ -145,25 +127,128 @@ class _SignUpBaseState extends State<SignUpBase> with TickerProviderStateMixin {
     );
   }
 
-  void _moveNext(BuildContext context) {
-    if (_tabController.index < maxIndex - 1) {
-      // Don't allow the user to Step into the Result Page.
-      if (_tabController.index == 0 && !isValidEmail(_emailController.text)) {
-        // Invalid Email
-        setState(() => _emailErrorText = 'Invalid email');
-        return;
+  List<Widget> _getStepContents(BuildContext context) {
+    return SignUpSteps.values.map((value) {
+      switch (value) {
+        case SignUpSteps.email:
+          return TextField(
+            decoration: InputDecoration(
+              labelText: 'Email address',
+              errorText: _emailErrorText,
+            ),
+            controller: _emailController,
+            focusNode: _emailFocusNode,
+            keyboardType: TextInputType.emailAddress,
+            autofocus: true,
+            onSubmitted: (value) => _moveNext(context),
+          );
+
+        case SignUpSteps.password:
+          return TextField(
+            decoration: InputDecoration(
+              labelText: 'Password',
+              errorText: _passwordErrorText,
+            ),
+            controller: _passwordController,
+            focusNode: _passwordFocusNode,
+            obscureText: true,
+            keyboardType: TextInputType.text,
+            onSubmitted: (value) => _moveNext(context),
+          );
+
+        case SignUpSteps.displayName:
+          return TextField(
+            controller: _displayNameController,
+            focusNode: _displayNameFocusNode,
+            decoration: InputDecoration(
+              labelText: 'Display name',
+              errorText: _displayNameErrorText,
+            ),
+            onSubmitted: (value) => _moveNext(context),
+          );
+
+        case SignUpSteps.result:
+          return Result(
+            result: result,
+            message: resultMessage,
+            onBackButtonPressed: () => _movePrev(context),
+            onStartButtonPressed: () => _finish(context),
+          );
+
+        default:
+          throw UnimplementedError(
+              'Switch case does not exist for this SignUpStep value: $value');
       }
+    }).toList();
+  }
 
-      setState(() => _emailErrorText = null);
+  bool _isValidPassword(String password) {
+    if (password == null) {
+      return false;
+    }
 
+    return password.length >= 6;
+  }
+
+  void _moveNext(BuildContext context) {
+    SignUpSteps currentStep = SignUpSteps.values[_tabController.index];
+
+    // Validate Email Address.
+    if (currentStep == SignUpSteps.email &&
+        !isValidEmail(_emailController.text)) {
+      setState(() => _emailErrorText = 'Invalid email');
+      return;
+    }
+
+    setState(() => _emailErrorText = null);
+
+    // Validate Password.
+    if (currentStep == SignUpSteps.password &&
+        !_isValidPassword(_passwordController.text)) {
+      // Invalid Password.
+      setState(() => _passwordErrorText =
+          'Please use a password with at least 6 characters');
+      return;
+    }
+
+    setState(() => _passwordErrorText = null);
+
+    // Validate Display Name.
+    if (currentStep == SignUpSteps.displayName &&
+        !_isValidDisplayName(_displayNameController.text)) {
+      // Invalid Display Name.
+      setState(() => _displayNameErrorText =
+          'Please use a Display Name with at least 2 characters');
+      return;
+    }
+
+    setState(() => _displayNameErrorText = null);
+
+    if (currentStep != maxUserStep) {
+      // Step Next.
       var newIndex = _tabController.index + 1;
       _tabController.index = newIndex;
-    } else if (_tabController.index == maxUserIndex) {
+    }
+
+    else {
+      // Try to Register (Takes us to result page).
       _tryRegister();
     }
   }
 
+  void _finish(BuildContext context) {
+    Navigator.of(context).pop();
+  } 
+
+  void _dropKeyboardFocus() {
+    _emailFocusNode.unfocus();
+    _passwordFocusNode.unfocus();
+    _displayNameFocusNode.unfocus();
+  }
+
   void _tryRegister() async {
+    _dropKeyboardFocus();
+
     var email = _emailController.text;
     var password = _passwordController.text;
     var displayName = _displayNameController.text;
@@ -187,22 +272,30 @@ class _SignUpBaseState extends State<SignUpBase> with TickerProviderStateMixin {
                   displayName: displayName, email: email, userId: user.uid)
               .toMap()));
 
-    
-
       await Future.wait(requests);
 
       _showResultPage(SignUpResult.success,
-          'Welcome ${user.displayName}, you are all ready to go, lets get started!');
+          'Welcome $displayName, you are all ready to go, lets get started!');
     } catch (error) {
       if (error is PlatformException) {
         _showResultPage(
             SignUpResult.error, _getHumanFriendlyErrorText(error.code));
       }
+
+      // TODO: Add handling here for if something goes wrong whilst updating the UserProfile or creating the directory Listing.
+      // User account should be cleaned up (Deleted), and user sent back to try again.
+      else {
+        throw error;
+      }
+      
     }
   }
 
+  bool _isValidDisplayName(String displayName) {
+    return displayName != null && displayName.length > 1;
+  }
+
   String _getHumanFriendlyErrorText(String errorCode) {
-    print(errorCode);
     if (errorCode == 'ERROR_EMAIL_ALREADY_IN_USE') {
       return 'The email address you entered is already registered';
     }
@@ -233,24 +326,31 @@ class _SignUpBaseState extends State<SignUpBase> with TickerProviderStateMixin {
   }
 
   void _grabFocus(BuildContext context, int index) async {
-    if (index == 0) {
+    if (index == SignUpSteps.email.index) {
       FocusScope.of(context).requestFocus(_emailFocusNode);
     }
 
-    if (index == 1) {
+    if (index == SignUpSteps.password.index) {
       FocusScope.of(context).requestFocus(_passwordFocusNode);
     }
 
-    if (index == 2) {
+    if (index == SignUpSteps.displayName.index) {
       FocusScope.of(context).requestFocus(_displayNameFocusNode);
     }
   }
 
   @override
   void dispose() {
+    _tabController.dispose();
+
     _emailController.dispose();
+    _emailFocusNode.dispose();
+
     _passwordController.dispose();
+    _passwordFocusNode.dispose();
+
     _displayNameController.dispose();
+    _displayNameFocusNode.dispose();
 
     super.dispose();
   }
