@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:handball_flutter/FirestoreStreamsContainer.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/keys.dart';
@@ -19,6 +20,7 @@ import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
+import 'package:handball_flutter/presentation/Screens/SignUp/SignUpBase.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
@@ -166,8 +168,7 @@ Future<DialogResult> postConfirmationDialog(String title, String text,
 
 ThunkAction<AppState> initializeApp() {
   return (Store<AppState> store) async {
-    FirebaseAuth.instance.onAuthStateChanged
-        .listen((user) => onAuthStateChanged(store, user));
+    auth.onAuthStateChanged.listen((user) => onAuthStateChanged(store, user));
   };
 }
 
@@ -186,6 +187,8 @@ void onAuthStateChanged(Store<AppState> store, FirebaseUser user) {
           email: user.email)));
 
   subscribeToDatabase(store, user.uid);
+
+  print(user.displayName);
 }
 
 void subscribeToDatabase(Store<AppState> store, String userId) {
@@ -195,13 +198,13 @@ void subscribeToDatabase(Store<AppState> store, String userId) {
       _subscribeToLocalIncompletedTasks(userId, store);
 }
 
-ThunkAction<AppState> signInUser(String email, String password, BuildContext context) {
+ThunkAction<AppState> signInUser(
+    String email, String password, BuildContext context) {
   return (Store<AppState> store) async {
     store.dispatch(SetAccountState(accountState: AccountState.loggingIn));
-    
+
     try {
-      await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: email, password: password);
+      await auth.signInWithEmailAndPassword(email: email, password: password);
     } catch (error) {
       store.dispatch(SetAccountState(accountState: AccountState.loggedOut));
       throw error;
@@ -212,7 +215,7 @@ ThunkAction<AppState> signInUser(String email, String password, BuildContext con
 ThunkAction<AppState> signOutUser() {
   return (Store<AppState> store) async {
     try {
-      FirebaseAuth.instance.signOut();
+      auth.signOut();
     } catch (error) {
       throw error;
     }
@@ -301,6 +304,20 @@ ThunkAction<AppState> deleteProjectWithDialog(
     } catch (error) {
       throw error;
     }
+  };
+}
+
+ThunkAction<AppState> showSignUpDialog(BuildContext context) {
+  return (Store<AppState> store) async {
+    await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return SignUpBase(
+            firebaseAuth: auth,
+            firestore: Firestore.instance,
+          );
+        });
   };
 }
 

@@ -4,9 +4,11 @@ import 'package:handball_flutter/utilities/isValidEmail.dart';
 
 class LoggedOut extends StatefulWidget {
   final dynamic onSignIn;
+  final dynamic onSignUpButtonPressed;
 
   LoggedOut({
     this.onSignIn,
+    this.onSignUpButtonPressed,
   });
 
   @override
@@ -109,7 +111,7 @@ class _LoggedOutState extends State<LoggedOut> with TickerProviderStateMixin {
             children: <Widget>[
               FlatButton(
                 child: Text("Don't have an account? Sign Up"),
-                onPressed: () => _handleSignUpButtonPress(context),
+                onPressed: widget.onSignUpButtonPressed,
               ),
               FlatButton(
                 child: Text("Forgot password?"),
@@ -118,16 +120,6 @@ class _LoggedOutState extends State<LoggedOut> with TickerProviderStateMixin {
           ),
         ],
       ),
-    );
-  }
-
-  void _handleSignUpButtonPress(BuildContext context) async {
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return SignUpBase();
-      }
     );
   }
 

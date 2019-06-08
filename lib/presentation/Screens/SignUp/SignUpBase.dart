@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:handball_flutter/models/DirectoryListing.dart';
 import 'package:handball_flutter/presentation/Screens/SignUp/DecorationPainter.dart';
 import 'package:handball_flutter/presentation/Screens/SignUp/NavigationButtons.dart';
 import 'package:handball_flutter/presentation/Screens/SignUp/Result.dart';
@@ -13,6 +15,14 @@ const int minStep = 0;
 const int resultIndex = 3;
 
 class SignUpBase extends StatefulWidget {
+  FirebaseAuth firebaseAuth;
+  Firestore firestore;
+
+  SignUpBase({
+    @required this.firebaseAuth,
+    @required this.firestore,
+  });
+
   @override
   _SignUpBaseState createState() => _SignUpBaseState();
 }
@@ -148,36 +158,65 @@ class _SignUpBaseState extends State<SignUpBase> with TickerProviderStateMixin {
 
       var newIndex = _tabController.index + 1;
       _tabController.index = newIndex;
-    }
-
-    else if (_tabController.index == maxUserIndex) {
+    } else if (_tabController.index == maxUserIndex) {
       _tryRegister();
     }
   }
 
   void _tryRegister() async {
+    var email = _emailController.text;
+    var password = _passwordController.text;
+    var displayName = _displayNameController.text;
+
     setState(() => result = SignUpResult.indeterminate);
+    _tabController.index = resultIndex;
 
     try {
-      print("Dispatching createUserWithEmailAndPassword");
-      var user = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text, password: _passwordController.text);
+      var user = await widget.firebaseAuth
+          .createUserWithEmailAndPassword(email: email, password: password);
 
-      print("Completed");
+      UserUpdateInfo profileUpdateInfo = new UserUpdateInfo();
+      profileUpdateInfo.displayName = displayName;
 
-      _showResultPage(
-          SignUpResult.success, 'You are all ready to go, lets get started!');
+      List<Future> requests = [];
+      requests.add(user.updateProfile(profileUpdateInfo));
+      requests.add(widget.firestore
+          .collection('directory')
+          .document(email)
+          .setData(DirectoryListing(
+                  displayName: displayName, email: email, userId: user.uid)
+              .toMap()));
+
+    
+
+      await Future.wait(requests);
+
+      _showResultPage(SignUpResult.success,
+          'Welcome ${user.displayName}, you are all ready to go, lets get started!');
     } catch (error) {
       if (error is PlatformException) {
-        var message = error.message ?? 'No message provided';
-        _showResultPage(SignUpResult.error, message);
+        _showResultPage(
+            SignUpResult.error, _getHumanFriendlyErrorText(error.code));
       }
     }
   }
 
-  void _showResultPage(SignUpResult result, String message) {
+  String _getHumanFriendlyErrorText(String errorCode) {
+    print(errorCode);
+    if (errorCode == 'ERROR_EMAIL_ALREADY_IN_USE') {
+      return 'The email address you entered is already registered';
+    }
+
+    if (errorCode == 'ERROR_WEAK_PASSWORD') {
+      return 'Password is too weak, try using a password with at least 6 characters';
+    }
+
+    return 'An unknown error has occured. Please try again';
+  }
+
+  void _showResultPage(SignUpResult signUpResult, String message) {
     setState(() {
-      result = result;
+      result = signUpResult;
       resultMessage = message;
     });
 

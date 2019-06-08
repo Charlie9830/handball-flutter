@@ -8,6 +8,7 @@ class AppSettingsViewModel {
   final dynamic onClose;
   final dynamic onSignIn;
   final dynamic onSignOut;
+  final dynamic onSignUpButtonPressed;
 
   AppSettingsViewModel({
     this.initialTab,
@@ -16,5 +17,6 @@ class AppSettingsViewModel {
     this.onSignIn,
     this.onSignOut,
     this.onClose,
+    this.onSignUpButtonPressed,
   });
 }

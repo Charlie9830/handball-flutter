@@ -11,9 +11,9 @@ class Failure extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Text(message, style: Theme.of(context).textTheme.display1),
-          
+          Text(message),
         ],
       )
     );

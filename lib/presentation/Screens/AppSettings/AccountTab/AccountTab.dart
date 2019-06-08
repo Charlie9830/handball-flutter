@@ -10,12 +10,14 @@ class AccountTab extends StatelessWidget {
   final AccountState accountState;
   final dynamic onSignIn;
   final dynamic onSignOut;
+  final dynamic onSignUpButtonPressed;
 
   AccountTab({
     this.user,
     this.accountState,
     this.onSignIn,
     this.onSignOut,
+    this.onSignUpButtonPressed,
   });
 
   @override
@@ -31,6 +33,7 @@ class AccountTab extends StatelessWidget {
       case AccountState.loggedOut:
         return LoggedOut(
           onSignIn: onSignIn,
+          onSignUpButtonPressed: onSignUpButtonPressed,
         );
 
       case AccountState.loggingIn:

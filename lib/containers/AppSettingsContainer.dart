@@ -36,6 +36,7 @@ class AppSettingsContainer extends StatelessWidget {
       onSignIn: (email, password) => store.dispatch(signInUser(email, password, context)),
       onSignOut: () => store.dispatch(signOutUser()),
       onClose: () => store.dispatch(CloseAppSettings()),
+      onSignUpButtonPressed: () => store.dispatch(showSignUpDialog(context))
     );
   }
 }

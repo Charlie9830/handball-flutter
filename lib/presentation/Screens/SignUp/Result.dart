@@ -32,7 +32,9 @@ class Result extends StatelessWidget {
       );
 
       case SignUpResult.success:
-        return Success();
+        return Success(
+          message: message,
+        );
 
       default:
         return Text("Uh oh, something went wrong");
