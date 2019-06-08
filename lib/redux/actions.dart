@@ -11,6 +11,7 @@ import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/ChecklistSettings.dart';
 import 'package:handball_flutter/models/GroupedDocumentChanges.dart';
 import 'package:handball_flutter/models/InflatedProject.dart';
+import 'package:handball_flutter/models/ProjectIdModel.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
@@ -47,6 +48,12 @@ class SelectProject {
   SelectProject(this.uid);
 }
 
+class RemoveProjectEntities {
+  final String projectId;
+
+  RemoveProjectEntities({this.projectId});
+}
+
 class SetAccountState {
   final AccountState accountState;
 
@@ -61,10 +68,10 @@ class SignIn {
   SignIn({this.user});
 }
 
-class ReceiveLocalProjects {
-  final List<ProjectModel> projects;
+class ReceiveProject {
+  final ProjectModel project;
 
-  ReceiveLocalProjects({this.projects});
+  ReceiveProject({this.project});
 }
 
 class PushLastUsedTaskList {
@@ -77,16 +84,18 @@ class PushLastUsedTaskList {
   });
 }
 
-class ReceiveLocalTasks {
+class ReceiveTasks {
   final List<TaskModel> tasks;
+  final String originProjectId;
 
-  ReceiveLocalTasks({this.tasks});
+  ReceiveTasks({@required this.tasks, @required this.originProjectId});
 }
 
-class ReceiveLocalTaskLists {
+class ReceiveTaskLists {
   final List<TaskListModel> taskLists;
+  final String originProjectId;
 
-  ReceiveLocalTaskLists({this.taskLists});
+  ReceiveTaskLists({@required this.taskLists, @required this.originProjectId});
 }
 
 class NavigateToProject {}
@@ -187,15 +196,10 @@ void onAuthStateChanged(Store<AppState> store, FirebaseUser user) {
           email: user.email)));
 
   subscribeToDatabase(store, user.uid);
-
-  print(user.displayName);
 }
 
 void subscribeToDatabase(Store<AppState> store, String userId) {
-  _firestoreStreams.localProjects = _subscribeToLocalProjects(userId, store);
-  _firestoreStreams.localTaskLists = _subscribeToLocalTaskLists(userId, store);
-  _firestoreStreams.localIncompletedTasks =
-      _subscribeToLocalIncompletedTasks(userId, store);
+  _firestoreStreams.projectIds = _subscribeToProjectIds(userId, store);
 }
 
 ThunkAction<AppState> signInUser(
@@ -293,11 +297,8 @@ ThunkAction<AppState> deleteProjectWithDialog(
       batch.delete(_getTaskListsCollectionRef(projectId, store).document(id));
     }
 
-    batch.delete(Firestore.instance
-        .collection('users')
-        .document(userId)
-        .collection('projects')
-        .document(projectId));
+    batch.delete(_getProjectsCollectionRef(store).document(projectId));
+    batch.delete(_getProjectIdsCollectionRef(userId).document(projectId));
 
     try {
       await batch.commit();
@@ -439,16 +440,26 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
 
     if (result is TextInputDialogResult &&
         result.result == DialogResult.affirmative) {
-      var ref = _getProjectsCollectionRef(store).document();
+      var batch = Firestore.instance.batch();
+
+      var projectRef = _getProjectsCollectionRef(store).document();
       var project = ProjectModel(
-        uid: ref.documentID,
+        uid: projectRef.documentID,
         projectName: result.value,
-        isRemote: false,
         created: DateTime.now().toIso8601String(),
       );
 
+      var projectIdRef = _getProjectIdsCollectionRef(store.state.user.userId).document(projectRef.documentID);
+      var projectId = ProjectIdModel(
+        uid: projectRef.documentID,
+      );
+
+      batch.setData(projectRef, project.toMap());
+      batch.setData(projectIdRef, projectId.toMap());
+      
+
       try {
-        await ref.setData(project.toMap());
+        await batch.commit();
       } catch (error) {
         throw error;
       }
@@ -632,18 +643,19 @@ ThunkAction<AppState> updateTaskComplete(String taskId, bool newValue) {
   };
 }
 
-StreamSubscription<QuerySnapshot> _subscribeToLocalTaskLists(
-    String userId, Store<AppState> store) {
+StreamSubscription<QuerySnapshot> _subscribeToTaskLists(
+    String projectId, Store<AppState> store) {
   return Firestore.instance
-      .collection('users')
-      .document(userId)
+      .collection('projects')
+      .document(projectId)
       .collection('taskLists')
       .snapshots()
-      .listen((snapshot) => _handleLocalTaskListsSnapshot(snapshot, store));
+      .listen(
+          (snapshot) => _handleTaskListsSnapshot(snapshot, projectId, store));
 }
 
-void _handleLocalTaskListsSnapshot(
-    QuerySnapshot snapshot, Store<AppState> store) {
+void _handleTaskListsSnapshot(
+    QuerySnapshot snapshot, String originProjectId, Store<AppState> store) {
   var taskLists = <TaskListModel>[];
   var checklists = <TaskListModel>[];
 
@@ -656,7 +668,8 @@ void _handleLocalTaskListsSnapshot(
     }
   });
 
-  store.dispatch(ReceiveLocalTaskLists(taskLists: taskLists));
+  store.dispatch(
+      ReceiveTaskLists(taskLists: taskLists, originProjectId: originProjectId));
   store.dispatch(processChecklists(checklists));
 }
 
@@ -735,18 +748,19 @@ DateTime determineNextRenewDate(DateTime lastRenewDate, int renewInterval) {
   return projectedRenewDate;
 }
 
-StreamSubscription<QuerySnapshot> _subscribeToLocalIncompletedTasks(
-    String userId, Store<AppState> store) {
+StreamSubscription<QuerySnapshot> _subscribeToIncompletedTasks(
+    String projectId, Store<AppState> store) {
   return Firestore.instance
-      .collection('users')
-      .document(userId)
+      .collection('projects')
+      .document(projectId)
       .collection('tasks')
       .where('isComplete', isEqualTo: false)
       .snapshots()
-      .listen((snapshot) => _handleTasksSnapshot(snapshot, store));
+      .listen((snapshot) => _handleTasksSnapshot(snapshot, projectId, store));
 }
 
-void _handleTasksSnapshot(QuerySnapshot snapshot, Store<AppState> store) {
+void _handleTasksSnapshot(
+    QuerySnapshot snapshot, String originProjectId, Store<AppState> store) {
   var tasks = <TaskModel>[];
 
   snapshot.documents.forEach((doc) {
@@ -762,26 +776,43 @@ void _handleTasksSnapshot(QuerySnapshot snapshot, Store<AppState> store) {
   _driveTaskRemovalAnimations(
       store.state.inflatedProject, groupedDocumentChanges.removed);
 
-  store.dispatch(ReceiveLocalTasks(tasks: tasks));
+  store.dispatch(ReceiveTasks(tasks: tasks, originProjectId: originProjectId));
 
   _driveTaskAdditionAnimations(
       store.state.inflatedProject, groupedDocumentChanges.added);
 }
 
-StreamSubscription<QuerySnapshot> _subscribeToLocalProjects(
+StreamSubscription<QuerySnapshot> _subscribeToProjectIds(
     String userId, Store<AppState> store) {
-  return Firestore.instance
-      .collection('users')
-      .document(userId)
-      .collection('projects')
-      .snapshots()
-      .listen((data) {
-    var projects = <ProjectModel>[];
-    data.documents.forEach((doc) {
-      projects.add(ProjectModel.fromDoc(doc));
-    });
+  return _getProjectIdsCollectionRef(userId).snapshots().listen((data) {
+    for (var change in data.documentChanges) {
+      var projectId = change.document.documentID;
+      // Added.
+      if (change.type == DocumentChangeType.added) {
+        _firestoreStreams.projectSubscriptions[projectId] =
+            ProjectSubscriptionContainer(
+                uid: projectId,
+                project: _subscribeToProject(projectId, store),
+                taskLists: _subscribeToTaskLists(projectId, store),
+                incompletedTasks:
+                    _subscribeToIncompletedTasks(projectId, store));
+      }
 
-    store.dispatch(ReceiveLocalProjects(projects: projects));
+      if (change.type == DocumentChangeType.removed) {
+        // Deleted.
+        _firestoreStreams.projectSubscriptions[projectId]?.cancelAll();
+        store.dispatch(RemoveProjectEntities(projectId: projectId));
+      }
+    }
+  });
+}
+
+StreamSubscription<DocumentSnapshot> _subscribeToProject(
+    String projectId, Store<AppState> store) {
+  return Firestore.instance.collection('projects').document(projectId).snapshots().listen( (doc) {
+    if (doc.exists) {
+      store.dispatch(ReceiveProject(project: ProjectModel.fromDoc(doc)));
+    }
   });
 }
 
@@ -830,42 +861,31 @@ ThunkAction<AppState> openChecklistSettings(
   };
 }
 
-bool _isProjectRemote(String projectId, Store<AppState> store) {
-  // Todo: Implement this to check if the projectId exists within state.remoteProjectIds. Try not to do it by checking through
-  // a collection of remoteProjects and matching ID, as this will likely get called in a lot of loops creating firestore batches
-  // and that would mean an O^n operation.
-  return false;
-}
-
 CollectionReference _getTasksCollectionRef(
     String projectId, Store<AppState> store) {
-  if (_isProjectRemote(projectId, store)) {
-    throw UnimplementedError();
-  } else {
-    return Firestore.instance
-        .collection('users')
-        .document(store.state.user.userId)
-        .collection('tasks');
-  }
+  return Firestore.instance
+      .collection('projects')
+      .document(projectId)
+      .collection('tasks');
 }
 
 CollectionReference _getTaskListsCollectionRef(
     String projectId, Store<AppState> store) {
-  if (_isProjectRemote(projectId, store)) {
-    throw UnimplementedError();
-  } else {
-    return Firestore.instance
-        .collection('users')
-        .document(store.state.user.userId)
-        .collection('taskLists');
-  }
+  return Firestore.instance
+      .collection('projects')
+      .document(projectId)
+      .collection('taskLists');
+}
+
+CollectionReference _getProjectIdsCollectionRef(String userId) {
+  return Firestore.instance
+      .collection('users')
+      .document(userId)
+      .collection('projectIds');
 }
 
 CollectionReference _getProjectsCollectionRef(Store<AppState> store) {
-  return Firestore.instance
-      .collection('users')
-      .document(store.state.user.userId)
-      .collection('projects');
+  return Firestore.instance.collection('projects');
 }
 
 GroupedDocumentChanges _getGroupedDocumentChanges(

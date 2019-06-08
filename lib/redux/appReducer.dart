@@ -13,8 +13,8 @@ import './actions.dart';
 
 AppState appReducer(AppState state, dynamic action) {
   if (action is SelectProject) {
-    var filteredTasks = _filterTasks(action.uid, state.tasks);
-    var filteredTaskLists = _filterTaskLists(action.uid, state.taskLists);
+    var filteredTasks = _filterTasks(action.uid, state.tasksByProject);
+    var filteredTaskLists = _filterTaskLists(action.uid, state.taskListsByProject);
 
     return state.copyWith(
       selectedProjectId: action.uid,
@@ -28,19 +28,25 @@ AppState appReducer(AppState state, dynamic action) {
     );
   }
 
-  if (action is ReceiveLocalProjects) {
-    return state.copyWith(projects: action.projects);
+  if (action is ReceiveProject) {
+    var projects = _mergeProject(state.projects, action.project);
+    return state.copyWith(projects: projects);
   }
 
-  if (action is ReceiveLocalTasks) {
-    var filteredTasks = _filterTasks(state.selectedProjectId, action.tasks);
+  if (action is ReceiveTasks) {
+    var tasks = _smooshAndMergeTasks(
+        state.tasksByProject, action.tasks, action.originProjectId);
+    var tasksByProject = _updateTasksByProject(
+        state.tasksByProject, action.tasks, action.originProjectId);
+    var filteredTasks = _filterTasks(state.selectedProjectId, tasksByProject);
 
     return state.copyWith(
-      tasks: action.tasks,
+      tasks: tasks,
       filteredTasks: filteredTasks,
+      tasksByProject: tasksByProject,
       selectedTaskEntity:
-          _updateSelectedTaskEntity(state.selectedTaskEntity, action.tasks),
-      projectIndicatorGroups: getProjectIndicatorGroups(action.tasks),
+          _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
+      projectIndicatorGroups: getProjectIndicatorGroups(tasks),
       inflatedProject: _buildInflatedProject(
           filteredTasks,
           state.filteredTaskLists,
@@ -50,12 +56,17 @@ AppState appReducer(AppState state, dynamic action) {
     );
   }
 
-  if (action is ReceiveLocalTaskLists) {
+  if (action is ReceiveTaskLists) {
+    var taskLists = _smooshAndMergeTaskLists(
+        state.taskListsByProject, action.taskLists, action.originProjectId);
+    var taskListsByProject = _updateTaskListsByProject(
+        state.taskListsByProject, action.taskLists, action.originProjectId);
     var filteredTaskLists =
-        _filterTaskLists(state.selectedProjectId, action.taskLists);
+        _filterTaskLists(state.selectedProjectId, taskListsByProject);
 
     return state.copyWith(
-      taskLists: action.taskLists,
+      taskLists: taskLists,
+      taskListsByProject: taskListsByProject,
       filteredTaskLists: filteredTaskLists,
       inflatedProject: _buildInflatedProject(
           state.filteredTasks,
@@ -78,6 +89,27 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is SetSelectedTaskEntity) {
     return state.copyWith(selectedTaskEntity: action.taskEntity);
+  }
+
+  if (action is RemoveProjectEntities) {
+    var projectId = action.projectId;
+    var projects =
+        state.projects.where((project) => project.uid != projectId).toList();
+    var taskLists = state.taskLists
+        .where((taskList) => taskList.project != projectId)
+        .toList();
+    var tasks = state.tasks.where((task) => task.project != projectId).toList();
+
+    return state.copyWith(
+      projects: projects,
+      taskLists: taskLists,
+      tasks: tasks,
+      filteredTaskLists: _filterTaskLists(projectId, state.taskListsByProject),
+      filteredTasks: _filterTasks(projectId, state.tasksByProject),
+      selectedTaskEntity:
+          _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
+      projectIndicatorGroups: getProjectIndicatorGroups(tasks),
+    );
   }
 
   if (action is PushLastUsedTaskList) {
@@ -121,12 +153,13 @@ AppState appReducer(AppState state, dynamic action) {
   return state;
 }
 
-_filterTaskLists(String projectId, List<TaskListModel> taskLists) {
-  return taskLists.where((taskList) => taskList.project == projectId).toList();
+_filterTaskLists(
+    String projectId, Map<String, List<TaskListModel>> taskListsByProject) {
+  return taskListsByProject[projectId] ?? <TaskListModel>[];
 }
 
-_filterTasks(String projectId, List<TaskModel> tasks) {
-  return tasks.where((task) => task.project == projectId).toList();
+_filterTasks(String projectId, Map<String, List<TaskModel>> tasksByProject) {
+  return tasksByProject[projectId] ?? <TaskModel>[];
 }
 
 TaskModel _updateSelectedTaskEntity(
@@ -173,6 +206,85 @@ Map<String, int> _buildTaskIndices(
   }
 
   return map;
+}
+
+List<ProjectModel> _mergeProject(
+    List<ProjectModel> existingProjects, ProjectModel incomingProject) {
+  if (existingProjects.length == 0) {
+    print("Bailing Early");
+    return <ProjectModel>[incomingProject];
+  }
+
+  List<ProjectModel> existingProjectsCopy = List.from(existingProjects);
+
+  var existingIndex =
+      existingProjects.indexWhere((item) => item.uid == incomingProject.uid);
+  if (existingIndex != -1) {
+    // Project already exists in original collection. Just Swap it out.
+    existingProjectsCopy[existingIndex] = incomingProject;
+
+    return existingProjectsCopy;
+  }
+
+  // Project doesn't already exist in original collection. Append it.
+  existingProjectsCopy.add(incomingProject);
+  return existingProjectsCopy;
+}
+
+List<TaskListModel> _smooshAndMergeTaskLists(
+    Map<String, List<TaskListModel>> taskListsByProject,
+    List<TaskListModel> newTaskLists,
+    String originProjectId) {
+  if (taskListsByProject.isEmpty) {
+    return newTaskLists;
+  }
+
+  var list = <TaskListModel>[];
+  taskListsByProject.forEach((key, value) {
+    // If projectId matches originProjectId, replace with new TaskLists. Else use current tasksLists.
+    list.addAll(
+        key == originProjectId ? newTaskLists : taskListsByProject[key]);
+  });
+
+  return list;
+}
+
+List<TaskModel> _smooshAndMergeTasks(
+    Map<String, List<TaskModel>> tasksByProject,
+    List<TaskModel> newTasks,
+    String originProjectId) {
+  if (tasksByProject.isEmpty) {
+    return newTasks;
+  }
+
+  var list = <TaskModel>[];
+  tasksByProject.forEach((key, value) {
+    // If projectId matches originProjectId, replace with new Tasks. Else use current tasks.
+    list.addAll(key == originProjectId ? newTasks : tasksByProject[key]);
+  });
+
+  return list;
+}
+
+Map<String, List<TaskModel>> _updateTasksByProject(
+    Map<String, List<TaskModel>> existingTasksByProject,
+    List<TaskModel> newTasks,
+    String originProjectId) {
+  Map<String, List<TaskModel>> newMap = Map.from(existingTasksByProject);
+  newMap[originProjectId] = newTasks;
+
+  return newMap;
+}
+
+Map<String, List<TaskListModel>> _updateTaskListsByProject(
+    Map<String, List<TaskListModel>> existingTaskListsByProject,
+    List<TaskListModel> newTaskLists,
+    String originProjectId) {
+  Map<String, List<TaskListModel>> newMap =
+      Map.from(existingTaskListsByProject);
+  newMap[originProjectId] = newTaskLists;
+
+  return newMap;
 }
 
 List<TaskModel> _sortTasks(Iterable<TaskModel> tasks, TaskSorting sorting) {

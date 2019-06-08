@@ -13,8 +13,10 @@ import './middleware.dart';
 
 final initialAppState = AppState(
   tasks: <TaskModel>[],
+  tasksByProject: <String, List<TaskModel>>{},
   filteredTasks: <TaskModel>[],
   taskLists: <TaskListModel>[],
+  taskListsByProject: <String, List<TaskListModel>>{},
   filteredTaskLists: <TaskListModel>[],
   projects: [],
   projectIndicatorGroups: <String, IndicatorGroup>{},

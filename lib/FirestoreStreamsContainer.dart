@@ -1,46 +1,50 @@
 // ignore_for_file: cancel_subscriptions
-
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:meta/meta.dart';
 
 class FirestoreStreamsContainer {
-  // Local
-  StreamSubscription<QuerySnapshot> localProjects;
-  StreamSubscription<QuerySnapshot> localTaskLists;
-  StreamSubscription<QuerySnapshot> localIncompletedTasks;
-  StreamSubscription<QuerySnapshot> localCompletedTasks;
-  StreamSubscription<QuerySnapshot> remoteProjectIds;
+  // User Level.
+  StreamSubscription<QuerySnapshot> projectIds;
   StreamSubscription<QuerySnapshot> invites;
   StreamSubscription<QuerySnapshot> accountConfig;
 
-  // Remotes
-  Map<String, RemoteProjectSubscription> remotes;
+  Map<String, ProjectSubscriptionContainer> projectSubscriptions;
+
+  FirestoreStreamsContainer() {
+    this.projectSubscriptions = <String, ProjectSubscriptionContainer>{};
+  }
 
   void cancelAll() {
-    localProjects?.cancel();
-    localTaskLists?.cancel();
-    localIncompletedTasks?.cancel();
-    localCompletedTasks?.cancel();
-    remoteProjectIds?.cancel();
-    invites?.cancel();
-    accountConfig?.cancel();
+    this.projectIds?.cancel();
+    this.invites?.cancel();
+    this.accountConfig?.cancel();
 
-    remotes?.forEach((key, value) => value?.cancelAll);
+    this.projectSubscriptions.forEach( (key, projectSub) => projectSub?.cancelAll());
   }
 }
 
-class RemoteProjectSubscription {
-  StreamSubscription<QuerySnapshot> base;
+class ProjectSubscriptionContainer {
+  final String uid;
+
+  StreamSubscription<DocumentSnapshot> project;
   StreamSubscription<QuerySnapshot> taskLists;
   StreamSubscription<QuerySnapshot> incompletedTasks;
-  StreamSubscription<QuerySnapshot> localCompletedTasks;
-  StreamSubscription<QuerySnapshot> members;
+  StreamSubscription<QuerySnapshot> completedTasks;
+
+  ProjectSubscriptionContainer({
+    @required this.uid,
+    this.project,
+    this.taskLists,
+    this.incompletedTasks,
+    this.completedTasks,
+  });
 
   void cancelAll() {
-    base?.cancel();
-    taskLists?.cancel();
-    incompletedTasks?.cancel();
-    localCompletedTasks?.cancel();
-    members?.cancel();
+    this.project?.cancel();
+    this.taskLists?.cancel();
+    this.incompletedTasks?.cancel();
+    this.completedTasks?.cancel();
   }
+
 }

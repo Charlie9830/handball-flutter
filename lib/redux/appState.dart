@@ -16,8 +16,10 @@ class AppState {
   final User user;
   final Map<String, String> lastUsedTaskLists;
   final List<TaskModel> tasks;
+  final Map<String, List<TaskModel>> tasksByProject;
   final List<TaskModel> filteredTasks;
   final List<TaskListModel> taskLists;
+  final Map<String, List<TaskListModel>> taskListsByProject;
   final List<TaskListModel> filteredTaskLists;
   final Map<String, IndicatorGroup> projectIndicatorGroups;
   final String focusedTaskListId;
@@ -34,8 +36,10 @@ class AppState {
     this.user,
     this.lastUsedTaskLists,
     this.tasks,
+    this.tasksByProject,
     this.filteredTasks,
     this.taskLists,
+    this.taskListsByProject,
     this.filteredTaskLists,
     this.focusedTaskListId,
     this.textInputDialog,
@@ -45,15 +49,15 @@ class AppState {
 
   AppState copyWith({
     List<ProjectModel> projects,
-    List<ProjectModel> localProjects,
-    List<ProjectModel> remoteProjects,
     Map<String, ProjectType> projectTypeLookup,
     String selectedProjectId,
     TaskModel selectedTaskEntity,
     User user,
     List<TaskModel> tasks,
+    Map<String, List<TaskModel>> tasksByProject,
     List<TaskModel> filteredTasks,
     List<TaskListModel> taskLists,
+    Map<String, List<TaskListModel>> taskListsByProject,
     List<TaskListModel> filteredTaskLists,
     String focusedTaskListId,
     TextInputDialogModel textInputDialog,
@@ -68,9 +72,11 @@ class AppState {
       selectedTaskEntity: selectedTaskEntity ?? this.selectedTaskEntity,
       user: user ?? this.user,
       tasks: tasks ?? this.tasks,
+      tasksByProject: tasksByProject ?? this.tasksByProject,
       lastUsedTaskLists: lastUsedTaskLists ?? this.lastUsedTaskLists,
       filteredTasks: tasks ?? this.tasks,
       taskLists: taskLists ?? this.taskLists,
+      taskListsByProject: taskListsByProject ?? this.taskListsByProject,
       filteredTaskLists: filteredTaskLists ?? this.filteredTaskLists,
       focusedTaskListId: focusedTaskListId ?? this.focusedTaskListId,
       textInputDialog: textInputDialog ?? this.textInputDialog,
