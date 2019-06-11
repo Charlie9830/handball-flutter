@@ -1,28 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:handball_flutter/models/ProjectScreenViewModel.dart';
+import 'package:handball_flutter/containers/AppDrawerContainer.dart';
+import 'package:handball_flutter/models/HomeScreenViewModel.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/presentation/TaskList/TaskList.dart';
 import 'package:handball_flutter/presentation/TaskList/TaskListHeader.dart';
 
-class ProjectScreen extends StatelessWidget {
-  final ProjectScreenViewModel viewModel;
+class HomeScreen extends StatelessWidget {
+  final HomeScreenViewModel viewModel;
 
-  ProjectScreen({this.viewModel});
+  HomeScreen({this.viewModel});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text(viewModel.projectName),
+          title: Text(viewModel.projectName ?? ''),
         ),
+        drawer: Drawer(
+          child: AppDrawerContainer(),
+        ),
+        
         body: ListView(
             children: _buildTaskLists(context, viewModel.taskListViewModels)),
         floatingActionButton: FloatingActionButton(
-            heroTag: 'addTaskListFab',
             onPressed: () => viewModel.onAddNewTaskFabButtonPressed(),
-            child: Icon(Icons.playlist_add),
+            child: Icon(Icons.add),
           ),
         );
   }

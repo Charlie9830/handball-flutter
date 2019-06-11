@@ -5,7 +5,6 @@ import 'package:handball_flutter/models/AppDrawerScreenViewModel.dart';
 import 'package:handball_flutter/models/AppSettingsViewModel.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/TaskInspectorScreenViewModel.dart';
-import 'package:handball_flutter/presentation/Screens/AppDrawer.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/AppSettings.dart';
 import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/TaskInspectorScreen.dart';
 import 'package:handball_flutter/redux/actions.dart';

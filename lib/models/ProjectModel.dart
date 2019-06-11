@@ -29,6 +29,7 @@ class ProjectModel {
 
 
 class ProjectViewModel {
+  final bool isSelected;
   final String projectName;
   final bool hasUnreadComments;
   final int laterDueDates;
@@ -39,6 +40,7 @@ class ProjectViewModel {
   final dynamic onDelete;
 
   ProjectViewModel({
+    this.isSelected,
     this.projectName,
     this.hasUnreadComments,
     this.laterDueDates,

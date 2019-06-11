@@ -98,10 +98,6 @@ class ReceiveTaskLists {
   ReceiveTaskLists({@required this.taskLists, @required this.originProjectId});
 }
 
-class NavigateToProject {}
-
-class NavigateToAppDrawer {}
-
 class SetFocusedTaskListId {
   final String taskListId;
 

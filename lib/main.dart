@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/containers/AppDrawerContainer.dart';
-import 'package:handball_flutter/containers/ProjectScreenContainer.dart';
+import 'package:handball_flutter/containers/HomeScreenContainer.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/presentation/EditableTextInput.dart';
@@ -47,7 +47,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
             brightness: Brightness.light,
           ),
           navigatorKey: navigatorKey,
-          home: AppDrawerContainer(),
+          home: HomeScreenContainer(),
         ));
   }
 

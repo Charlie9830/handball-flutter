@@ -3,7 +3,6 @@ import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/models/AppDrawerScreenViewModel.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/TaskInspectorScreenViewModel.dart';
-import 'package:handball_flutter/presentation/Screens/AppDrawer.dart';
 import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/TaskInspectorScreen.dart';
 import 'package:handball_flutter/redux/actions.dart';
 import 'package:handball_flutter/redux/appState.dart';

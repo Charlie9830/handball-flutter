@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/containers/AppSettingsContainer.dart';
-import 'package:handball_flutter/containers/ProjectScreenContainer.dart';
+import 'package:handball_flutter/containers/HomeScreenContainer.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
@@ -16,13 +16,7 @@ void navigationMiddleware(
 ) {
   next(action);
 
-  if (action is NavigateToProject) {
-    navigatorKey.currentState.push(new MaterialPageRoute(builder: (context) {
-      return new ProjectScreenContainer();
-    }));
-  }
-
-  if (action is NavigateToAppDrawer) {
+  if (action is SelectProject) {
     navigatorKey.currentState.pop();
   }
 

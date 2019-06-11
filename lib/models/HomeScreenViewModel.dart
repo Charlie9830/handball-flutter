@@ -2,14 +2,14 @@ import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:meta/meta.dart';
 
-class ProjectScreenViewModel {
+class HomeScreenViewModel {
   final String projectId;
   final String projectName;
   final List<TaskListViewModel> taskListViewModels;
   final onAddNewTaskFabButtonPressed;
   final onAddNewTaskListFabButtonPressed;
 
-  ProjectScreenViewModel({
+  HomeScreenViewModel({
     this.projectId,
     this.projectName,
     this.taskListViewModels,

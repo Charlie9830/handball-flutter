@@ -1,30 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/enums.dart';
+import 'package:handball_flutter/models/HomeScreenViewModel.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
-import 'package:handball_flutter/models/ProjectScreenViewModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
-import 'package:handball_flutter/presentation/Screens/ProjectScreen.dart';
+import 'package:handball_flutter/presentation/Screens/HomeScreen.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:redux/redux.dart';
 import 'package:handball_flutter/redux/actions.dart';
 
-class ProjectScreenContainer extends StatelessWidget {
+class HomeScreenContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return new StoreConnector<AppState, ProjectScreenViewModel>(
+    return new StoreConnector<AppState, HomeScreenViewModel>(
         converter: (Store<AppState> store) => _converter(store, context),
-        builder: (context, projectScreenViewModel) {
-          return new ProjectScreen(viewModel: projectScreenViewModel);
+        builder: (context, homeScreenViewModel) {
+          return new HomeScreen(viewModel: homeScreenViewModel);
         });
   }
 
-  ProjectScreenViewModel _converter(
+  HomeScreenViewModel _converter(
       Store<AppState> store, BuildContext context) {
     var projectId = store.state.selectedProjectId;
 
-    return ProjectScreenViewModel(
+    return HomeScreenViewModel(
       projectId: projectId,
       projectName: _getProjectName(projectId, store.state.projects),
       taskListViewModels: _buildTaskListViewModels(store, context),
@@ -39,11 +39,15 @@ class ProjectScreenContainer extends StatelessWidget {
     var project = projects.firstWhere((item) => item.uid == projectId,
         orElse: () => null);
 
-    return project.projectName ?? '';
+    return project?.projectName ?? '';
   }
 
   List<TaskViewModel> _buildTaskViewModels(
       List<TaskModel> tasks, Store<AppState> store, BuildContext context) {
+    if (tasks.length == 0) {
+      return <TaskViewModel>[];
+    }
+
     return tasks.map((task) {
       return TaskViewModel(
         data: task,

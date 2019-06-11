@@ -23,6 +23,7 @@ class ProjectListItem extends StatelessWidget {
       delegate: new SlidableDrawerDelegate(),
       actionExtentRatio: 0.25,
       child: ListTile(
+          selected: viewModel.isSelected,
           title: Text('${viewModel.projectName}',
               style: Theme.of(context).textTheme.body1),
           onTap: viewModel.onSelect,
