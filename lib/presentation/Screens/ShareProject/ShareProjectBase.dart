@@ -3,6 +3,7 @@ import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/ShareProjectViewModel.dart';
 import 'package:handball_flutter/presentation/Nothing.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
+import 'package:handball_flutter/presentation/Screens/ShareProject/ComplexShareProject.dart';
 import 'package:handball_flutter/presentation/Screens/ShareProject/SimplifiedShareProject.dart';
 
 class ShareProjectBase extends StatelessWidget {
@@ -14,10 +15,27 @@ class ShareProjectBase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PredicateBuilder(
-      predicate: () => viewModel.type == ShareProjectScreenType.simplified,
-      childIfTrue: SimplifiedShareProject(viewModel: viewModel),
-      childIfFalse: Nothing(),
+    return Material(
+      type: MaterialType.canvas,
+      child: SafeArea(
+        child: Column(
+          children: <Widget>[
+            AppBar(
+              title: viewModel.type == ShareProjectScreenType.simplified
+                  ? Text('Share Project')
+                  : Text('Manage Sharing'),
+            ),
+            Expanded(
+              child: PredicateBuilder(
+                predicate: () =>
+                    viewModel.type == ShareProjectScreenType.simplified,
+                childIfTrue: SimplifiedShareProject(viewModel: viewModel),
+                childIfFalse: ComplexShareProject(viewModel: viewModel),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/IndicatorGroup.dart';
 import 'package:handball_flutter/models/InflatedProject.dart';
+import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/ProjectInvite.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
@@ -28,6 +29,9 @@ class AppState {
   final AccountState accountState;
   final List<ProjectInviteModel> projectInvites;
   final List<String> processingProjectInviteIds;
+  final Map<String, List<MemberModel>> members;
+  final bool isInvitingUser;
+
 
   final TextInputDialogModel textInputDialog;
 
@@ -52,6 +56,8 @@ class AppState {
     this.accountState,
     this.projectInvites,
     this.processingProjectInviteIds,
+    this.members,
+    this.isInvitingUser,
     });
 
   AppState copyWith({
@@ -75,6 +81,8 @@ class AppState {
     AccountState accountState,
     List<ProjectInviteModel> projectInvites,
     List<String> processingProjectInviteIds,
+    Map<String, List<MemberModel>> members,
+    bool isInvitingUser,
   }) {
     return AppState(
       projects: projects ?? this.projects,
@@ -96,6 +104,8 @@ class AppState {
       accountState: accountState ?? this.accountState,
       projectInvites: projectInvites ?? this.projectInvites,
       processingProjectInviteIds: processingProjectInviteIds ?? this.processingProjectInviteIds,
+      members: members ?? this.members,
+      isInvitingUser: isInvitingUser ?? this.isInvitingUser,
     );
   }
 }

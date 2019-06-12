@@ -1,5 +1,6 @@
 import 'package:handball_flutter/models/InflatedProject.dart';
 import 'package:handball_flutter/models/InflatedTaskList.dart';
+import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
@@ -149,6 +150,8 @@ AppState appReducer(AppState state, dynamic action) {
       focusedTaskListId: initialAppState.focusedTaskListId,
       lastUsedTaskLists: initialAppState.lastUsedTaskLists,
       projectInvites: initialAppState.projectInvites,
+      processingProjectInviteIds: initialAppState.processingProjectInviteIds,
+      members: initialAppState.members,
     );
   }
 
@@ -170,12 +173,31 @@ AppState appReducer(AppState state, dynamic action) {
     );
   }
 
+  if (action is ReceiveMembers) {
+    return state.copyWith(
+      members: _updateMembers(state.members, action.projectId, action.membersList)
+    );
+  }
+
+  if (action is SetIsInvitingUser) {
+    return state.copyWith(
+      isInvitingUser: action.isInvitingUser,
+    );
+  }
+
   return state;
 }
 
 /*
   Helper Methods
 */
+Map<String, List<MemberModel>> _updateMembers(Map<String, List<MemberModel>> existingMembersMap, String projectId, List<MemberModel> incomingMembersList) {
+  var newMembersMap = Map<String, List<MemberModel>>.from(existingMembersMap);
+
+  newMembersMap[projectId] = incomingMembersList;
+
+  return newMembersMap;
+}
 
 _filterTaskLists(
     String projectId, Map<String, List<TaskListModel>> taskListsByProject) {

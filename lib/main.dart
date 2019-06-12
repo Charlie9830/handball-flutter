@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/containers/AppDrawerContainer.dart';
@@ -28,8 +29,15 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       store.dispatch(initializeApp());
+
+      // var user = await FirebaseAuth.instance.currentUser();
+      // var updateInfo = UserUpdateInfo();
+      // updateInfo.displayName = 'User A';
+      // await user.updateProfile(updateInfo);
+
+      // print("User Info Updated");
     });
 
     WidgetsBinding.instance.addObserver(this);

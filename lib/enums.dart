@@ -11,3 +11,4 @@ enum AccountState { loggedOut, loggingIn, loggedIn, registering }
 enum ShareProjectScreenType { complete, simplified }
 enum RemoteUserResultStatus { found, notFound}
 enum MemberRole { member, owner }
+enum MemberStatus { pending, added, denied }

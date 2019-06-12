@@ -13,6 +13,7 @@ import 'package:handball_flutter/models/ChecklistSettings.dart';
 import 'package:handball_flutter/models/DirectoryListing.dart';
 import 'package:handball_flutter/models/GroupedDocumentChanges.dart';
 import 'package:handball_flutter/models/InflatedProject.dart';
+import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/ProjectIdModel.dart';
 import 'package:handball_flutter/models/ProjectInvite.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
@@ -55,6 +56,14 @@ class SetProcessingProjectInviteIds {
   });
 }
 
+class SetIsInvitingUser {
+  final bool isInvitingUser;
+
+  SetIsInvitingUser({
+    this.isInvitingUser,
+  });
+}
+
 class ReceiveProjectInvites {
   final List<ProjectInviteModel> invites;
 
@@ -87,6 +96,16 @@ class SignIn {
   final User user;
 
   SignIn({this.user});
+}
+
+class ReceiveMembers {
+  final String projectId;
+  final List<MemberModel> membersList;
+
+  ReceiveMembers({
+    this.projectId,
+    this.membersList,
+  });
 }
 
 class ReceiveProject {
@@ -200,6 +219,7 @@ Future<DialogResult> postConfirmationDialog(String title, String text,
 
 ThunkAction<AppState> initializeApp() {
   return (Store<AppState> store) async {
+    Firestore.instance.settings(timestampsInSnapshotsEnabled: true);
     auth.onAuthStateChanged.listen((user) => onAuthStateChanged(store, user));
   };
 }
@@ -347,9 +367,11 @@ Future<void> _removeProjectInvite(String userId, String projectId) async {
 ThunkAction<AppState> inviteUserToProject(
     String email, String sourceProjectId, String projectName, MemberRole role) {
   return (Store<AppState> store) async {
+    store.dispatch(SetIsInvitingUser(isInvitingUser: true));
     var response = await _cloudFunctionsLayer.getRemoteUserData(email);
 
     if (response == null) {
+      store.dispatch(SetIsInvitingUser(isInvitingUser: false));
       // No user found.
       // TODO: Implement Firebase Dynamic Links to dispatch an email to the intended user, inviting them to the app.
     }
@@ -365,7 +387,10 @@ ThunkAction<AppState> inviteUserToProject(
         targetUserId: response.userId,
         role: role,
       );
+
+      store.dispatch(SetIsInvitingUser(isInvitingUser: false));
     } catch (error) {
+      store.dispatch(SetIsInvitingUser(isInvitingUser: false));
       throw error;
     }
   };
@@ -439,9 +464,22 @@ ThunkAction<AppState> updateTaskDueDate(String taskId, DateTime newValue) {
 ThunkAction<AppState> deleteProjectWithDialog(
     String projectId, String projectName, BuildContext context) {
   return (Store<AppState> store) async {
+    print("Made it to Thunk");
+    if (store.state.members[projectId] != null &&
+        store.state.members[projectId].length > 1) {
+      // TODO: Implement Handling for if this is a shared Project.
+      var dialogResult = await postConfirmationDialog(
+        'Delete Shared Project',
+        '$projectName will be deleted for all contributors. Are you sure you want to continue?',
+        'Delete',
+        'Cancel',
+        context,
+      );
+    }
+
     var dialogResult = await postConfirmationDialog(
         "Delete Project",
-        'Are you sure you want to delete $projectName',
+        'Are you sure you want to delete $projectName?',
         'Delete',
         'Cancel',
         context);
@@ -466,6 +504,8 @@ ThunkAction<AppState> deleteProjectWithDialog(
       batch.delete(_getTaskListsCollectionRef(projectId, store).document(id));
     }
 
+    batch.delete(_getMembersCollectionRef(projectId).document(
+        userId)); // Single Member (Self). Won't work for Shared Projects.
     batch.delete(_getProjectsCollectionRef(store).document(projectId));
     batch.delete(_getProjectIdsCollectionRef(userId).document(projectId));
 
@@ -606,11 +646,13 @@ ThunkAction<AppState> updateTaskSorting(String projectId, String taskListId,
 ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
   return (Store<AppState> store) async {
     var result = await postTextInputDialog('Add new Project', '', context);
+    var userId = store.state.user.userId;
 
     if (result is TextInputDialogResult &&
         result.result == DialogResult.affirmative) {
       var batch = Firestore.instance.batch();
 
+      // Project Entity Ref.
       var projectRef = _getProjectsCollectionRef(store).document();
       var project = ProjectModel(
         uid: projectRef.documentID,
@@ -618,14 +660,22 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
         created: DateTime.now().toIso8601String(),
       );
 
-      var projectIdRef = _getProjectIdsCollectionRef(store.state.user.userId)
-          .document(projectRef.documentID);
+      // Project ID Ref.
+      var projectIdRef =
+          _getProjectIdsCollectionRef(userId).document(projectRef.documentID);
       var projectId = ProjectIdModel(
         uid: projectRef.documentID,
       );
 
+      // Member Ref.
+      var memberRef = _getProjectMembersCollectionRef(projectRef.documentID)
+          .document(userId);
+      var member =
+          store.state.user.toMember(MemberRole.owner, MemberStatus.added);
+
       batch.setData(projectRef, project.toMap());
       batch.setData(projectIdRef, projectId.toMap());
+      batch.setData(memberRef, member.toMap());
 
       try {
         await batch.commit();
@@ -962,6 +1012,7 @@ StreamSubscription<QuerySnapshot> _subscribeToProjectIds(
             ProjectSubscriptionContainer(
                 uid: projectId,
                 project: _subscribeToProject(projectId, store),
+                members: _subscribeToMembers(projectId, store),
                 taskLists: _subscribeToTaskLists(projectId, store),
                 incompletedTasks:
                     _subscribeToIncompletedTasks(projectId, store));
@@ -973,6 +1024,21 @@ StreamSubscription<QuerySnapshot> _subscribeToProjectIds(
         store.dispatch(RemoveProjectEntities(projectId: projectId));
       }
     }
+  });
+}
+
+StreamSubscription<QuerySnapshot> _subscribeToMembers(
+    String projectId, Store<AppState> store) {
+  return Firestore.instance
+      .collection('projects')
+      .document(projectId)
+      .collection('members')
+      .snapshots()
+      .listen((snapshot) {
+    List<MemberModel> members = [];
+    snapshot.documents.forEach((doc) => members.add(MemberModel.fromDoc(doc)));
+
+    store.dispatch(ReceiveMembers(projectId: projectId, membersList: members));
   });
 }
 
@@ -1066,6 +1132,13 @@ CollectionReference _getTaskListsCollectionRef(
       .collection('projects')
       .document(projectId)
       .collection('taskLists');
+}
+
+CollectionReference _getProjectMembersCollectionRef(String projectId) {
+  return Firestore.instance
+      .collection('projects')
+      .document(projectId)
+      .collection('members');
 }
 
 CollectionReference _getProjectIdsCollectionRef(String userId) {

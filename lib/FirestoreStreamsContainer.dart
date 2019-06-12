@@ -31,6 +31,7 @@ class ProjectSubscriptionContainer {
   StreamSubscription<QuerySnapshot> taskLists;
   StreamSubscription<QuerySnapshot> incompletedTasks;
   StreamSubscription<QuerySnapshot> completedTasks;
+  StreamSubscription<QuerySnapshot> members;
 
   ProjectSubscriptionContainer({
     @required this.uid,
@@ -38,6 +39,7 @@ class ProjectSubscriptionContainer {
     this.taskLists,
     this.incompletedTasks,
     this.completedTasks,
+    this.members,
   });
 
   void cancelAll() {
@@ -45,6 +47,7 @@ class ProjectSubscriptionContainer {
     this.taskLists?.cancel();
     this.incompletedTasks?.cancel();
     this.completedTasks?.cancel();
+    this.members?.cancel();
   }
 
 }

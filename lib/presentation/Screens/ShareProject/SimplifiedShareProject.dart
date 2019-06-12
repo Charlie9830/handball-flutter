@@ -14,8 +14,9 @@ class SimplifiedShareProject extends StatelessWidget {
     return Container(
       child: Column(
         children: <Widget>[
-          Text('Invite User', style: Theme.of(context).textTheme.headline),
           InviteUserField(
+            isInvitingUser: viewModel.isInvitingUser,
+            autofocus: true,
             onInvite: viewModel.onInvite,
           )
         ],
