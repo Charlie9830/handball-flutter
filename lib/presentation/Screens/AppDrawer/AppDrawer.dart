@@ -3,6 +3,7 @@ import 'package:handball_flutter/models/AppDrawerScreenViewModel.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/presentation/ProjectList.dart';
 import 'package:handball_flutter/presentation/Screens/AppDrawer/AppDrawerHeader.dart';
+import 'package:handball_flutter/presentation/Screens/AppDrawer/ProjectInviteList.dart';
 
 class AppDrawer extends StatelessWidget {
   final AppDrawerScreenViewModel viewModel;
@@ -23,6 +24,8 @@ class AppDrawer extends StatelessWidget {
                     viewModel.onAddNewProjectButtonPress,
                 onSettingsButtonPressed: viewModel.onAppSettingsOpen,
               ),
+              ProjectInviteList(
+                viewModels: viewModel.projectInviteViewModels,),
               Expanded(
                   child: ProjectList(
                       projectViewModels: viewModel.projectViewModels))

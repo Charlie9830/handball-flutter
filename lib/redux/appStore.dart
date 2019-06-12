@@ -1,5 +1,6 @@
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/IndicatorGroup.dart';
+import 'package:handball_flutter/models/ProjectInvite.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
@@ -21,6 +22,7 @@ final initialAppState = AppState(
   projects: [],
   projectIndicatorGroups: <String, IndicatorGroup>{},
   selectedProjectId: '-1',
+  projectShareMenuEntity: null,
   inflatedProject: null,
   selectedTaskEntity: null,
   focusedTaskListId: '-1',
@@ -38,6 +40,8 @@ final initialAppState = AppState(
     onCancel: (){},
   ),
   accountState: AccountState.loggedOut,
+  projectInvites: <ProjectInviteModel>[],
+  processingProjectInviteIds: <String>[],
 );
 
 final appStore = new Store<AppState> (

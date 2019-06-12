@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -9,9 +10,11 @@ import 'package:handball_flutter/FirestoreStreamsContainer.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/ChecklistSettings.dart';
+import 'package:handball_flutter/models/DirectoryListing.dart';
 import 'package:handball_flutter/models/GroupedDocumentChanges.dart';
 import 'package:handball_flutter/models/InflatedProject.dart';
 import 'package:handball_flutter/models/ProjectIdModel.dart';
+import 'package:handball_flutter/models/ProjectInvite.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
@@ -21,16 +24,18 @@ import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
+import 'package:handball_flutter/presentation/Screens/AppDrawer/ProjectInviteListTile.dart';
 import 'package:handball_flutter/presentation/Screens/SignUp/SignUpBase.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
 import 'package:redux/redux.dart';
 import 'package:redux_thunk/redux_thunk.dart';
+import 'package:handball_flutter/utilities/CloudFunctionLayer.dart';
 
 final FirebaseAuth auth = FirebaseAuth.instance;
-
 final FirestoreStreamsContainer _firestoreStreams = FirestoreStreamsContainer();
+final CloudFunctionsLayer _cloudFunctionsLayer = CloudFunctionsLayer();
 
 class OpenAppSettings {
   final AppSettingsTabs tab;
@@ -41,6 +46,22 @@ class OpenAppSettings {
 }
 
 class CloseAppSettings {}
+
+class SetProcessingProjectInviteIds {
+  final List<String> processingProjectInviteIds;
+
+  SetProcessingProjectInviteIds({
+    this.processingProjectInviteIds,
+  });
+}
+
+class ReceiveProjectInvites {
+  final List<ProjectInviteModel> invites;
+
+  ReceiveProjectInvites({
+    this.invites,
+  });
+}
 
 class SelectProject {
   final String uid;
@@ -82,6 +103,12 @@ class PushLastUsedTaskList {
     this.projectId,
     this.taskListId,
   });
+}
+
+class OpenShareProjectScreen {
+  final String projectId;
+
+  OpenShareProjectScreen({this.projectId});
 }
 
 class ReceiveTasks {
@@ -195,7 +222,153 @@ void onAuthStateChanged(Store<AppState> store, FirebaseUser user) {
 }
 
 void subscribeToDatabase(Store<AppState> store, String userId) {
+  _firestoreStreams.invites = _subscribeToProjectInvites(userId, store);
   _firestoreStreams.projectIds = _subscribeToProjectIds(userId, store);
+}
+
+StreamSubscription<QuerySnapshot> _subscribeToProjectInvites(
+    String userId, Store<AppState> store) {
+  return Firestore.instance
+      .collection('users')
+      .document(userId)
+      .collection('invites')
+      .snapshots()
+      .listen((snapshot) {
+    List<ProjectInviteModel> invites = [];
+    snapshot.documents
+        .forEach((doc) => invites.add(ProjectInviteModel.fromDoc(doc)));
+
+    print(invites.length);
+
+    // Animation
+    var groupedChanges = _getGroupedDocumentChanges(snapshot.documentChanges);
+
+    _driveProjectInviteRemovalAnimations(groupedChanges.removed);
+    store.dispatch(ReceiveProjectInvites(invites: invites));
+    _driveProjectInviteAdditionAnimations(groupedChanges.added);
+  });
+}
+
+void _driveProjectInviteAdditionAnimations(List<DocumentChange> additions) {
+  if (projectInviteAnimatedListStateKey.currentState == null) {
+    return;
+  }
+
+  for (var docChange in additions) {
+    projectInviteAnimatedListStateKey.currentState
+        .insertItem(docChange.newIndex);
+  }
+}
+
+void _driveProjectInviteRemovalAnimations(List<DocumentChange> removals) {
+  if (projectInviteAnimatedListStateKey.currentState == null) {
+    return;
+  }
+
+  for (var docChange in removals) {
+    projectInviteAnimatedListStateKey.currentState
+        .removeItem(docChange.oldIndex, (context, animation) {
+      var model = ProjectInviteModel.fromDoc(docChange.document);
+      return SizeTransition(
+        sizeFactor: animation.drive(Tween(begin: 1, end: 0)),
+        axis: Axis.vertical,
+        key: Key(model.projectId),
+        child: ProjectInviteListTile(
+          projectId: model.projectId,
+          projectName: model.projectName,
+          sourceEmail: model.sourceEmail,
+        ),
+      );
+    });
+  }
+}
+
+ThunkAction<AppState> acceptProjectInvite(String projectId) {
+  return (Store<AppState> store) async {
+    addProcessingProjectInviteId(projectId, store);
+
+    try {
+      await _cloudFunctionsLayer.acceptProjectInvite(projectId: projectId);
+      await _removeProjectInvite(store.state.user.userId, projectId);
+
+      removeProccessingProjectInviteId(projectId, store);
+    } catch (error) {
+      removeProccessingProjectInviteId(projectId, store);
+      throw error;
+    }
+  };
+}
+
+void addProcessingProjectInviteId(String projectId, Store<AppState> store) {
+  if (store.state.processingProjectInviteIds.contains(projectId)) {
+    return;
+  }
+
+  List<String> newList = store.state.processingProjectInviteIds.toList();
+  newList.add(projectId);
+
+  store.dispatch(
+      SetProcessingProjectInviteIds(processingProjectInviteIds: newList));
+}
+
+void removeProccessingProjectInviteId(String projectId, Store<AppState> store) {
+  List<String> newList = store.state.processingProjectInviteIds
+      .where((item) => item != projectId)
+      .toList();
+
+  store.dispatch(
+      SetProcessingProjectInviteIds(processingProjectInviteIds: newList));
+}
+
+ThunkAction<AppState> denyProjectInvite(String projectId) {
+  return (Store<AppState> store) async {
+    addProcessingProjectInviteId(projectId, store);
+    try {
+      await _cloudFunctionsLayer.denyProjectInvite(projectId: projectId);
+      await _removeProjectInvite(store.state.user.userId, projectId);
+      removeProccessingProjectInviteId(projectId, store);
+    } catch (error) {
+      removeProccessingProjectInviteId(projectId, store);
+      throw error;
+    }
+  };
+}
+
+Future<void> _removeProjectInvite(String userId, String projectId) async {
+  var ref = _getInvitesCollectionRef(userId).document(projectId);
+  try {
+    await ref.delete();
+    return;
+  } catch (error) {
+    throw error;
+  }
+}
+
+ThunkAction<AppState> inviteUserToProject(
+    String email, String sourceProjectId, String projectName, MemberRole role) {
+  return (Store<AppState> store) async {
+    var response = await _cloudFunctionsLayer.getRemoteUserData(email);
+
+    if (response == null) {
+      // No user found.
+      // TODO: Implement Firebase Dynamic Links to dispatch an email to the intended user, inviting them to the app.
+    }
+
+    try {
+      await _cloudFunctionsLayer.sendProjectInvite(
+        projectId: sourceProjectId,
+        projectName: projectName,
+        sourceDisplayName: store.state.user.displayName,
+        sourceEmail: store.state.user.email,
+        targetDisplayName: response.displayName,
+        targetEmail: response.email,
+        targetUserId: response.userId,
+        role: role,
+      );
+    } catch (error) {
+      throw error;
+    }
+  };
 }
 
 ThunkAction<AppState> signInUser(
@@ -445,14 +618,14 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
         created: DateTime.now().toIso8601String(),
       );
 
-      var projectIdRef = _getProjectIdsCollectionRef(store.state.user.userId).document(projectRef.documentID);
+      var projectIdRef = _getProjectIdsCollectionRef(store.state.user.userId)
+          .document(projectRef.documentID);
       var projectId = ProjectIdModel(
         uid: projectRef.documentID,
       );
 
       batch.setData(projectRef, project.toMap());
       batch.setData(projectIdRef, projectId.toMap());
-      
 
       try {
         await batch.commit();
@@ -805,7 +978,11 @@ StreamSubscription<QuerySnapshot> _subscribeToProjectIds(
 
 StreamSubscription<DocumentSnapshot> _subscribeToProject(
     String projectId, Store<AppState> store) {
-  return Firestore.instance.collection('projects').document(projectId).snapshots().listen( (doc) {
+  return Firestore.instance
+      .collection('projects')
+      .document(projectId)
+      .snapshots()
+      .listen((doc) {
     if (doc.exists) {
       store.dispatch(ReceiveProject(project: ProjectModel.fromDoc(doc)));
     }
@@ -855,6 +1032,24 @@ ThunkAction<AppState> openChecklistSettings(
       }
     }
   };
+}
+
+CollectionReference _getInvitesCollectionRef(
+  String userId,
+) {
+  return Firestore.instance
+      .collection('users')
+      .document(userId)
+      .collection('invites');
+}
+
+CollectionReference _getMembersCollectionRef(
+  String projectId,
+) {
+  return Firestore.instance
+      .collection('projects')
+      .document(projectId)
+      .collection('members');
 }
 
 CollectionReference _getTasksCollectionRef(

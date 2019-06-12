@@ -1,6 +1,7 @@
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/IndicatorGroup.dart';
 import 'package:handball_flutter/models/InflatedProject.dart';
+import 'package:handball_flutter/models/ProjectInvite.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
@@ -10,6 +11,7 @@ import 'package:handball_flutter/models/User.dart';
 class AppState {
   final List<ProjectModel> projects;
   final String selectedProjectId;
+  final ProjectModel projectShareMenuEntity;
   final InflatedProjectModel inflatedProject;
   final String selectedTaskId;
   final TaskModel selectedTaskEntity;
@@ -24,12 +26,15 @@ class AppState {
   final Map<String, IndicatorGroup> projectIndicatorGroups;
   final String focusedTaskListId;
   final AccountState accountState;
+  final List<ProjectInviteModel> projectInvites;
+  final List<String> processingProjectInviteIds;
 
   final TextInputDialogModel textInputDialog;
 
   AppState({
     this.projects,
     this.selectedProjectId,
+    this.projectShareMenuEntity,
     this.inflatedProject,
     this.selectedTaskId,
     this.selectedTaskEntity,
@@ -45,12 +50,15 @@ class AppState {
     this.textInputDialog,
     this.projectIndicatorGroups,
     this.accountState,
+    this.projectInvites,
+    this.processingProjectInviteIds,
     });
 
   AppState copyWith({
     List<ProjectModel> projects,
     Map<String, ProjectType> projectTypeLookup,
     String selectedProjectId,
+    ProjectModel projectShareMenuEntity,
     TaskModel selectedTaskEntity,
     User user,
     List<TaskModel> tasks,
@@ -65,10 +73,13 @@ class AppState {
     InflatedProjectModel inflatedProject,
     Map<String, String> lastUsedTaskLists,
     AccountState accountState,
+    List<ProjectInviteModel> projectInvites,
+    List<String> processingProjectInviteIds,
   }) {
     return AppState(
       projects: projects ?? this.projects,
       selectedProjectId: selectedProjectId ?? this.selectedProjectId,
+      projectShareMenuEntity: projectShareMenuEntity ?? this.projectShareMenuEntity,
       selectedTaskEntity: selectedTaskEntity ?? this.selectedTaskEntity,
       user: user ?? this.user,
       tasks: tasks ?? this.tasks,
@@ -83,6 +94,8 @@ class AppState {
       projectIndicatorGroups: projectIndicatorGroups ?? this.projectIndicatorGroups,
       inflatedProject: inflatedProject ?? this.inflatedProject,
       accountState: accountState ?? this.accountState,
+      projectInvites: projectInvites ?? this.projectInvites,
+      processingProjectInviteIds: processingProjectInviteIds ?? this.processingProjectInviteIds,
     );
   }
 }

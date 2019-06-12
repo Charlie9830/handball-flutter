@@ -38,6 +38,7 @@ class ProjectViewModel {
   final int overdueDueDates;
   final dynamic onSelect;
   final dynamic onDelete;
+  final dynamic onShare;
 
   ProjectViewModel({
     this.isSelected,
@@ -49,5 +50,6 @@ class ProjectViewModel {
     this.overdueDueDates,
     this.onSelect,
     this.onDelete,
+    this.onShare,
     });
 }

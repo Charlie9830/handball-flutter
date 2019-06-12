@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/containers/AppSettingsContainer.dart';
 import 'package:handball_flutter/containers/HomeScreenContainer.dart';
+import 'package:handball_flutter/containers/ShareProjectContainer.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
@@ -27,6 +28,16 @@ void navigationMiddleware(
           return new AppSettingsContainer(
             initialTab: action.tab ?? AppSettingsTabs.general,
           );
+        }
+      )
+    );
+  }
+
+  if (action is OpenShareProjectScreen) {
+    navigatorKey.currentState.push(
+      new MaterialPageRoute(
+        builder: (context) {
+          return new ShareProjectContainer();
         }
       )
     );

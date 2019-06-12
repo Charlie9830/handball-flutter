@@ -34,6 +34,14 @@ class ProjectListItem extends StatelessWidget {
             overdueDueDates: viewModel.overdueDueDates,
             hasUnreadTaskComments: viewModel.hasUnreadComments,
           )),
+          actions: <Widget>[
+            IconSlideAction(
+              icon: Icons.share,
+              caption: 'Share',
+              color: Colors.blue,
+              onTap: viewModel.onShare,
+            )
+          ],
       secondaryActions: <Widget>[
         IconSlideAction(
           icon: Icons.delete,
@@ -42,6 +50,7 @@ class ProjectListItem extends StatelessWidget {
           onTap: viewModel.onDelete,
         )
       ],
+      
     );
   }
 }

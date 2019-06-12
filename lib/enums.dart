@@ -8,3 +8,6 @@ const defaultTaskSorting = TaskSorting.dateAdded;
 
 enum AppSettingsTabs { general, account, about }
 enum AccountState { loggedOut, loggingIn, loggedIn, registering }
+enum ShareProjectScreenType { complete, simplified }
+enum RemoteUserResultStatus { found, notFound}
+enum MemberRole { member, owner }

@@ -14,7 +14,8 @@ import './actions.dart';
 AppState appReducer(AppState state, dynamic action) {
   if (action is SelectProject) {
     var filteredTasks = _filterTasks(action.uid, state.tasksByProject);
-    var filteredTaskLists = _filterTaskLists(action.uid, state.taskListsByProject);
+    var filteredTaskLists =
+        _filterTaskLists(action.uid, state.taskListsByProject);
 
     return state.copyWith(
       selectedProjectId: action.uid,
@@ -147,11 +148,34 @@ AppState appReducer(AppState state, dynamic action) {
       selectedTaskEntity: initialAppState.selectedTaskEntity,
       focusedTaskListId: initialAppState.focusedTaskListId,
       lastUsedTaskLists: initialAppState.lastUsedTaskLists,
+      projectInvites: initialAppState.projectInvites,
+    );
+  }
+
+  if (action is OpenShareProjectScreen) {
+    return state.copyWith(
+      projectShareMenuEntity: state.projects.firstWhere( (project) => project.uid == action.projectId, orElse: () => null),
+    );
+  }
+
+  if (action is ReceiveProjectInvites) {
+    return state.copyWith(
+      projectInvites: action.invites,
+    );
+  }
+
+  if (action is SetProcessingProjectInviteIds) {
+    return state.copyWith(
+      processingProjectInviteIds: action.processingProjectInviteIds
     );
   }
 
   return state;
 }
+
+/*
+  Helper Methods
+*/
 
 _filterTaskLists(
     String projectId, Map<String, List<TaskListModel>> taskListsByProject) {
