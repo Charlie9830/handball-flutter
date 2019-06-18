@@ -24,11 +24,13 @@ import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
+import 'package:handball_flutter/presentation/Dialogs/DelegateOwnerDialog/DelegateOwnerDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/presentation/Screens/AppDrawer/ProjectInviteListTile.dart';
 import 'package:handball_flutter/presentation/Screens/SignUp/SignUpBase.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/redux/appState.dart';
+import 'package:handball_flutter/utilities/convertMemberRole.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
 import 'package:redux/redux.dart';
 import 'package:redux_thunk/redux_thunk.dart';
@@ -53,6 +55,14 @@ class SetProcessingProjectInviteIds {
 
   SetProcessingProjectInviteIds({
     this.processingProjectInviteIds,
+  });
+}
+
+class SetProcessingMembers {
+  final List<String> processingMembers;
+
+  SetProcessingMembers({
+    this.processingMembers,
   });
 }
 
@@ -214,6 +224,35 @@ Future<DialogResult> postConfirmationDialog(String title, String text,
                     Navigator.of(context).pop(DialogResult.affirmative),
               ),
             ]);
+      });
+}
+
+Future<void> postAlertDialog(
+    String title, String text, String affirmativeText, BuildContext context) {
+  return showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return AlertDialog(
+            title: Text(title),
+            content: Text(text),
+            actions: <Widget>[
+              FlatButton(
+                child: Text(affirmativeText),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ]);
+      });
+}
+
+Future<String> postDelegateOwnerDialog(
+    List<MemberModel> nonOwnerMembers, BuildContext context) {
+  // Returns userId of selected user or null if User cancelled dialog.
+  return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return DelegateOwnerDialog(members: nonOwnerMembers);
       });
 }
 
@@ -461,20 +500,214 @@ ThunkAction<AppState> updateTaskDueDate(String taskId, DateTime newValue) {
   };
 }
 
+ThunkAction<AppState> leaveSharedProject(String projectId, String projectName,
+    List<MemberModel> currentMembers, BuildContext context) {
+  return (Store<AppState> store) async {
+    var userId = store.state.user.userId;
+
+    // User is the Last Owner. Ensure they delegate another Member to be the Owner before leaving.
+    if (_isLastOwner(userId, currentMembers)) {
+      String resultUserId = await postDelegateOwnerDialog(
+          currentMembers
+              .where((item) => item.role == MemberRole.member)
+              .toList(),
+          context);
+
+      if (resultUserId == null) {
+        return;
+      }
+
+      try {
+        await _promoteUser(userId, projectId);
+        await _leaveSharedProject(projectId, store);
+        store.dispatch(SelectProject('-1'));
+        Navigator.of(context).popUntil((route) => route.isFirst == true);
+
+        return;
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    if (currentMembers.length == 1 && currentMembers[0].userId == userId) {
+      // This project has never been, or is no longer shared with other users.
+      // Delete Project.
+      try {
+        _deleteProject(projectId, store);
+        store.dispatch((SelectProject('-1')));
+        Navigator.of(context).popUntil((route) => route.isFirst == true);
+
+        return;
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    // Clean Exit from Project.
+    try {
+      store.dispatch(SelectProject('-1'));
+      await _leaveSharedProject(projectId, store);
+      Navigator.of(context).popUntil((route) => route.isFirst == true);
+
+      return;
+    } catch (error) {
+      throw error;
+    }
+  };
+}
+
+void _deleteSharedProject(
+    String projectId, Store<AppState> store, BuildContext context) async {
+  var members = store.state.members[projectId];
+  if (members == null) {
+    // Not a shared project.
+    await _deleteProject(projectId, store);
+    return;
+  }
+
+  if (_canDeleteSharedProject(store.state.user.userId, members) == false) {
+    // User does not have sufficent permissions to Delete Project. Inform and bail out.
+    await postAlertDialog(
+        'Insufficent permissions',
+        'Sorry, you do not have permission to delete this project, only Owners can delete projects shared with other contributors.',
+        'Okay',
+        context);
+    return;
+  }
+
+  try {
+    await _cloudFunctionsLayer.removeRemoteProject(projectId: projectId);
+    store.dispatch(SelectProject('-1'));
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  } catch(error) {
+    throw error;
+  }
+
+}
+
+bool _canDeleteSharedProject(String userId, List<MemberModel> members) {
+  var selfMember =
+      members.firstWhere((item) => item.userId == userId, orElse: () => null);
+
+  if (selfMember == null) {
+    return false;
+  }
+
+  return selfMember.role == MemberRole.owner;
+}
+
+Future<void> _leaveSharedProject(
+    String projectId, Store<AppState> store) async {
+  try {
+    await _cloudFunctionsLayer.kickUserFromProject(
+        projectId: projectId, userId: store.state.user.userId);
+    return;
+  } catch (error) {
+    throw error;
+  }
+}
+
+bool _isLastOwner(String userId, List<MemberModel> members) {
+  var owners = members.where((item) => item.role == MemberRole.owner).toList();
+  if (owners.length == 1 && owners[0].userId == userId) {
+    // Current user is the Last Owner.
+    return true;
+  }
+
+  return false;
+}
+
+ThunkAction<AppState> promoteUser(String userId, String projectId) {
+  return (Store<AppState> store) async {
+    try {
+      store.dispatch(SetProcessingMembers(
+          processingMembers: store.state.processingMembers..add(userId)));
+
+      await _promoteUser(userId, projectId);
+
+      store.dispatch(SetProcessingMembers(
+          processingMembers: store.state.processingMembers..remove(userId)));
+    } catch (error) {
+      throw error;
+    }
+  };
+}
+
+Future<void> _promoteUser(String userId, String projectId) async {
+  try {
+    var memberRef = _getMembersCollectionRef(projectId).document(userId);
+    await memberRef.updateData({
+      'role': convertMemberRole(MemberRole.owner),
+    });
+    return;
+  } catch (error) {
+    throw error;
+  }
+}
+
+ThunkAction<AppState> demoteUser(String userId, String projectId) {
+  return (Store<AppState> store) async {
+    var memberRef = _getMembersCollectionRef(projectId).document(userId);
+
+    try {
+      store.dispatch(SetProcessingMembers(
+          processingMembers: store.state.processingMembers..add(userId)));
+      await memberRef.updateData({
+        'role': convertMemberRole(MemberRole.member),
+      });
+      store.dispatch(SetProcessingMembers(
+          processingMembers: store.state.processingMembers..remove(userId)));
+    } catch (error) {
+      throw error;
+    }
+  };
+}
+
+ThunkAction<AppState> kickUserFromProject(String userId, String projectId,
+    String displayName, String projectName, BuildContext context) {
+  return (Store<AppState> store) async {
+    var dialogResult = await postConfirmationDialog(
+        'Kick user',
+        'Are you sure you want to kick $displayName from $projectName?',
+        'Kick',
+        'Cancel',
+        context);
+
+    if (dialogResult == DialogResult.negative) {
+      return;
+    }
+
+    try {
+      store.dispatch(SetProcessingMembers(
+          processingMembers: store.state.processingMembers..add(userId)));
+      await _cloudFunctionsLayer.kickUserFromProject(
+          userId: userId, projectId: projectId);
+      store.dispatch(SetProcessingMembers(
+          processingMembers: store.state.processingMembers..remove(userId)));
+    } catch (error) {
+      throw error;
+    }
+  };
+}
+
 ThunkAction<AppState> deleteProjectWithDialog(
     String projectId, String projectName, BuildContext context) {
   return (Store<AppState> store) async {
-    print("Made it to Thunk");
     if (store.state.members[projectId] != null &&
         store.state.members[projectId].length > 1) {
-      // TODO: Implement Handling for if this is a shared Project.
       var dialogResult = await postConfirmationDialog(
-        'Delete Shared Project',
-        '$projectName will be deleted for all contributors. Are you sure you want to continue?',
+        'Delete Project',
+        'Are you sure you want to delete $projectName? It will be permanently deleted for all contributors',
         'Delete',
         'Cancel',
         context,
       );
+
+      if (dialogResult == DialogResult.negative) {
+        return;
+      }
+
+      _deleteSharedProject(projectId, store, context);
     }
 
     var dialogResult = await postConfirmationDialog(
@@ -488,33 +721,64 @@ ThunkAction<AppState> deleteProjectWithDialog(
       return;
     }
 
-    var taskIds = _getProjectRelatedTaskIds(projectId, store.state.tasks);
-    var taskListIds =
-        _getProjectRelatedTaskListIds(projectId, store.state.taskLists);
-    var batch = Firestore.instance.batch();
-    var userId = store.state.user.userId;
-
-    // Build Tasks into Batch
-    for (var id in taskIds) {
-      batch.delete(_getTasksCollectionRef(projectId, store).document(id));
-    }
-
-    // Build TaskLists into Batch.
-    for (var id in taskListIds) {
-      batch.delete(_getTaskListsCollectionRef(projectId, store).document(id));
-    }
-
-    batch.delete(_getMembersCollectionRef(projectId).document(
-        userId)); // Single Member (Self). Won't work for Shared Projects.
-    batch.delete(_getProjectsCollectionRef(store).document(projectId));
-    batch.delete(_getProjectIdsCollectionRef(userId).document(projectId));
-
-    try {
-      await batch.commit();
-    } catch (error) {
-      throw error;
-    }
+    await _deleteProject(projectId, store);
   };
+}
+
+Future<void> _deleteProject(String projectId, Store<AppState> store) async {
+  var userId = store.state.user.userId;
+  var allMemberIds =
+      _getProjectRelatedMemberIds(projectId, store.state.members);
+  var otherMemberIds = allMemberIds.where((id) => id != userId).toList();
+  var taskIds = _getProjectRelatedTaskIds(projectId, store.state.tasks);
+  var taskListIds =
+      _getProjectRelatedTaskListIds(projectId, store.state.taskLists);
+  var batch = Firestore.instance.batch();
+  bool isOnlySharedWithSelf =
+      allMemberIds.length == 1 && allMemberIds[0] == userId;
+
+  if (isOnlySharedWithSelf) {
+    // Project not shared with anyone else. It is safe to remove the user from the Members collection.
+    batch.delete(_getMembersCollectionRef(projectId).document(userId));
+  }
+
+  // Build Tasks into Batch
+  for (var id in taskIds) {
+    batch.delete(_getTasksCollectionRef(projectId, store).document(id));
+  }
+
+  // Build TaskLists into Batch.
+  for (var id in taskListIds) {
+    batch.delete(_getTaskListsCollectionRef(projectId, store).document(id));
+  }
+
+  batch.delete(_getProjectsCollectionRef(store).document(projectId));
+  batch.delete(_getProjectIdsCollectionRef(userId).document(projectId));
+
+  try {
+    if (!isOnlySharedWithSelf) {
+      // Remove for other Users.
+      var cloudFunctionRequests = otherMemberIds.map((id) =>
+          _cloudFunctionsLayer.kickUserFromProject(
+              userId: id, projectId: projectId));
+      await Future.wait(cloudFunctionRequests);
+    }
+    await batch.commit();
+    return;
+  } catch (error) {
+    throw error;
+  }
+}
+
+List<String> _getProjectRelatedMemberIds(
+    String projectId, Map<String, List<MemberModel>> members) {
+  var memberList = members[projectId];
+
+  if (memberList == null) {
+    return <String>[];
+  }
+
+  return memberList.map((item) => item.userId);
 }
 
 ThunkAction<AppState> showSignUpDialog(BuildContext context) {

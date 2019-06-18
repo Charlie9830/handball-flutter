@@ -35,6 +35,7 @@ class MemberList extends StatelessWidget {
     return viewModels.map((vm) {
       return MemberListTile(
         key: Key(vm.data.userId),
+        isProcessing: vm.isProcessing,
         displayName: vm.data.displayName,
         email: vm.data.email,
         status: vm.data.status,

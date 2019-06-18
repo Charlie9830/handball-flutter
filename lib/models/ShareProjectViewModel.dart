@@ -18,6 +18,6 @@ class ShareProjectViewModel {
     this.type,
     this.onInvite,
     this.onDelete,
-    this.onLeave
+    this.onLeave,
   });
 }

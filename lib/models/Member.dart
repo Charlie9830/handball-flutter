@@ -84,12 +84,14 @@ class MemberModel {
 
 class MemberViewModel {
   final MemberModel data;
+  final bool isProcessing;
   final dynamic onKick;
   final dynamic onPromote;
   final dynamic onDemote;
 
   MemberViewModel({
     this.data,
+    this.isProcessing,
     this.onKick,
     this.onPromote,
     this.onDemote,

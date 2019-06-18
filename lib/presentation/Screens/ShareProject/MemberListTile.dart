@@ -8,6 +8,7 @@ class MemberListTile extends StatefulWidget {
   final String displayName;
   final String email;
   final MemberStatus status;
+  final bool isProcessing;
   final dynamic onPromote;
   final dynamic onKick;
   final dynamic onDemote;
@@ -15,6 +16,7 @@ class MemberListTile extends StatefulWidget {
   MemberListTile(
       {this.key,
       this.displayName,
+      this.isProcessing,
       this.email,
       this.status,
       this.onPromote,
@@ -49,6 +51,7 @@ class _MemberListTileState extends State<MemberListTile> {
             Padding(
               padding: EdgeInsets.only(top: 16),
               child: MemberActionsRow(
+                isProcessing: widget.isProcessing,
                 onDemote: widget.onDemote,
                 onPromote: widget.onPromote,
                 onKick: widget.onKick,

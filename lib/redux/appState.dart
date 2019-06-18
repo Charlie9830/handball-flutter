@@ -31,6 +31,7 @@ class AppState {
   final List<String> processingProjectInviteIds;
   final Map<String, List<MemberModel>> members;
   final bool isInvitingUser;
+  final List<String> processingMembers;
 
 
   final TextInputDialogModel textInputDialog;
@@ -58,6 +59,7 @@ class AppState {
     this.processingProjectInviteIds,
     this.members,
     this.isInvitingUser,
+    this.processingMembers,
     });
 
   AppState copyWith({
@@ -83,6 +85,7 @@ class AppState {
     List<String> processingProjectInviteIds,
     Map<String, List<MemberModel>> members,
     bool isInvitingUser,
+    List<String> processingMembers,
   }) {
     return AppState(
       projects: projects ?? this.projects,
@@ -106,6 +109,7 @@ class AppState {
       processingProjectInviteIds: processingProjectInviteIds ?? this.processingProjectInviteIds,
       members: members ?? this.members,
       isInvitingUser: isInvitingUser ?? this.isInvitingUser,
+      processingMembers: processingMembers ?? this.processingMembers,
     );
   }
 }

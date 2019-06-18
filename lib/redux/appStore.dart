@@ -45,6 +45,7 @@ final initialAppState = AppState(
   processingProjectInviteIds: <String>[],
   members: <String, List<MemberModel>>{},
   isInvitingUser: false,
+  processingMembers: <String>[],
 );
 
 final appStore = new Store<AppState> (

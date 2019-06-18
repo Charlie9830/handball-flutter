@@ -25,41 +25,53 @@ class ShareProjectContainer extends StatelessWidget {
   }
 
   _converter(Store<AppState> store, BuildContext context) {
-    var members = store.state.members[store.state.projectShareMenuEntity.uid] ??
+    var projectId = store.state.projectShareMenuEntity.uid;
+    var members = store.state.members[projectId] ??
         <MemberModel>[];
+    var projectName = store.state.projectShareMenuEntity.projectName;
 
     return ShareProjectViewModel(
       projectEntity: store.state.projectShareMenuEntity,
-      memberViewModels: _buildMemberViewModels(members, store),
+      memberViewModels: _buildMemberViewModels(members, store, context),
       type: members.length > 1
           ? ShareProjectScreenType.complete
           : ShareProjectScreenType.simplified,
       isInvitingUser: store.state.isInvitingUser,
       onInvite: (email) => store.dispatch(inviteUserToProject(
           email,
-          store.state.projectShareMenuEntity.uid,
+          projectId,
           store.state.projectShareMenuEntity.projectName,
           MemberRole.member)),
       onDelete: _canDelete(members, store.state.user.userId)
           ? () => store.dispatch(deleteProjectWithDialog(
-              store.state.projectShareMenuEntity.uid,
-              store.state.projectShareMenuEntity.projectName,
+              projectId,
+              projectName,
               context))
           : null,
-      onLeave: () => {},
+      onLeave: () => store.dispatch(leaveSharedProject(projectId, projectName, members, context)),
     );
   }
 
   List<MemberViewModel> _buildMemberViewModels(
-      List<MemberModel> members, Store<AppState> store) {
+      List<MemberModel> members, Store<AppState> store, BuildContext context) {
     var userId = store.state.user.userId;
+    var projectId = store.state.projectShareMenuEntity.uid;
+    var projectName = store.state.projectShareMenuEntity.projectName;
 
     return members.map((item) {
       return MemberViewModel(
         data: item,
-        onKick: _canBeKicked(item, members, userId) ? () {} : null,
-        onDemote: _canBeDemoted(item, members, userId) ? () {} : null,
-        onPromote: _canBePromoted(item, members, userId) ? () {} : null,
+        onKick: _canBeKicked(item, members, userId)
+            ? () => store.dispatch(kickUserFromProject(
+                item.userId, projectId, item.displayName, projectName, context))
+            : null,
+        onDemote: _canBeDemoted(item, members, userId)
+            ? () => store.dispatch(demoteUser(item.userId, projectId))
+            : null,
+        onPromote: _canBePromoted(item, members, userId)
+            ? () => store.dispatch(promoteUser(item.userId, projectId))
+            : null,
+        isProcessing: store.state.processingMembers.contains(item.userId),
       );
     }).toList();
   }

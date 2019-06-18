@@ -10,6 +10,58 @@ class CloudFunctionsLayer {
   static const _sendProjectInviteFunctionName = 'sendProjectInvite';
   static const _acceptProjectInviteFunctionName = 'acceptProjectInvite';
   static const _denyProjectInviteFunctionName = 'denyProjectInvite';
+  static const _kickUserFromProjectFunctionName = 'kickUserFromProject';
+  static const _removeRemoteProjectFunctionName = 'removeRemoteProject';
+
+  Future<void> removeRemoteProject({
+    @required String projectId,
+  }) async {
+    HttpsCallable callable = CloudFunctions.instance.getHttpsCallable(functionName: _removeRemoteProjectFunctionName);
+
+    try {
+      var response = await callable.call({
+        'projectId': projectId,
+      });
+
+      if (response.data['status'] == 'complete') {
+        return;
+      }
+
+      if (response.data['status'] == 'error') {
+        throw CloudFunctionsRejectionError(message: response.data['message']);
+      }
+    } catch( error) {
+      throw error;
+    }
+  }
+
+  Future<void> kickUserFromProject({
+    @required String userId,
+    @required String projectId,
+  }) async {
+    HttpsCallable callable = CloudFunctions.instance.getHttpsCallable(functionName: _kickUserFromProjectFunctionName);
+
+    try {
+      var response = await callable.call({
+        'userId': userId,
+        'projectId': projectId,
+      });
+
+      if (response.data['status'] == 'complete') {
+        print('Success');
+        return;
+      }
+
+      if (response.data['status'] == 'error') {
+        throw CloudFunctionsRejectionError(
+          message: response.data['message'],
+        );
+      }
+
+    } catch(error) {
+      throw error;
+    }
+  }
 
   Future<void> acceptProjectInvite({
     @required String projectId,
