@@ -544,6 +544,17 @@ ThunkAction<AppState> leaveSharedProject(String projectId, String projectName,
     }
 
     // Clean Exit from Project.
+    var result = await postConfirmationDialog(
+        'Leave Project',
+        'Are you sure you want to leave $projectName? It will be removed from all of your devices',
+        'Leave Project',
+        'Cancel',
+        context);
+
+    if (result == DialogResult.negative) {
+      return;
+    }
+    
     try {
       store.dispatch(SelectProject('-1'));
       await _leaveSharedProject(projectId, store);
@@ -579,10 +590,9 @@ void _deleteSharedProject(
     await _cloudFunctionsLayer.removeRemoteProject(projectId: projectId);
     store.dispatch(SelectProject('-1'));
     Navigator.of(context).popUntil((route) => route.isFirst);
-  } catch(error) {
+  } catch (error) {
     throw error;
   }
-
 }
 
 bool _canDeleteSharedProject(String userId, List<MemberModel> members) {

@@ -101,8 +101,10 @@ AppState appReducer(AppState state, dynamic action) {
         .where((taskList) => taskList.project != projectId)
         .toList();
     var tasks = state.tasks.where((task) => task.project != projectId).toList();
+    var members = Map<String, List<MemberModel>>.from(state.members)..remove(projectId);
 
     return state.copyWith(
+      selectedProjectId: '-1',
       projects: projects,
       taskLists: taskLists,
       tasks: tasks,
@@ -111,6 +113,7 @@ AppState appReducer(AppState state, dynamic action) {
       selectedTaskEntity:
           _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
       projectIndicatorGroups: getProjectIndicatorGroups(tasks),
+      members: members,
     );
   }
 
