@@ -26,6 +26,7 @@ import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialo
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/DelegateOwnerDialog/DelegateOwnerDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
+import 'package:handball_flutter/presentation/Nothing.dart';
 import 'package:handball_flutter/presentation/Screens/AppDrawer/ProjectInviteListTile.dart';
 import 'package:handball_flutter/presentation/Screens/SignUp/SignUpBase.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
@@ -301,7 +302,6 @@ StreamSubscription<QuerySnapshot> _subscribeToProjectInvites(
   });
 }
 
-
 ThunkAction<AppState> acceptProjectInvite(String projectId) {
   return (Store<AppState> store) async {
     addProcessingProjectInviteId(projectId, store);
@@ -363,11 +363,40 @@ Future<void> _removeProjectInvite(String userId, String projectId) async {
   }
 }
 
+showSnackBar(
+    {@required GlobalKey<ScaffoldState> targetGlobalKey,
+    @required String message,
+    int autoHideSeconds = 6,
+    String actionLabel}) {
+  if (targetGlobalKey?.currentState == null) {
+    throw ArgumentError(
+        'targetGlobalKey or targetGlobalKey.currentState must not be null');
+  }
+
+  var duration =
+      autoHideSeconds == 0 ? null : Duration(seconds: autoHideSeconds);
+  var snackBarAction = actionLabel == null
+      ? null
+      : SnackBarAction(
+          label: actionLabel,
+          onPressed: () => targetGlobalKey.currentState.hideCurrentSnackBar(),
+        );
+
+  targetGlobalKey.currentState.showSnackBar(SnackBar(
+    content: Text(message ?? ''),
+    action: snackBarAction,
+    duration: duration,
+  ));
+}
+
 ThunkAction<AppState> inviteUserToProject(
     String email, String sourceProjectId, String projectName, MemberRole role) {
   return (Store<AppState> store) async {
     if (email == store.state.user.email) {
-      // TODO: Implement handling for a User trying to invite themselves.
+      showSnackBar(
+          targetGlobalKey: shareScreenScaffoldKey,
+          message:
+              'Hey! You are already a contributor! No need to invite yourself.');
       return;
     }
 
@@ -392,6 +421,9 @@ ThunkAction<AppState> inviteUserToProject(
         role: role,
       );
 
+      showSnackBar(
+          targetGlobalKey: shareScreenScaffoldKey,
+          message: 'Invite sent to ${response.displayName}.');
       store.dispatch(SetIsInvitingUser(isInvitingUser: false));
     } catch (error) {
       store.dispatch(SetIsInvitingUser(isInvitingUser: false));
@@ -424,15 +456,16 @@ ThunkAction<AppState> signOutUser() {
   };
 }
 
-ThunkAction<AppState> changeAccount(String email, String password, BuildContext context) {
-return (Store<AppState> store) async {
-  try {
-    await auth.signOut();
-    await Future.delayed(Duration(seconds: 2));
-    store.dispatch(signInUser(email, password, context));
-  } catch (error) {
-    throw error;
-  }
+ThunkAction<AppState> changeAccount(
+    String email, String password, BuildContext context) {
+  return (Store<AppState> store) async {
+    try {
+      await auth.signOut();
+      await Future.delayed(Duration(seconds: 2));
+      store.dispatch(signInUser(email, password, context));
+    } catch (error) {
+      throw error;
+    }
   };
 }
 
@@ -595,7 +628,10 @@ Future<void> _leaveSharedProject(
 }
 
 bool _isLastOwner(String userId, List<MemberModel> members) {
-  var owners = members.where((item) => item.role == MemberRole.owner && item.status != MemberStatus.denied).toList();
+  var owners = members
+      .where((item) =>
+          item.role == MemberRole.owner && item.status != MemberStatus.denied)
+      .toList();
   if (owners.length == 1 && owners[0].userId == userId) {
     // Current user is the Last Owner.
     return true;

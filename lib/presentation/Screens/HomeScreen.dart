@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/containers/AppDrawerContainer.dart';
+import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/HomeScreenViewModel.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
@@ -15,6 +16,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        key: homeScreenScaffoldKey,
         appBar: AppBar(
           title: Text(viewModel.projectName ?? ''),
         ),
