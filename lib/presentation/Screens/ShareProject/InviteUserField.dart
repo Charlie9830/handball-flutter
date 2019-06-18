@@ -30,34 +30,36 @@ class _InviteUserFieldState extends State<InviteUserField> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(8),
-        child: PredicateBuilder(
-      predicate: () => widget.isInvitingUser,
-      childIfTrue: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          CircularProgressIndicator()
-        ],
-      ),
-      childIfFalse: Column(
-        children: <Widget>[
-          TextField(
-            controller: _emailController,
-            autofocus: widget.autofocus,
-            keyboardType: TextInputType.emailAddress,
-            decoration: InputDecoration(
-              labelText: 'Email Address',
-              errorText: _emailErrorText,
+    return SizedBox(
+      height: 130,
+      child: Container(
+          padding: EdgeInsets.all(8),
+          child: PredicateBuilder(
+            predicate: () => widget.isInvitingUser,
+            childIfTrue: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[CircularProgressIndicator()],
             ),
-            onSubmitted: (value) => _submit(context, _emailController.text),
-          ),
-          RaisedButton(
-              child: Text('Invite'),
-              onPressed: () => _submit(context, _emailController.text))
-        ],
-      ),
-    ));
+            childIfFalse: Column(
+              children: <Widget>[
+                TextField(
+                  controller: _emailController,
+                  autofocus: widget.autofocus,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: 'Email Address',
+                    errorText: _emailErrorText,
+                  ),
+                  onSubmitted: (value) =>
+                      _submit(context, _emailController.text),
+                ),
+                RaisedButton(
+                    child: Text('Invite'),
+                    onPressed: () => _submit(context, _emailController.text))
+              ],
+            ),
+          )),
+    );
   }
 
   void _submit(BuildContext context, String email) {

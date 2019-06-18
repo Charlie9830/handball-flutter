@@ -26,29 +26,26 @@ class ShareProjectContainer extends StatelessWidget {
 
   _converter(Store<AppState> store, BuildContext context) {
     var projectId = store.state.projectShareMenuEntity.uid;
-    var members = store.state.members[projectId] ??
-        <MemberModel>[];
+    var members = store.state.members[projectId] ?? <MemberModel>[];
     var projectName = store.state.projectShareMenuEntity.projectName;
 
     return ShareProjectViewModel(
       projectEntity: store.state.projectShareMenuEntity,
       memberViewModels: _buildMemberViewModels(members, store, context),
-      type: members.length > 1
+      type: members.length > 1 && _getOtherActiveMembers(members, store.state.user.userId).length > 0
           ? ShareProjectScreenType.complete
           : ShareProjectScreenType.simplified,
       isInvitingUser: store.state.isInvitingUser,
       onInvite: (email) => store.dispatch(inviteUserToProject(
-          email,
-          projectId,
-          store.state.projectShareMenuEntity.projectName,
-          MemberRole.member)),
+          email, projectId, projectName, MemberRole.member)),
       onDelete: _canDelete(members, store.state.user.userId)
-          ? () => store.dispatch(deleteProjectWithDialog(
-              projectId,
-              projectName,
-              context))
+          ? () => store.dispatch(
+              deleteProjectWithDialog(projectId, projectName, context))
           : null,
-      onLeave: () => store.dispatch(leaveSharedProject(projectId, projectName, members, context)),
+      onLeave: _canLeave(members, store.state.user.userId)
+          ? () => store.dispatch(
+              leaveSharedProject(projectId, projectName, members, context))
+          : null,
     );
   }
 
@@ -76,8 +73,24 @@ class ShareProjectContainer extends StatelessWidget {
     }).toList();
   }
 
-  bool _canDelete(List<MemberModel> members, String userId) {
-    var currentMember = _extractCurrentMember(members, userId);
+  bool _canLeave(List<MemberModel> members, String selfUserId) {
+    if (members.length == 1) {
+      return false;
+    }
+
+    return _getOtherActiveMembers(members, selfUserId).length > 0;
+  }
+
+  List<MemberModel> _getOtherActiveMembers(
+      List<MemberModel> members, String selfUserId) {
+    return members
+        .where((item) =>
+            item.status == MemberStatus.added && item.userId != selfUserId)
+        .toList();
+  }
+
+  bool _canDelete(List<MemberModel> members, String selfUserId) {
+    var currentMember = _extractCurrentMember(members, selfUserId);
 
     return currentMember.role == MemberRole.owner;
   }
@@ -95,7 +108,8 @@ class ShareProjectContainer extends StatelessWidget {
     var currentMember = _extractCurrentMember(members, userId);
 
     return currentMember.role == MemberRole.owner &&
-        member.role == MemberRole.member;
+        member.role == MemberRole.member &&
+        member.status != MemberStatus.denied;
   }
 
   bool _canBeDemoted(
@@ -103,7 +117,8 @@ class ShareProjectContainer extends StatelessWidget {
     var currentMember = _extractCurrentMember(members, userId);
 
     return currentMember.role == MemberRole.owner &&
-        member.role == MemberRole.owner;
+        member.role == MemberRole.owner &&
+        member.status != MemberStatus.denied;
   }
 
   MemberModel _extractCurrentMember(List<MemberModel> members, String userId) {

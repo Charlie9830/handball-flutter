@@ -19,7 +19,7 @@ class StatusText extends StatelessWidget {
         return Text('Added', style: TextStyle(color: Colors.green));
 
       case MemberStatus.denied:
-        return Text('Denied', style: TextStyle(color: Colors.red));
+        return Text('Declined');
 
       default:
         return Nothing();

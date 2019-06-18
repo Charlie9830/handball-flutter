@@ -12,15 +12,23 @@ class SimplifiedShareProject extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: Column(
-        children: <Widget>[
-          InviteUserField(
-            isInvitingUser: viewModel.isInvitingUser,
-            autofocus: true,
-            onInvite: viewModel.onInvite,
-          )
-        ],
-      )
-    );
+        child: Column(
+      children: <Widget>[
+        Card(
+            child: InviteUserField(
+          isInvitingUser: viewModel.isInvitingUser,
+          autofocus: true,
+          onInvite: viewModel.onInvite,
+        )),
+        Card(
+          
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+                'When other contributors accept your invite, you will see them here.'),
+          ),
+        ),
+      ],
+    ));
   }
 }

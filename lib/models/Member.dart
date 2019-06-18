@@ -44,7 +44,7 @@ class MemberModel {
         return 'added';
 
       case MemberStatus.denied:
-        return 'denied';
+        return 'rejected invite';
       
       default:
         throw UnsupportedError('Cannot convert Member.status to String. Value: $status');
@@ -73,8 +73,8 @@ class MemberModel {
       case 'added':
         return MemberStatus.added;
 
-      case 'denied':
-        return MemberStatus.pending; // For the sake of privacy. We hide if the user has denied the invitation.
+      case 'rejected invite':
+        return MemberStatus.denied;
 
       default:
         throw UnsupportedError('Unknown value when parsing Member.status. Value: $status');

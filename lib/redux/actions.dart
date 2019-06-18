@@ -366,6 +366,11 @@ Future<void> _removeProjectInvite(String userId, String projectId) async {
 ThunkAction<AppState> inviteUserToProject(
     String email, String sourceProjectId, String projectName, MemberRole role) {
   return (Store<AppState> store) async {
+    if (email == store.state.user.email) {
+      // TODO: Implement handling for a User trying to invite themselves.
+      return;
+    }
+
     store.dispatch(SetIsInvitingUser(isInvitingUser: true));
     var response = await _cloudFunctionsLayer.getRemoteUserData(email);
 
@@ -590,7 +595,7 @@ Future<void> _leaveSharedProject(
 }
 
 bool _isLastOwner(String userId, List<MemberModel> members) {
-  var owners = members.where((item) => item.role == MemberRole.owner).toList();
+  var owners = members.where((item) => item.role == MemberRole.owner && item.status != MemberStatus.denied).toList();
   if (owners.length == 1 && owners[0].userId == userId) {
     // Current user is the Last Owner.
     return true;
