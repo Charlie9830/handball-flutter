@@ -297,50 +297,10 @@ StreamSubscription<QuerySnapshot> _subscribeToProjectInvites(
     snapshot.documents
         .forEach((doc) => invites.add(ProjectInviteModel.fromDoc(doc)));
 
-    print(invites.length);
-
-    // Animation
-    var groupedChanges = _getGroupedDocumentChanges(snapshot.documentChanges);
-
-    _driveProjectInviteRemovalAnimations(groupedChanges.removed);
     store.dispatch(ReceiveProjectInvites(invites: invites));
-    _driveProjectInviteAdditionAnimations(groupedChanges.added);
   });
 }
 
-void _driveProjectInviteAdditionAnimations(List<DocumentChange> additions) {
-  if (projectInviteAnimatedListStateKey.currentState == null) {
-    return;
-  }
-
-  for (var docChange in additions) {
-    projectInviteAnimatedListStateKey.currentState
-        .insertItem(docChange.newIndex);
-  }
-}
-
-void _driveProjectInviteRemovalAnimations(List<DocumentChange> removals) {
-  if (projectInviteAnimatedListStateKey.currentState == null) {
-    return;
-  }
-
-  for (var docChange in removals) {
-    projectInviteAnimatedListStateKey.currentState
-        .removeItem(docChange.oldIndex, (context, animation) {
-      var model = ProjectInviteModel.fromDoc(docChange.document);
-      return SizeTransition(
-        sizeFactor: animation.drive(Tween(begin: 1, end: 0)),
-        axis: Axis.vertical,
-        key: Key(model.projectId),
-        child: ProjectInviteListTile(
-          projectId: model.projectId,
-          projectName: model.projectName,
-          sourceEmail: model.sourceEmail,
-        ),
-      );
-    });
-  }
-}
 
 ThunkAction<AppState> acceptProjectInvite(String projectId) {
   return (Store<AppState> store) async {
@@ -554,7 +514,7 @@ ThunkAction<AppState> leaveSharedProject(String projectId, String projectName,
     if (result == DialogResult.negative) {
       return;
     }
-    
+
     try {
       store.dispatch(SelectProject('-1'));
       await _leaveSharedProject(projectId, store);

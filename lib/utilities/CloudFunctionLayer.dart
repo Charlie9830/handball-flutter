@@ -188,4 +188,9 @@ class CloudFunctionsRejectionError extends Error {
   CloudFunctionsRejectionError({
     this.message = 'No error message was provided from server',
   });
+
+  @override
+  String toString() {
+    return message;
+  }
 }
