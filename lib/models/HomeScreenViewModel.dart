@@ -8,6 +8,7 @@ class HomeScreenViewModel {
   final List<TaskListViewModel> taskListViewModels;
   final onAddNewTaskFabButtonPressed;
   final onAddNewTaskListFabButtonPressed;
+  final onShareProjectButtonPressed;
 
   HomeScreenViewModel({
     this.projectId,
@@ -15,5 +16,6 @@ class HomeScreenViewModel {
     this.taskListViewModels,
     this.onAddNewTaskFabButtonPressed,
     this.onAddNewTaskListFabButtonPressed,
+    this.onShareProjectButtonPressed,
     });
 }

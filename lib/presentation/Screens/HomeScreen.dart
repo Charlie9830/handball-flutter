@@ -19,6 +19,12 @@ class HomeScreen extends StatelessWidget {
         key: homeScreenScaffoldKey,
         appBar: AppBar(
           title: Text(viewModel.projectName ?? ''),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.share),
+              onPressed: viewModel.onShareProjectButtonPressed,
+            ),
+          ],
         ),
         drawer: Drawer(
           child: AppDrawerContainer(),

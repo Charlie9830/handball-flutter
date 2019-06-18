@@ -32,6 +32,7 @@ class HomeScreenContainer extends StatelessWidget {
           .dispatch(addNewTaskWithDialog(projectId, context, taskListId: null)),
       onAddNewTaskListFabButtonPressed: () =>
           store.dispatch(addNewTaskListWithDialog(projectId, context)),
+      onShareProjectButtonPressed: projectId != '-1' ? () => store.dispatch(OpenShareProjectScreen(projectId: projectId)) : null,
     );
   }
 
