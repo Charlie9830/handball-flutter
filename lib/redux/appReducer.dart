@@ -105,6 +105,7 @@ AppState appReducer(AppState state, dynamic action) {
 
     return state.copyWith(
       selectedProjectId: '-1',
+      inflatedProject: initialAppState.inflatedProject,
       projects: projects,
       taskLists: taskLists,
       tasks: tasks,
