@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/Member.dart';
+import 'package:handball_flutter/presentation/ReactiveAnimatedList.dart';
 import 'package:handball_flutter/presentation/Screens/ShareProject/MemberListTile.dart';
 
 class MemberList extends StatelessWidget {
@@ -21,11 +22,11 @@ class MemberList extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(title, style: Theme.of(context).textTheme.subtitle),
-          ListView(
+          ReactiveAnimatedList(
             physics: NeverScrollableScrollPhysics(),
             shrinkWrap: true,
             children: _getChildren(),
-          ),
+          )
         ],
       ),
     );
