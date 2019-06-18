@@ -41,6 +41,7 @@ class AppSettings extends StatelessWidget {
               onSignIn: viewModel.onSignIn,
               onSignOut: viewModel.onSignOut,
               onSignUpButtonPressed: viewModel.onSignUpButtonPressed,
+              onAccountChange: viewModel.onAccountChange,
             ),
             AboutTab(),
           ],

@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/AccountTab/AccountProgess.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/AccountTab/LoggedIn.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/AccountTab/LoggedOut.dart';
+import 'package:handball_flutter/presentation/Screens/AppSettings/AccountTab/QuickAccountChanger.dart';
 
 class AccountTab extends StatelessWidget {
   final User user;
@@ -11,6 +13,7 @@ class AccountTab extends StatelessWidget {
   final dynamic onSignIn;
   final dynamic onSignOut;
   final dynamic onSignUpButtonPressed;
+  final dynamic onAccountChange;
 
   AccountTab({
     this.user,
@@ -18,14 +21,21 @@ class AccountTab extends StatelessWidget {
     this.onSignIn,
     this.onSignOut,
     this.onSignUpButtonPressed,
+    this.onAccountChange,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
         alignment: Alignment.topCenter,
-        child: _getChild(accountState),
-    );
+        child: Column(
+          children: <Widget>[
+          Expanded(
+            child: _getChild(accountState),
+          ),
+          if (!kReleaseMode)
+            QuickAccountChanger(onAccountChange: onAccountChange)
+        ]));
   }
 
   Widget _getChild(AccountState accountState) {

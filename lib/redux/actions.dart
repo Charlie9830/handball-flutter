@@ -419,6 +419,18 @@ ThunkAction<AppState> signOutUser() {
   };
 }
 
+ThunkAction<AppState> changeAccount(String email, String password, BuildContext context) {
+return (Store<AppState> store) async {
+  try {
+    await auth.signOut();
+    await Future.delayed(Duration(seconds: 2));
+    store.dispatch(signInUser(email, password, context));
+  } catch (error) {
+    throw error;
+  }
+  };
+}
+
 ThunkAction<AppState> updateTaskPriority(
     bool newValue, String taskId, String projectId) {
   return (Store<AppState> store) async {

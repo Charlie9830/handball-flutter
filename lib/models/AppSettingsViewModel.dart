@@ -9,6 +9,7 @@ class AppSettingsViewModel {
   final dynamic onSignIn;
   final dynamic onSignOut;
   final dynamic onSignUpButtonPressed;
+  final dynamic onAccountChange;
 
   AppSettingsViewModel({
     this.initialTab,
@@ -18,5 +19,6 @@ class AppSettingsViewModel {
     this.onSignOut,
     this.onClose,
     this.onSignUpButtonPressed,
+    this.onAccountChange,
   });
 }
