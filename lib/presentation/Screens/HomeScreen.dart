@@ -4,6 +4,7 @@ import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/HomeScreenViewModel.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
+import 'package:handball_flutter/presentation/ProjectMenu.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/presentation/TaskList/TaskList.dart';
 import 'package:handball_flutter/presentation/TaskList/TaskListHeader.dart';
@@ -24,6 +25,11 @@ class HomeScreen extends StatelessWidget {
               icon: Icon(Icons.share),
               onPressed: viewModel.onShareProjectButtonPressed,
             ),
+            ProjectMenu(
+              onSetListSorting: viewModel.onSetListSorting,
+              listSorting: viewModel.listSorting,
+            )
+            
           ],
         ),
         drawer: Drawer(

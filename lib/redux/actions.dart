@@ -28,14 +28,17 @@ import 'package:handball_flutter/presentation/Dialogs/DelegateOwnerDialog/Delega
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/presentation/Nothing.dart';
 import 'package:handball_flutter/presentation/Screens/AppDrawer/ProjectInviteListTile.dart';
+import 'package:handball_flutter/presentation/Screens/ListSortingScreen/ListSortingScreen.dart';
 import 'package:handball_flutter/presentation/Screens/SignUp/SignUpBase.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:handball_flutter/utilities/convertMemberRole.dart';
+import 'package:handball_flutter/utilities/listSortingHelpers.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
 import 'package:redux/redux.dart';
 import 'package:redux_thunk/redux_thunk.dart';
 import 'package:handball_flutter/utilities/CloudFunctionLayer.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final FirebaseAuth auth = FirebaseAuth.instance;
 final FirestoreStreamsContainer _firestoreStreams = FirestoreStreamsContainer();
@@ -57,6 +60,12 @@ class SetProcessingProjectInviteIds {
   SetProcessingProjectInviteIds({
     this.processingProjectInviteIds,
   });
+}
+
+class SetListSorting {
+  final TaskListSorting listSorting;
+
+  SetListSorting({this.listSorting});
 }
 
 class SetProcessingMembers {
@@ -261,6 +270,11 @@ ThunkAction<AppState> initializeApp() {
   return (Store<AppState> store) async {
     Firestore.instance.settings(timestampsInSnapshotsEnabled: true);
     auth.onAuthStateChanged.listen((user) => onAuthStateChanged(store, user));
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    TaskListSorting listSorting =
+        parseTaskListSorting(prefs.getString('listSorting'));
+    store.dispatch(SetListSorting(listSorting: listSorting));
   };
 }
 
@@ -985,6 +999,7 @@ ThunkAction<AppState> addNewTaskListWithDialog(
         uid: ref.documentID,
         project: projectId,
         taskListName: result.value,
+        dateAdded: DateTime.now(),
       );
 
       try {
@@ -995,6 +1010,53 @@ ThunkAction<AppState> addNewTaskListWithDialog(
       }
     } else {
       print('Canceled');
+    }
+  };
+}
+
+ThunkAction<AppState> updateListSorting(
+    String projectId, TaskListSorting sorting, BuildContext context) {
+  return (Store<AppState> store) async {
+    if (sorting == TaskListSorting.custom) {
+      var existingTaskLists = store.state.inflatedProject.inflatedTaskLists
+          .map((item) => item.data)
+          .toList();
+
+      var dialogResult = await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              ListSortingScreen(taskLists: existingTaskLists));
+
+      // If dialogResult is null. User did not change any of the order, So we assume they are happy with the ordering as is,
+      // and just wanted to activate custom order, so we use the existingTasklists collection to build the ID List. Otherwise,
+      // we use what was returned from the Dialog.
+      var sortedTaskLists = dialogResult is List<TaskListModel>
+          ? dialogResult
+          : existingTaskLists;
+
+      var ref =
+          _getMembersCollectionRef(projectId).document(store.state.user.userId);
+
+      try {
+        await ref.updateData({
+          'listCustomSortOrder':
+              sortedTaskLists.map((item) => item.uid).toList()
+        });
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    // Update State
+    store.dispatch(SetListSorting(listSorting: sorting));
+
+    // Update on Device Storage.
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('listSorting', convertTaskListSorting(sorting));
+    } catch (error) {
+      throw error;
     }
   };
 }
@@ -1044,6 +1106,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
           uid: taskListRef.documentID,
           project: projectId,
           taskListName: result.taskListName,
+          dateAdded: DateTime.now(),
         );
 
         // New Task
@@ -1335,7 +1398,7 @@ StreamSubscription<DocumentSnapshot> _subscribeToProject(
       .collection('projects')
       .document(projectId)
       .snapshots()
-      .listen((doc) {
+      .listen((doc) async {
     if (doc.exists) {
       store.dispatch(ReceiveProject(project: ProjectModel.fromDoc(doc)));
     }

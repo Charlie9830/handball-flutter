@@ -1,16 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:handball_flutter/enums.dart';
 import 'package:meta/meta.dart';
 
 class ProjectModel {
-    String uid;
-    String projectName;
-    String created;
-  
+  String uid;
+  String projectName;
+  String created;
+
   ProjectModel({
     @required this.uid,
     this.projectName,
-    this.created
-    });
+    this.created,
+  });
 
   ProjectModel.fromDoc(DocumentSnapshot doc) {
     this.uid = doc['uid'];
@@ -25,8 +26,9 @@ class ProjectModel {
       'created': this.created,
     };
   }
-}
 
+  
+}
 
 class ProjectViewModel {
   final bool isSelected;
@@ -51,5 +53,5 @@ class ProjectViewModel {
     this.onSelect,
     this.onDelete,
     this.onShare,
-    });
+  });
 }

@@ -12,6 +12,7 @@ import 'package:redux/redux.dart';
 import './appState.dart';
 import './appReducer.dart';
 import './middleware.dart';
+import 'package:redux_logging/redux_logging.dart';
 
 final initialAppState = AppState(
   tasks: <TaskModel>[],
@@ -46,10 +47,11 @@ final initialAppState = AppState(
   members: <String, List<MemberModel>>{},
   isInvitingUser: false,
   processingMembers: <String>[],
+  listSorting: TaskListSorting.dateAdded,
 );
 
 final appStore = new Store<AppState> (
   appReducer,
   initialState: initialAppState,
-  middleware: [thunkMiddleware, navigationMiddleware]
+  middleware: [thunkMiddleware, navigationMiddleware, LoggingMiddleware.printer()]
 );

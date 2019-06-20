@@ -7,6 +7,7 @@ import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/redux/appStore.dart';
 import 'package:handball_flutter/utilities/getProjectIndicatorGroups.dart';
+import 'package:meta/meta.dart';
 
 import '../enums.dart';
 import './appState.dart';
@@ -19,15 +20,17 @@ AppState appReducer(AppState state, dynamic action) {
         _filterTaskLists(action.uid, state.taskListsByProject);
 
     return state.copyWith(
-      selectedProjectId: action.uid,
-      inflatedProject: _buildInflatedProject(
-          filteredTasks,
-          filteredTaskLists,
-          state.projects.firstWhere((item) => item.uid == action.uid,
-              orElse: () => null)),
-      filteredTasks: filteredTasks,
-      filteredTaskLists: filteredTaskLists,
-    );
+        selectedProjectId: action.uid,
+        filteredTasks: filteredTasks,
+        filteredTaskLists: filteredTaskLists,
+        inflatedProject: _buildInflatedProject(
+          tasks: filteredTasks,
+          taskLists: filteredTaskLists,
+          project: _extractProject(action.uid, state.projects),
+          listCustomSortOrder: _extractListCustomSortOrder(
+              state.members, action.uid, state.user.userId),
+          listSorting: state.listSorting,
+        ));
   }
 
   if (action is ReceiveProject) {
@@ -43,19 +46,20 @@ AppState appReducer(AppState state, dynamic action) {
     var filteredTasks = _filterTasks(state.selectedProjectId, tasksByProject);
 
     return state.copyWith(
-      tasks: tasks,
-      filteredTasks: filteredTasks,
-      tasksByProject: tasksByProject,
-      selectedTaskEntity:
-          _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
-      projectIndicatorGroups: getProjectIndicatorGroups(tasks),
-      inflatedProject: _buildInflatedProject(
-          filteredTasks,
-          state.filteredTaskLists,
-          state.projects.firstWhere(
-              (item) => item.uid == state.selectedProjectId,
-              orElse: () => null)),
-    );
+        tasks: tasks,
+        filteredTasks: filteredTasks,
+        tasksByProject: tasksByProject,
+        selectedTaskEntity:
+            _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
+        projectIndicatorGroups: getProjectIndicatorGroups(tasks),
+        inflatedProject: _buildInflatedProject(
+          tasks: filteredTasks,
+          taskLists: state.filteredTaskLists,
+          project: _extractProject(state.selectedProjectId, state.projects),
+          listCustomSortOrder: _extractListCustomSortOrder(
+              state.members, state.selectedProjectId, state.user.userId),
+          listSorting: state.listSorting,
+        ));
   }
 
   if (action is ReceiveTaskLists) {
@@ -67,16 +71,17 @@ AppState appReducer(AppState state, dynamic action) {
         _filterTaskLists(state.selectedProjectId, taskListsByProject);
 
     return state.copyWith(
-      taskLists: taskLists,
-      taskListsByProject: taskListsByProject,
-      filteredTaskLists: filteredTaskLists,
-      inflatedProject: _buildInflatedProject(
-          state.filteredTasks,
-          filteredTaskLists,
-          state.projects.firstWhere(
-              (item) => item.uid == state.selectedProjectId,
-              orElse: () => null)),
-    );
+        taskLists: taskLists,
+        taskListsByProject: taskListsByProject,
+        filteredTaskLists: filteredTaskLists,
+        inflatedProject: _buildInflatedProject(
+          tasks: state.filteredTasks,
+          taskLists: filteredTaskLists,
+          project: _extractProject(state.selectedProjectId, state.projects),
+          listCustomSortOrder: _extractListCustomSortOrder(
+              state.members, state.selectedProjectId, state.user.userId),
+          listSorting: state.listSorting,
+        ));
   }
 
   if (action is SetFocusedTaskListId) {
@@ -101,7 +106,8 @@ AppState appReducer(AppState state, dynamic action) {
         .where((taskList) => taskList.project != projectId)
         .toList();
     var tasks = state.tasks.where((task) => task.project != projectId).toList();
-    var members = Map<String, List<MemberModel>>.from(state.members)..remove(projectId);
+    var members = Map<String, List<MemberModel>>.from(state.members)
+      ..remove(projectId);
 
     return state.copyWith(
       selectedProjectId: '-1',
@@ -161,7 +167,9 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is OpenShareProjectScreen) {
     return state.copyWith(
-      projectShareMenuEntity: state.projects.firstWhere( (project) => project.uid == action.projectId, orElse: () => null),
+      projectShareMenuEntity: state.projects.firstWhere(
+          (project) => project.uid == action.projectId,
+          orElse: () => null),
     );
   }
 
@@ -173,13 +181,27 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is SetProcessingProjectInviteIds) {
     return state.copyWith(
-      processingProjectInviteIds: action.processingProjectInviteIds
-    );
+        processingProjectInviteIds: action.processingProjectInviteIds);
   }
 
   if (action is ReceiveMembers) {
+    var members =
+        _updateMembers(state.members, action.projectId, action.membersList);
+
+    // Updating inflatedProject is expensive. So we will only do it here if we have to.
+    var inflatedProject = action.projectId == state.selectedProjectId
+        ? _buildInflatedProject(
+            tasks: state.filteredTasks,
+            taskLists: state.filteredTaskLists,
+            project: _extractProject(state.selectedProjectId, state.projects),
+            listCustomSortOrder: _extractListCustomSortOrder(
+                members, state.selectedProjectId, state.user.userId),
+            listSorting: state.listSorting)
+        : state.inflatedProject;
+
     return state.copyWith(
-      members: _updateMembers(state.members, action.projectId, action.membersList)
+      members: members,
+      inflatedProject: inflatedProject
     );
   }
 
@@ -189,13 +211,35 @@ AppState appReducer(AppState state, dynamic action) {
     );
   }
 
+  if (action is SetListSorting) {
+    var listSorting = action.listSorting;
+    // Updating inflatedProject can be expensive. And we may be receiving this action from the initializeApp thunk
+    // as it is drawing the ListSorting value from SharedPreferences.
+    var inflatedProject = state.selectedProjectId != '-1'
+        ? _buildInflatedProject(
+            tasks: state.filteredTasks,
+            taskLists: state.filteredTaskLists,
+            project: _extractProject(state.selectedProjectId, state.projects),
+            listCustomSortOrder: _extractListCustomSortOrder(
+                state.members, state.selectedProjectId, state.user.userId),
+            listSorting: listSorting)
+        : state.inflatedProject;
+
+    return state.copyWith(
+        listSorting: listSorting,
+        inflatedProject: inflatedProject);
+  }
+
   return state;
 }
 
 /*
   Helper Methods
 */
-Map<String, List<MemberModel>> _updateMembers(Map<String, List<MemberModel>> existingMembersMap, String projectId, List<MemberModel> incomingMembersList) {
+Map<String, List<MemberModel>> _updateMembers(
+    Map<String, List<MemberModel>> existingMembersMap,
+    String projectId,
+    List<MemberModel> incomingMembersList) {
   var newMembersMap = Map<String, List<MemberModel>>.from(existingMembersMap);
 
   newMembersMap[projectId] = incomingMembersList;
@@ -223,13 +267,36 @@ TaskModel _updateSelectedTaskEntity(
       orElse: () => null);
 }
 
-InflatedProjectModel _buildInflatedProject(List<TaskModel> tasks,
-    List<TaskListModel> taskLists, ProjectModel project) {
+ProjectModel _extractProject(String projectId, List<ProjectModel> projects) {
+  return projects.firstWhere((item) => item.uid == projectId,
+      orElse: () => null);
+}
+
+List<String> _extractListCustomSortOrder(
+    Map<String, List<MemberModel>> members, String projectId, String userId) {
+  if (projectId == '-1') {
+    return null;
+  }
+
+  return members[projectId]
+      ?.firstWhere((item) => item.userId == userId, orElse: () => null)
+      ?.listCustomSortOrder;
+}
+
+InflatedProjectModel _buildInflatedProject(
+    {@required List<TaskModel> tasks,
+    @required List<TaskListModel> taskLists,
+    @required ProjectModel project,
+    @required TaskListSorting listSorting,
+    @required List<String> listCustomSortOrder}) {
   if (project == null) {
     return null;
   }
 
-  var inflatedTaskLists = taskLists
+  var sortedTaskLists =
+      _sortTaskLists(listSorting, taskLists, listCustomSortOrder);
+
+  var inflatedTaskLists = sortedTaskLists
       .where((taskList) => taskList.project == project.uid)
       .map((taskList) {
     return InflatedTaskListModel(
@@ -241,8 +308,55 @@ InflatedProjectModel _buildInflatedProject(List<TaskModel> tasks,
 
   return InflatedProjectModel(
       data: project,
+      taskListSorting: listSorting,
       inflatedTaskLists: inflatedTaskLists,
       taskIndices: _buildTaskIndices(inflatedTaskLists));
+}
+
+int _taskListSorter(TaskListModel a, TaskListModel b) {
+  int dateA = a.dateAdded?.millisecondsSinceEpoch ?? 0;
+  int dateB = b.dateAdded?.millisecondsSinceEpoch ?? 0;
+
+  return dateA - dateB;
+}
+
+List<TaskListModel> _sortTaskLists(TaskListSorting sorting,
+    List<TaskListModel> taskLists, List<String> listCustomSortOrder) {
+  var preSortedTaskLists = taskLists.toList()..sort(_taskListSorter);
+
+  if (sorting == TaskListSorting.custom && listCustomSortOrder != null) {
+    var idMap =
+        _mapTaskListsById(taskLists); // Avoids running into O^n List lookups.
+
+    var sortedTaskLists = <TaskListModel>[];
+    // Prepend Task lists that haven't been given a Custom order by the User.
+    for (var taskList in preSortedTaskLists) {
+      if (listCustomSortOrder.contains(taskList.uid) == false) {
+        sortedTaskLists.add(taskList);
+      }
+    }
+
+    // Now add remaining TaskLists honoring the Custom Sorting Order.
+    for (var id in listCustomSortOrder) {
+      if (idMap.containsKey(id)) {
+        sortedTaskLists.add(idMap[id]);
+      }
+    }
+
+    return sortedTaskLists;
+  } else {
+    // No Custom Sorting. Sorted by Date added. Which we already did in the pre sort.
+    return preSortedTaskLists;
+  }
+}
+
+Map<String, TaskListModel> _mapTaskListsById(List<TaskListModel> taskLists) {
+  return Map<String, TaskListModel>.fromIterable(taskLists,
+      key: (item) {
+        var taskList = item as TaskListModel;
+        return taskList.uid;
+      },
+      value: (item) => item);
 }
 
 Map<String, int> _buildTaskIndices(
@@ -261,7 +375,6 @@ Map<String, int> _buildTaskIndices(
 List<ProjectModel> _mergeProject(
     List<ProjectModel> existingProjects, ProjectModel incomingProject) {
   if (existingProjects.length == 0) {
-    print("Bailing Early");
     return <ProjectModel>[incomingProject];
   }
 

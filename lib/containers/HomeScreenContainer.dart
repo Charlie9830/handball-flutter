@@ -33,6 +33,8 @@ class HomeScreenContainer extends StatelessWidget {
       onAddNewTaskListFabButtonPressed: () =>
           store.dispatch(addNewTaskListWithDialog(projectId, context)),
       onShareProjectButtonPressed: projectId != '-1' ? () => store.dispatch(OpenShareProjectScreen(projectId: projectId)) : null,
+      onSetListSorting: (sorting) => store.dispatch(updateListSorting(projectId, sorting, context)),
+      listSorting: store.state.inflatedProject?.taskListSorting ?? TaskListSorting.dateAdded,
     );
   }
 

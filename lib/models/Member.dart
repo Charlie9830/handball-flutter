@@ -8,6 +8,7 @@ class MemberModel {
   String email;
   MemberStatus status;
   MemberRole role;
+  List<String> listCustomSortOrder;
 
   MemberModel({
     this.userId,
@@ -15,6 +16,7 @@ class MemberModel {
     this.email,
     this.status = MemberStatus.pending,
     this.role = MemberRole.member,
+    this.listCustomSortOrder,
   });
 
   MemberModel.fromDoc(DocumentSnapshot doc) {
@@ -23,6 +25,7 @@ class MemberModel {
     this.email = doc.data['email'] ?? '';
     this.status = _parseStatus(doc.data['status']);
     this.role = parseMemberRole(doc.data['role']);
+    this.listCustomSortOrder = _coerceListCustomSortOrder(doc.data['listCustomSortOrder']) ?? <String>[];
   }
 
   Map<String, dynamic> toMap() {
@@ -32,7 +35,16 @@ class MemberModel {
       'email': this.email,
       'status': _convertStatusToString(this.status),
       'role': _convertRoleToString(this.role),
+      'listCustomSortOrder': this.listCustomSortOrder ?? <String>[],
     };
+  }
+
+  List<String> _coerceListCustomSortOrder(List<dynamic> listCustomSortOrder) {
+    if (listCustomSortOrder == null) {
+      return null;
+    }
+
+    return List<String>.from(listCustomSortOrder);
   }
 
   String _convertStatusToString(MemberStatus status) {
