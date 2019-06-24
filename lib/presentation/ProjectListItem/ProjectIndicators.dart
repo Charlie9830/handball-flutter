@@ -10,63 +10,49 @@ class ProjectIndicators extends StatelessWidget {
   final int overdueDueDates;
   final bool hasUnreadTaskComments;
 
-  
-  const ProjectIndicators({
-    this.laterDueDates,
-    this.soonDueDates,
-    this.todayDueDates,
-    this.overdueDueDates,
-    this.hasUnreadTaskComments
-  });
-
+  const ProjectIndicators(
+      {this.laterDueDates,
+      this.soonDueDates,
+      this.todayDueDates,
+      this.overdueDueDates,
+      this.hasUnreadTaskComments});
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.end,
-      
-      children: <Widget>[
-      PredicateBuilder(
-          predicate: () => laterDueDates > 0,
-          childIfTrue: DueDateChit(
-            color: DueDateType.later,
-            text: laterDueDates.toString(),
-            size: DueDateChitSize.small,
-            onTap: null,
-          ),
-          childIfFalse: SizedBox(height: 0, width: 0)),
-
-          PredicateBuilder(
-          predicate: () => soonDueDates > 0,
-          childIfTrue: DueDateChit(
-            color: DueDateType.soon,
-            text: soonDueDates.toString(),
-            size: DueDateChitSize.small,
-            onTap: null,
-          ),
-          childIfFalse: SizedBox(height: 0, width: 0)),
-          
-          PredicateBuilder(
-          predicate: () => todayDueDates > 0,
-          childIfTrue: DueDateChit(
-            color: DueDateType.today,
-            text: todayDueDates.toString(),
-            size: DueDateChitSize.small,
-            onTap: null,
-          ),
-          childIfFalse: SizedBox(height: 0, width: 0)),
-
-          PredicateBuilder(
-          predicate: () => overdueDueDates > 0,
-          childIfTrue: DueDateChit(
-            color: DueDateType.overdue,
-            text: overdueDueDates.toString(),
-            size: DueDateChitSize.small,
-            onTap: null,
-          ),
-          childIfFalse: SizedBox(height: 0, width: 0)),
-      
-    ]);
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          if (laterDueDates > 0)
+            DueDateChit(
+              color: DueDateType.later,
+              text: laterDueDates.toString(),
+              size: DueDateChitSize.small,
+              onTap: null,
+            ),
+          if (soonDueDates > 0)
+            DueDateChit(
+              color: DueDateType.soon,
+              text: soonDueDates.toString(),
+              size: DueDateChitSize.small,
+              onTap: null,
+            ),
+          if (todayDueDates > 0)
+            DueDateChit(
+              color: DueDateType.today,
+              text: todayDueDates.toString(),
+              size: DueDateChitSize.small,
+              onTap: null,
+            ),
+          if (overdueDueDates > 0)
+            DueDateChit(
+              color: DueDateType.overdue,
+              text: overdueDueDates.toString(),
+              size: DueDateChitSize.small,
+              onTap: null,
+            ),
+          if (hasUnreadTaskComments == true)
+            Icon(Icons.comment)
+        ]);
   }
 }

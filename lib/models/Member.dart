@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:handball_flutter/enums.dart';
+import 'package:handball_flutter/utilities/coerceStringList.dart';
 import 'package:handball_flutter/utilities/parseMemberRole.dart';
 
 class MemberModel {
@@ -25,7 +26,7 @@ class MemberModel {
     this.email = doc.data['email'] ?? '';
     this.status = _parseStatus(doc.data['status']);
     this.role = parseMemberRole(doc.data['role']);
-    this.listCustomSortOrder = _coerceListCustomSortOrder(doc.data['listCustomSortOrder']) ?? <String>[];
+    this.listCustomSortOrder = coerceStringList(doc.data['listCustomSortOrder']) ?? <String>[];
   }
 
   Map<String, dynamic> toMap() {
@@ -39,13 +40,7 @@ class MemberModel {
     };
   }
 
-  List<String> _coerceListCustomSortOrder(List<dynamic> listCustomSortOrder) {
-    if (listCustomSortOrder == null) {
-      return null;
-    }
-
-    return List<String>.from(listCustomSortOrder);
-  }
+  
 
   String _convertStatusToString(MemberStatus status) {
     switch(status) {

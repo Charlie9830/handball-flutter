@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/TaskInspectorScreenViewModel.dart';
+import 'package:handball_flutter/presentation/CommentPanel/CommentPanel.dart';
 import 'package:handball_flutter/presentation/EditableTextInput.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/NoTaskEntityFallback.dart';
@@ -27,20 +29,21 @@ class TaskInspectorScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
                       IconButton(
-                        icon: Icon(Icons.arrow_back),
-                        onPressed: viewModel.onClose
-                      ),
+                          icon: Icon(Icons.arrow_back),
+                          onPressed: viewModel.onClose),
                       IconButton(
-                        icon: viewModel.taskEntity.isHighPriority ? Icon(Icons.star) : Icon(Icons.star_border),
-                        onPressed: viewModel.onIsHighPriorityChange
-                        )
+                          icon: viewModel.taskEntity.isHighPriority
+                              ? Icon(Icons.star)
+                              : Icon(Icons.star_border),
+                          onPressed: viewModel.onIsHighPriorityChange)
                     ]),
                 Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: <Widget>[
                       Expanded(
                         child: Padding(
-                          padding: const EdgeInsets.only(left: 8, top: 24, right: 8, bottom: 24),
+                          padding: const EdgeInsets.only(
+                              left: 8, top: 24, right: 8, bottom: 24),
                           child: EditableTextInput(
                               text: viewModel.taskEntity.taskName,
                               hintText: 'Task Name',
@@ -54,7 +57,17 @@ class TaskInspectorScreen extends StatelessWidget {
                   note: viewModel.taskEntity.note,
                   onNoteChange: viewModel.onNoteChange,
                   taskName: viewModel.taskEntity.taskName,
-                )
+                ),
+                Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SizedBox(
+                          height: 400,
+                          child: CommentPanel(
+                              isInteractive: false,
+                              onPressed: viewModel.onOpenTaskCommentScreen,
+                              viewModels: viewModel.commentPreviewViewModels)),
+                    ))
               ])),
               childIfFalse: NoTaskEntityFallback(),
             ),

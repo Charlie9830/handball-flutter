@@ -1,4 +1,5 @@
 import 'package:handball_flutter/enums.dart';
+import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/IndicatorGroup.dart';
 import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/ProjectInvite.dart';
@@ -48,10 +49,14 @@ final initialAppState = AppState(
   isInvitingUser: false,
   processingMembers: <String>[],
   listSorting: TaskListSorting.dateAdded,
+  taskComments: <CommentModel>[],
+  isTaskCommentPaginationComplete: false,
+  isGettingTaskComments: false,
+  isPaginatingTaskComments: false,
 );
 
 final appStore = new Store<AppState> (
   appReducer,
   initialState: initialAppState,
-  middleware: [thunkMiddleware, navigationMiddleware, LoggingMiddleware.printer()]
+  middleware: [thunkMiddleware, navigationMiddleware, /* LoggingMiddleware.printer() */]
 );

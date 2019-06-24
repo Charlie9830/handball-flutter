@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/utilities/coerceDateAdded.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
 import 'package:meta/meta.dart';
@@ -8,17 +9,24 @@ class TaskModel {
   String project;
   String taskList;
   String taskName;
+  String userId; // Not the user ID of the creator.
   DateTime dueDate;
   DateTime dateAdded;
   bool isComplete;
   bool isHighPriority;
   String note;
   String assignedTo;
+  List<CommentModel> commentPreview;
+  Map<String, String> unseenTaskCommentMembers;
+  /* 
+    UPDATE THE copyWith METHOD BELOW
+  */
 
   TaskModel({
     @required this.uid,
     @required this.project,
     @required this.taskList,
+    @required this.userId,
     this.taskName = '',
     this.dueDate,
     this.dateAdded,
@@ -26,12 +34,15 @@ class TaskModel {
     this.note = '',
     this.assignedTo = '-1',
     this.isHighPriority = false,
+    this.commentPreview,
+    this.unseenTaskCommentMembers,
   });
 
-  TaskModel.fromDoc(DocumentSnapshot doc) {
+  TaskModel.fromDoc(DocumentSnapshot doc, String userId) {
     this.uid = doc['uid'];
     this.project = doc['project'];
     this.taskList = doc['taskList'];
+    this.userId = userId;
     this.taskName = doc['taskName'] ?? '';
     this.dueDate = _coerceDueDate(doc['dueDate']);
     this.dateAdded = coerceDate(doc['dateAdded']);
@@ -39,8 +50,10 @@ class TaskModel {
     this.note = doc['note'] ?? '';
     this.isHighPriority = doc['isHighPriority'] ?? false;
     this.assignedTo = doc['assignedTo'] ?? '-1';
+    this.commentPreview = _coerceCommentPreview(doc['commentPreview'], doc.metadata.isFromCache);
+    this.unseenTaskCommentMembers = _coerceUnseenTaskCommentMembers(doc['unseenTaskCommentMembers']);
   }
-
+  
   Map<String, dynamic> toMap() {
     return {
       'uid': this.uid,
@@ -56,7 +69,69 @@ class TaskModel {
       'note': this.note,
       'isHighPriority': this.isHighPriority,
       'assignedTo': this.assignedTo,
+      'commentPreview': _convertCommentPreviewToMapCollection(),
+      'unseenTaskCommentMembers': this.unseenTaskCommentMembers ?? <String, dynamic>{},
     };
+  }
+
+  bool get hasUnseenComments {
+    return this.unseenTaskCommentMembers[this.userId] != null;
+  }
+
+  TaskModel copyWith({
+  String uid,
+  String project,
+  String taskList,
+  String taskName,
+  String userId,
+  DateTime dueDate,
+  DateTime dateAdded,
+  bool isComplete,
+  bool isHighPriority,
+  String note,
+  String assignedTo,
+  List<CommentModel> commentPreview,
+  Map<String, String> unseenTaskCommentMembers,
+  }) {
+    return TaskModel(
+      uid: uid ?? this.uid,
+      userId: userId ?? this.userId,
+      project: project ?? this.project,
+      taskList: taskList ?? this.taskList,
+      taskName: taskName ?? this.taskName,
+      dueDate: dueDate ?? this.dueDate,
+      dateAdded: dateAdded ?? this.dateAdded,
+      isComplete: isComplete ?? this.isComplete,
+      isHighPriority: isHighPriority ?? this.isHighPriority,
+      note: note ?? this.note,
+      assignedTo: assignedTo ?? this.assignedTo,
+      commentPreview: commentPreview ?? this.commentPreview,
+      unseenTaskCommentMembers: unseenTaskCommentMembers ?? this.unseenTaskCommentMembers,
+    );
+  }
+
+  Map<String, String> _coerceUnseenTaskCommentMembers(Map<dynamic, dynamic> unseenTaskCommentMembers) {
+    if (unseenTaskCommentMembers == null) {
+      return <String,String>{};
+    }
+
+    return Map<String, String>.from(unseenTaskCommentMembers);
+  }
+
+  List<Map<String,dynamic>> _convertCommentPreviewToMapCollection() {
+    if (commentPreview == null || commentPreview.length == 0) {
+      return <Map<String,dynamic>>[];
+    }
+
+    return commentPreview.map( (comment) => comment.toMap()).toList();
+  }
+
+  List<CommentModel> _coerceCommentPreview(List<dynamic> commentPreview, bool isFromCache) {
+    if (commentPreview == null || commentPreview.length == 0) {
+      return <CommentModel>[];
+    }
+
+    return commentPreview.map( (comment) => CommentModel.fromMap(comment, isFromCache)).toList();
   }
 
   DateTime _coerceDueDate(String dueDate) {

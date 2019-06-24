@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/presentation/Nothing.dart';
 
 class ReactiveAnimatedList extends StatefulWidget {
   final List<Widget> children;
   final ScrollPhysics physics;
   final bool shrinkWrap;
+  final ScrollController controller;
   ReactiveAnimatedList(
-      {Key key, this.children, this.physics, this.shrinkWrap = false})
+      {Key key,
+      this.children,
+      this.physics,
+      this.shrinkWrap = false,
+      this.controller})
       : super(key: key);
 
   _ReactiveAnimatedListState createState() => _ReactiveAnimatedListState();
@@ -34,8 +40,7 @@ class _ReactiveAnimatedListState extends State<ReactiveAnimatedList> {
           newCollection: widget.children, oldCollection: oldWidget.children);
 
       for (var index in diffedChildren.addedIndexes) {
-        listStateKey.currentState
-            .insertItem(index);
+        listStateKey.currentState.insertItem(index);
       }
 
       for (var index in diffedChildren.removedIndexes) {
@@ -54,11 +59,16 @@ class _ReactiveAnimatedListState extends State<ReactiveAnimatedList> {
   @override
   Widget build(BuildContext context) {
     return AnimatedList(
+        controller: widget.controller,
         physics: widget.physics,
         shrinkWrap: widget.shrinkWrap,
         key: listStateKey,
         initialItemCount: widget.children.length,
         itemBuilder: (context, index, animation) {
+          if (index >= widget.children.length) {
+            return Nothing();
+          }
+
           return SizeTransition(
               key: widget.children[index].key,
               child: widget.children[index],

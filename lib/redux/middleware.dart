@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/containers/AppSettingsContainer.dart';
+import 'package:handball_flutter/containers/CommentScreenContainer.dart';
 import 'package:handball_flutter/containers/HomeScreenContainer.dart';
 import 'package:handball_flutter/containers/ShareProjectContainer.dart';
 import 'package:handball_flutter/enums.dart';
@@ -62,6 +63,20 @@ void navigationMiddleware(
   if (action is CloseTaskInspector) {
     store.dispatch(SetSelectedTaskEntity(taskEntity: null));
 
+    navigatorKey.currentState.pop();
+  }
+
+  if (action is OpenTaskCommentsScreen) {
+    navigatorKey.currentState.push(
+      new MaterialPageRoute(
+        builder: (context) {
+          return CommentScreenContainer();
+        }
+      )
+    );
+  }
+
+  if (action is CloseTaskCommentsScreen) {
     navigatorKey.currentState.pop();
   }
 }

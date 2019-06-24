@@ -55,7 +55,7 @@ class AppDrawerContainer extends StatelessWidget {
             store.dispatch(SelectProject(item.uid));
           },
           hasUnreadComments: indicatorGroup?.hasUnreadComments ?? false,
-          laterDueDates: indicatorGroup?.later ?? 0,
+          laterDueDates:  indicatorGroup?.later ?? 0,
           soonDueDates: indicatorGroup?.soon ?? 0,
           todayDueDates: indicatorGroup?.today ?? 0,
           overdueDueDates: indicatorGroup?.overdue ?? 0,

@@ -51,7 +51,7 @@ AppState appReducer(AppState state, dynamic action) {
         tasksByProject: tasksByProject,
         selectedTaskEntity:
             _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
-        projectIndicatorGroups: getProjectIndicatorGroups(tasks),
+        projectIndicatorGroups: getProjectIndicatorGroups(tasks, state.user.userId),
         inflatedProject: _buildInflatedProject(
           tasks: filteredTasks,
           taskLists: state.filteredTaskLists,
@@ -119,7 +119,7 @@ AppState appReducer(AppState state, dynamic action) {
       filteredTasks: _filterTasks(projectId, state.tasksByProject),
       selectedTaskEntity:
           _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
-      projectIndicatorGroups: getProjectIndicatorGroups(tasks),
+      projectIndicatorGroups: getProjectIndicatorGroups(tasks, state.user.userId),
       members: members,
     );
   }
@@ -228,6 +228,24 @@ AppState appReducer(AppState state, dynamic action) {
     return state.copyWith(
         listSorting: listSorting,
         inflatedProject: inflatedProject);
+  }
+
+  if (action is ReceiveTaskComments) {
+    return state.copyWith(
+      taskComments: action.taskComments,
+    );
+  }
+
+  if (action is SetIsTaskCommentPaginationComplete) {
+    return state.copyWith(
+      isTaskCommentPaginationComplete: action.isComplete,
+    );
+  }
+
+  if (action is SetIsGettingTaskComments) {
+    return state.copyWith(
+      isGettingTaskComments: action.isGettingTaskComments,
+    );
   }
 
   return state;

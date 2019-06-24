@@ -1,4 +1,5 @@
 import 'package:handball_flutter/enums.dart';
+import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/IndicatorGroup.dart';
 import 'package:handball_flutter/models/InflatedProject.dart';
 import 'package:handball_flutter/models/Member.dart';
@@ -33,6 +34,10 @@ class AppState {
   final bool isInvitingUser;
   final List<String> processingMembers;
   final TaskListSorting listSorting;
+  final List<CommentModel> taskComments;
+  final bool isTaskCommentPaginationComplete;
+  final bool isGettingTaskComments;
+  final bool isPaginatingTaskComments;
 
 
   final TextInputDialogModel textInputDialog;
@@ -62,6 +67,10 @@ class AppState {
     this.isInvitingUser,
     this.processingMembers,
     this.listSorting,
+    this.taskComments,
+    this.isTaskCommentPaginationComplete,
+    this.isGettingTaskComments,
+    this.isPaginatingTaskComments
     });
 
   AppState copyWith({
@@ -90,6 +99,11 @@ class AppState {
     List<String> processingMembers,
     Map<String, List<String>> customTaskListSorting,
     TaskListSorting listSorting,
+    List<CommentModel> taskComments,
+    bool isTaskCommentPaginationComplete,
+    bool isGettingTaskComments,
+    bool isPaginatingTaskComments,
+
   }) {
     return AppState(
       projects: projects ?? this.projects,
@@ -115,6 +129,10 @@ class AppState {
       isInvitingUser: isInvitingUser ?? this.isInvitingUser,
       processingMembers: processingMembers ?? this.processingMembers,
       listSorting: listSorting ?? this.listSorting,
+      taskComments: taskComments ?? this.taskComments,
+      isTaskCommentPaginationComplete: isTaskCommentPaginationComplete ?? this.isTaskCommentPaginationComplete,
+      isGettingTaskComments: isGettingTaskComments ?? this.isGettingTaskComments,
+      isPaginatingTaskComments: isPaginatingTaskComments ?? this.isPaginatingTaskComments,
     );
   }
 }

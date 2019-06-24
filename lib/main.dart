@@ -50,7 +50,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
         child: new MaterialApp(
           title: 'Handball',
           theme: ThemeData(
-            primarySwatch: Colors.blue,
+            primarySwatch: Colors.blueGrey,
             accentColor: Colors.orangeAccent,
             brightness: Brightness.light,
           ),

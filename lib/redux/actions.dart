@@ -7,9 +7,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:handball_flutter/FirestoreStreamsContainer.dart';
+import 'package:handball_flutter/configValues.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/ChecklistSettings.dart';
+import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/DirectoryListing.dart';
 import 'package:handball_flutter/models/GroupedDocumentChanges.dart';
 import 'package:handball_flutter/models/InflatedProject.dart';
@@ -52,6 +54,24 @@ class OpenAppSettings {
   });
 }
 
+class ReceiveTaskComments {
+  final List<CommentModel> taskComments;
+
+  ReceiveTaskComments({this.taskComments});
+}
+
+class SetIsGettingTaskComments {
+  final bool isGettingTaskComments;
+
+  SetIsGettingTaskComments({this.isGettingTaskComments});
+}
+
+class SetIsPaginatingTaskComments {
+  final bool isPaginatingTaskComments;
+
+  SetIsPaginatingTaskComments({this.isPaginatingTaskComments});
+}
+
 class CloseAppSettings {}
 
 class SetProcessingProjectInviteIds {
@@ -60,6 +80,12 @@ class SetProcessingProjectInviteIds {
   SetProcessingProjectInviteIds({
     this.processingProjectInviteIds,
   });
+}
+
+class SetIsTaskCommentPaginationComplete {
+  final bool isComplete;
+
+  SetIsTaskCommentPaginationComplete({this.isComplete});
 }
 
 class SetListSorting {
@@ -182,6 +208,10 @@ class OpenTaskInspector {
   OpenTaskInspector({this.taskEntity});
 }
 
+class OpenTaskCommentsScreen {}
+
+class CloseTaskCommentsScreen {}
+
 class CloseTaskInspector {}
 
 class SetTextInputDialog {
@@ -278,7 +308,7 @@ ThunkAction<AppState> initializeApp() {
   };
 }
 
-void onAuthStateChanged(Store<AppState> store, FirebaseUser user) {
+void onAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
   if (user == null) {
     store.dispatch(SignOut());
     _firestoreStreams.cancelAll();
@@ -654,6 +684,306 @@ bool _isLastOwner(String userId, List<MemberModel> members) {
   return false;
 }
 
+ThunkAction<AppState> getTaskComments(String projectId, String taskId) {
+  return (Store<AppState> store) async {
+    store.dispatch(SetIsGettingTaskComments(isGettingTaskComments: true));
+
+    var snapshot = await Firestore.instance
+        .collection('projects')
+        .document(projectId)
+        .collection('tasks')
+        .document(taskId)
+        .collection('taskComments')
+        .orderBy('timestamp', descending: true)
+        .limit(taskCommentQueryLimit + 1)
+        .getDocuments();
+
+    store.dispatch(SetIsGettingTaskComments(isGettingTaskComments: false));
+    _handleTaskCommentsSnapshot(store, snapshot);
+  };
+}
+
+ThunkAction<AppState> openTaskCommentsScreen(String projectId, String taskId) {
+  return (Store<AppState> store) async {
+    if (projectId == null || taskId == null) {
+      return;
+    }
+
+    store.dispatch(getTaskComments(projectId, taskId));
+    store.dispatch(OpenTaskCommentsScreen());
+  };
+}
+
+ThunkAction<AppState> closeTaskCommentsScreen(String projectId, String taskId) {
+  return (Store<AppState> store) async {
+    store.dispatch(CloseTaskCommentsScreen());
+    var selectedTaskEntity = store.state.selectedTaskEntity;
+
+    if (projectId == null || taskId == null || selectedTaskEntity == null) {
+      return;
+    }
+
+    var taskComments = store.state.taskComments.toList();
+    var userId = store.state.user.userId;
+    var taskRef = _getTasksCollectionRef(projectId, store).document(taskId);
+    var batch = Firestore.instance.batch();
+
+    // Posting and Deleting Comments already re-generates the Comment Preview. We only need to do so here, if we have
+    // unread flags that need updating.
+    var previewComments = _generateTaskCommentPreview(taskComments);
+    if (_doesTaskCommentPreviewSeenByNeedUpdate(previewComments, userId)) {
+      batch.updateData(taskRef, {
+        'commentPreview': _seeComments(previewComments, userId).map( (item) => item.toMap()).toList()
+      });
+    }
+
+    var commentsNeedingSeenByUpdate = taskComments
+        .where((comment) => comment.seenBy.contains(userId) == false);
+
+    for (var comment in commentsNeedingSeenByUpdate) {
+      var commentRef =
+          _getTaskCommentCollectionRef(projectId, taskId).document(comment.uid);
+      var seenBy = comment.seenBy.toList();
+      seenBy.add(userId);
+      batch.updateData(commentRef, {'seenBy': seenBy});
+    }
+
+    if (commentsNeedingSeenByUpdate.length > 0) {
+      // User viewed previously unread Comments. Update the Task level indicator.
+      var currentUnseenTaskCommentMembers =
+          Map<String, String>.from(selectedTaskEntity.unseenTaskCommentMembers);
+      currentUnseenTaskCommentMembers.remove(userId);
+
+      batch.updateData(taskRef,
+          {'unseenTaskCommentMembers': currentUnseenTaskCommentMembers});
+    }
+
+    store.dispatch(ReceiveTaskComments(taskComments: <CommentModel>[]));
+    store
+        .dispatch(SetIsPaginatingTaskComments(isPaginatingTaskComments: false));
+    store.dispatch(SetIsTaskCommentPaginationComplete(isComplete: false));
+    store.dispatch(SetIsGettingTaskComments(isGettingTaskComments: false));
+
+    try {
+      await batch.commit();
+    } catch (error) {
+      throw error;
+    }
+  };
+}
+
+List<CommentModel> _seeComments(List<CommentModel> previewComments, String userId) {
+  return previewComments.map( (item) => item..seenBy.add(userId)).toList();
+}
+
+bool _doesTaskCommentPreviewSeenByNeedUpdate(
+    List<CommentModel> previewComments, String userId) {
+  return previewComments
+          .where((item) => item.seenBy.contains(userId) == false)
+          .length >
+      0;
+}
+
+void _handleTaskCommentsSnapshot(
+    Store<AppState> store, QuerySnapshot snapshot) {
+  // We query for taskCommentQueryLimit + 1 documents. So if we didn't retreive that many documents,
+  // then we can guarantee that the Pagination is complete.
+  store.dispatch(SetIsTaskCommentPaginationComplete(
+      isComplete: snapshot.documents.length < taskCommentQueryLimit + 1));
+
+  List<CommentModel> comments = [];
+  snapshot.documents.forEach((doc) => comments.add(CommentModel.fromDoc(doc)));
+
+  var taskComments = store.state.taskComments.toList();
+  taskComments.addAll(comments.take(taskCommentQueryLimit));
+
+  store.dispatch(ReceiveTaskComments(taskComments: taskComments));
+}
+
+ThunkAction<AppState> paginateTaskComments(String projectId, String taskId) {
+  return (Store<AppState> store) async {
+    if (store.state.taskComments.length == 0) {
+      return;
+    }
+
+    store.dispatch(SetIsPaginatingTaskComments(isPaginatingTaskComments: true));
+
+    var lastCommentDoc = store.state.taskComments.last.docSnapshot;
+    print(store.state.taskComments.last.text);
+
+    var snapshot = await Firestore.instance
+        .collection('projects')
+        .document(projectId)
+        .collection('tasks')
+        .document(taskId)
+        .collection('taskComments')
+        .orderBy('timestamp', descending: true)
+        .startAfterDocument(lastCommentDoc)
+        .limit(taskCommentQueryLimit + 1)
+        .getDocuments();
+
+    store
+        .dispatch(SetIsPaginatingTaskComments(isPaginatingTaskComments: false));
+    _handleTaskCommentsSnapshot(store, snapshot);
+  };
+}
+
+ThunkAction<AppState> postTaskComment(
+    TaskModel selectedTaskEntity, String text) {
+  return (Store<AppState> store) async {
+    if (selectedTaskEntity == null) {
+      return;
+    }
+
+    var projectId = selectedTaskEntity.project;
+    var userId = store.state.user.userId;
+    var taskId = selectedTaskEntity.uid;
+    var members = store.state.members[projectId];
+
+    var batch = Firestore.instance.batch();
+    var taskRef = _getTasksCollectionRef(projectId, store).document(taskId);
+    var commentRef = _getTaskCommentCollectionRef(projectId, taskId).document();
+
+    var comment = CommentModel(
+        uid: commentRef.documentID,
+        created: DateTime.now(),
+        timestamp: DateTime.now(),
+        createdBy: userId,
+        displayName: store.state.user.displayName,
+        seenBy: <String>[userId],
+        text: text,
+        isSynced: false);
+
+    batch.setData(commentRef, comment.toMap());
+
+    // Comment Preview
+    var commentPreview = _generateTaskCommentPreview(store.state.taskComments,
+        addedComment: comment);
+
+    batch.updateData(taskRef, {
+      'commentPreview':
+          commentPreview.map((comment) => comment.toMap()).toList()
+    });
+
+    batch.updateData(taskRef, {
+      'unseenTaskCommentMembers':
+          _buildUnseenTaskCommentMembers(members, userId)
+    });
+
+    // Update State directly. We only use single Fire queries to get Task Comments so we aren't subscribed to Changes,
+    // therefore we have to update State directly.
+    store.dispatch(ReceiveTaskComments(
+        taskComments: store.state.taskComments.toList()..insert(0, comment)));
+
+    try {
+      await batch.commit();
+
+      // Update Sync Status of Comment within State.
+      // We do this because we aren't subscribed to TaskComment changes, therefore Firestore won't
+      // update the state for us.
+      var unsyncedComment = store.state.taskComments
+          .firstWhere((item) => item.uid == comment.uid, orElse: () => null);
+      if (unsyncedComment != null) {
+        unsyncedComment.isSynced = true;
+        store.dispatch(ReceiveTaskComments(
+            taskComments: store.state.taskComments.toList()));
+
+        var updatedCommentPreview =
+            commentPreview.map((item) => item..isSynced = true).toList();
+        var newSelectedTaskEntity = store.state.selectedTaskEntity
+            .copyWith(commentPreview: updatedCommentPreview);
+        store
+            .dispatch(SetSelectedTaskEntity(taskEntity: newSelectedTaskEntity));
+      }
+    } catch (error) {
+      throw (error);
+    }
+  };
+}
+
+ThunkAction<AppState> deleteTaskComment(
+    TaskModel selectedTaskEntity, CommentModel comment) {
+  return (Store<AppState> store) async {
+    if (selectedTaskEntity == null || comment == null) {
+      return;
+    }
+
+    var taskId = selectedTaskEntity.uid;
+    var projectId = selectedTaskEntity.project;
+    var commentId = comment.uid;
+
+    var newTaskComments = store.state.taskComments.toList()
+      ..removeWhere((item) => item.uid == commentId);
+
+    // Update State.
+    store.dispatch(ReceiveTaskComments(taskComments: newTaskComments));
+
+    var commentRef =
+        _getTaskCommentCollectionRef(projectId, taskId).document(commentId);
+    var taskRef = _getTasksCollectionRef(projectId, store).document(taskId);
+    var batch = Firestore.instance.batch();
+
+    var commentPreview = _generateTaskCommentPreview(newTaskComments)
+        .map((item) => item.toMap())
+        .toList();
+
+    batch.delete(commentRef);
+    batch.updateData(taskRef, {'commentPreview': commentPreview});
+
+    try {
+      await batch.commit();
+    } catch (error) {
+      throw error;
+    }
+  };
+}
+
+Map<String, dynamic> _buildUnseenTaskCommentMembers(
+    List<MemberModel> members, String userId) {
+  if (members == null || members.length <= 1) {
+    return <String, String>{};
+  }
+
+  var otherMembers = members.where((member) => member.userId != userId);
+
+  return Map<String, dynamic>.fromIterable(otherMembers,
+      key: (item) {
+        var member = item as MemberModel;
+        return member.userId;
+      },
+      value: (item) => "0");
+}
+
+List<CommentModel> _generateTaskCommentPreview(
+    List<CommentModel> existingTaskComments,
+    {CommentModel addedComment,
+    CommentModel removedComment}) {
+  if (addedComment != null && removedComment != null) {
+    throw UnsupportedError(
+        '_generateTaskCommentPreview: You can only provide an addedComment OR a removedComment OR neither, not both');
+  }
+
+  var list = existingTaskComments.toList();
+
+  if (addedComment != null) {
+    list.insert(0, addedComment);
+  }
+
+  if (removedComment != null) {
+    list.remove(removedComment);
+  }
+
+  // We clone the comment elements, because we need to update and mutate the Comment Preview without screwing with
+  // the comments that exist in the state.taskComments collection.
+  var clonedElements = list.map((item) => item.copy()).toList();
+
+  return clonedElements.reversed
+      .take(taskCommentPreviewLimit)
+      .toList()
+      .reversed
+      .toList();
+}
+
 ThunkAction<AppState> promoteUser(String userId, String projectId) {
   return (Store<AppState> store) async {
     try {
@@ -815,7 +1145,7 @@ List<String> _getProjectRelatedMemberIds(
     return <String>[];
   }
 
-  return memberList.map((item) => item.userId);
+  return memberList.map((item) => item.userId).toList();
 }
 
 ThunkAction<AppState> showSignUpDialog(BuildContext context) {
@@ -923,9 +1253,8 @@ ThunkAction<AppState> deleteTaskWithDialog(
       await _getTasksCollectionRef(store.state.selectedProjectId, store)
           .document(taskId)
           .delete();
-      print("Task Deleted");
     } catch (error) {
-      print(error);
+      throw error;
     }
   };
 }
@@ -1004,9 +1333,8 @@ ThunkAction<AppState> addNewTaskListWithDialog(
 
       try {
         await ref.setData(taskList.toMap());
-        print("Success");
       } catch (error) {
-        print(error.toString());
+        throw error;
       }
     } else {
       print('Canceled');
@@ -1115,6 +1443,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
           uid: taskRef.documentID,
           taskList: newTaskList.uid,
           project: projectId,
+          userId: store.state.user.userId,
           taskName: result.taskName,
           dueDate: result.selectedDueDate,
           isHighPriority: result.isHighPriority,
@@ -1144,6 +1473,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
         var task = TaskModel(
           uid: taskRef.documentID,
           taskList: targetTaskListId,
+          userId: store.state.user.userId,
           project: projectId,
           taskName: result.taskName,
           dueDate: result.selectedDueDate,
@@ -1261,8 +1591,6 @@ void renewChecklist(TaskListModel checklist, Store<AppState> store,
     return;
   }
 
-  print('Renewing ${checklist.taskListName}');
-
   // 'unComplete' related Tasks.
   var batch = Firestore.instance.batch();
   var snapshot = await _getTasksCollectionRef(checklist.project, store)
@@ -1333,7 +1661,7 @@ void _handleTasksSnapshot(
   var tasks = <TaskModel>[];
 
   snapshot.documents.forEach((doc) {
-    tasks.add(TaskModel.fromDoc(doc));
+    tasks.add(TaskModel.fromDoc(doc, store.state.user.userId));
   });
 
   // Animation.
@@ -1342,8 +1670,8 @@ void _handleTasksSnapshot(
   var groupedDocumentChanges =
       _getGroupedDocumentChanges(snapshot.documentChanges);
 
-  _driveTaskRemovalAnimations(
-      store.state.inflatedProject, groupedDocumentChanges.removed);
+  _driveTaskRemovalAnimations(store.state.inflatedProject,
+      groupedDocumentChanges.removed, store.state.user.userId);
 
   store.dispatch(ReceiveTasks(tasks: tasks, originProjectId: originProjectId));
 
@@ -1459,6 +1787,18 @@ CollectionReference _getInvitesCollectionRef(
       .collection('invites');
 }
 
+CollectionReference _getTaskCommentCollectionRef(
+  String projectId,
+  String taskId,
+) {
+  return Firestore.instance
+      .collection('projects')
+      .document(projectId)
+      .collection('tasks')
+      .document(taskId)
+      .collection('taskComments');
+}
+
 CollectionReference _getMembersCollectionRef(
   String projectId,
 ) {
@@ -1470,6 +1810,7 @@ CollectionReference _getMembersCollectionRef(
 
 CollectionReference _getTasksCollectionRef(
     String projectId, Store<AppState> store) {
+  // TODO: You don't need to provide Store here anymore.
   return Firestore.instance
       .collection('projects')
       .document(projectId)
@@ -1547,14 +1888,14 @@ void _driveTaskAdditionAnimations(InflatedProjectModel inflatedProject,
 }
 
 void _driveTaskRemovalAnimations(InflatedProjectModel inflatedProject,
-    List<DocumentChange> removalDocChanges) {
+    List<DocumentChange> removalDocChanges, String userId) {
   if (inflatedProject == null) {
     return;
   }
 
   for (var docChange in removalDocChanges) {
     // Determine Index.
-    var task = TaskModel.fromDoc(docChange.document);
+    var task = TaskModel.fromDoc(docChange.document, userId);
     var index =
         _getTaskAnimationIndex(inflatedProject.taskIndices, docChange.document);
     var animatedListStateKey = _getAnimatedListStateKey(task.taskList);

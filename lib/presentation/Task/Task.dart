@@ -19,7 +19,6 @@ class Task extends StatelessWidget {
     return new Slidable(
       delegate: new SlidableDrawerDelegate(),
       actionExtentRatio: 0.25,
-
       child: Container(
           child: Row(
         children: <Widget>[
@@ -53,12 +52,10 @@ class Task extends StatelessWidget {
                   padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
                   child: Row(
                     children: <Widget>[
-                      PredicateBuilder(
-                        predicate: () => model.hasNote,
-                        childIfTrue: Icon(Icons.note,
+                      if (model.hasNote)
+                        Icon(Icons.note,
                             color: Theme.of(context).disabledColor),
-                        childIfFalse: SizedBox(width: 0, height: 0),
-                      )
+                      if (model.data.hasUnseenComments) Icon(Icons.comment),
                     ],
                   ),
                 )
