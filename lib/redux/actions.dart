@@ -551,7 +551,8 @@ ThunkAction<AppState> updateTaskNote(String newValue, String taskId,
   };
 }
 
-ThunkAction<AppState> updateTaskDueDate(String taskId, DateTime newValue) {
+ThunkAction<AppState> updateTaskDueDate(
+    String taskId, DateTime newValue, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     var ref = _getTasksCollectionRef(store.state.selectedProjectId, store)
         .document(taskId);
@@ -559,6 +560,10 @@ ThunkAction<AppState> updateTaskDueDate(String taskId, DateTime newValue) {
 
     try {
       await ref.updateData({'dueDate': coercedValue});
+      await ref.updateData({
+        'metadata': _getUpdatedTaskMetadata(existingMetadata,
+            TaskMetadataUpdateType.updated, store.state.user.displayName)
+      });
     } catch (error) {
       throw error;
     }
