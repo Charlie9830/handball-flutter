@@ -532,9 +532,13 @@ ThunkAction<AppState> updateTaskPriority(bool newValue, String taskId,
   };
 }
 
-ThunkAction<AppState> updateTaskNote(String newValue, String taskId,
+ThunkAction<AppState> updateTaskNote(String newValue, String oldValue, String taskId,
     String projectId, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
+    if (newValue?.trim() == oldValue?.trim()) {
+      return;
+    }
+
     var ref = _getTasksCollectionRef(projectId, store).document(taskId);
     var coercedValue = newValue ?? '';
 
@@ -552,8 +556,12 @@ ThunkAction<AppState> updateTaskNote(String newValue, String taskId,
 }
 
 ThunkAction<AppState> updateTaskDueDate(
-    String taskId, DateTime newValue, TaskMetadata existingMetadata) {
+    String taskId, DateTime newValue, DateTime oldValue, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
+    if (newValue == oldValue) {
+      return;
+    }
+
     var ref = _getTasksCollectionRef(store.state.selectedProjectId, store)
         .document(taskId);
     String coercedValue = newValue == null ? '' : newValue.toIso8601String();
@@ -562,7 +570,7 @@ ThunkAction<AppState> updateTaskDueDate(
       await ref.updateData({'dueDate': coercedValue});
       await ref.updateData({
         'metadata': _getUpdatedTaskMetadata(existingMetadata,
-            TaskMetadataUpdateType.updated, store.state.user.displayName)
+            TaskMetadataUpdateType.updated, store.state.user.displayName).toMap(),
       });
     } catch (error) {
       throw error;
@@ -1188,7 +1196,8 @@ ThunkAction<AppState> renameTaskListWithDialog(
     var dialogResult =
         await postTextInputDialog('Rename List', taskListName, context);
 
-    if (dialogResult.result == DialogResult.negative) {
+    if (dialogResult.result == DialogResult.negative ||
+        taskListName?.trim() == dialogResult.value.trim()) {
       return;
     }
 
@@ -1281,6 +1290,10 @@ ThunkAction<AppState> deleteTaskWithDialog(
 ThunkAction<AppState> updateTaskSorting(String projectId, String taskListId,
     TaskListSettingsModel existingSettings, TaskSorting sorting) {
   return (Store<AppState> store) async {
+    if (existingSettings?.sortBy == sorting) {
+      return;
+    }
+
     var ref = _getTaskListsCollectionRef(projectId, store).document(taskListId);
     var newSettings = existingSettings?.copyWith(sortBy: sorting);
 
@@ -1408,9 +1421,13 @@ ThunkAction<AppState> updateListSorting(
   };
 }
 
-ThunkAction<AppState> updateTaskName(String newValue, String taskId,
+ThunkAction<AppState> updateTaskName(String newValue, String oldValue, String taskId,
     String projectId, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
+    if (newValue?.trim() == oldValue?.trim()) {
+      return;
+    }
+
     var ref = _getTasksCollectionRef(projectId, store).document(taskId);
     try {
       await ref.updateData({'taskName': newValue});

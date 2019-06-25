@@ -20,31 +20,35 @@ class TaskInspectorScreenContainer extends StatelessWidget {
   }
 
   _converter(Store<AppState> store, BuildContext context) {
+    var selectedTaskEntity = store.state.selectedTaskEntity;
+
     return new TaskInspectorScreenViewModel(
         onClose: () => store.dispatch(CloseTaskInspector()),
-        taskEntity: store.state.selectedTaskEntity,
+        taskEntity: selectedTaskEntity,
         onDueDateChange: (newValue) => store.dispatch(
-            updateTaskDueDate(store.state.selectedTaskEntity.uid, newValue)),
+            updateTaskDueDate(selectedTaskEntity.uid, newValue, selectedTaskEntity.dueDate, selectedTaskEntity.metadata)),
         onNoteChange: (newValue) => store.dispatch(updateTaskNote(
             newValue,
-            store.state.selectedTaskEntity.uid,
-            store.state.selectedTaskEntity.project,
-            store.state.selectedTaskEntity.metadata)),
+            selectedTaskEntity.note,
+            selectedTaskEntity.uid,
+            selectedTaskEntity.project,
+            selectedTaskEntity.metadata)),
         onTaskNameChange: (newValue) => store.dispatch(updateTaskName(
             newValue,
-            store.state.selectedTaskEntity.uid,
-            store.state.selectedTaskEntity.project,
-            store.state.selectedTaskEntity.metadata)),
+            selectedTaskEntity.taskName,
+            selectedTaskEntity.uid,
+            selectedTaskEntity.project,
+            selectedTaskEntity.metadata)),
         onIsHighPriorityChange: () => store.dispatch(updateTaskPriority(
-            !store.state.selectedTaskEntity.isHighPriority,
-            store.state.selectedTaskEntity.uid,
-            store.state.selectedTaskEntity.project,
-            store.state.selectedTaskEntity.metadata)),
+            !selectedTaskEntity.isHighPriority,
+            selectedTaskEntity.uid,
+            selectedTaskEntity.project,
+            selectedTaskEntity.metadata)),
         onOpenTaskCommentScreen: () => store.dispatch(openTaskCommentsScreen(
-            store.state.selectedTaskEntity.project,
-            store.state.selectedTaskEntity.uid)),
+            selectedTaskEntity.project,
+            selectedTaskEntity.uid)),
         commentPreviewViewModels: _buildCommentPreviewViewModels(
-            store.state.selectedTaskEntity?.commentPreview,
+            selectedTaskEntity?.commentPreview,
             store.state.user.userId));
   }
 
