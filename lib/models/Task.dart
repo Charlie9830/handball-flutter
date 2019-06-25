@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:handball_flutter/models/Comment.dart';
-import 'package:handball_flutter/utilities/coerceDateAdded.dart';
+import 'package:handball_flutter/models/TaskMetadata.dart';
+import 'package:handball_flutter/utilities/coerceDate.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
 import 'package:meta/meta.dart';
 
@@ -18,6 +19,7 @@ class TaskModel {
   String assignedTo;
   List<CommentModel> commentPreview;
   Map<String, String> unseenTaskCommentMembers;
+  TaskMetadata metadata;
   /* 
     UPDATE THE copyWith METHOD BELOW
   */
@@ -27,6 +29,7 @@ class TaskModel {
     @required this.project,
     @required this.taskList,
     @required this.userId,
+    @required this.metadata,
     this.taskName = '',
     this.dueDate,
     this.dateAdded,
@@ -52,6 +55,7 @@ class TaskModel {
     this.assignedTo = doc['assignedTo'] ?? '-1';
     this.commentPreview = _coerceCommentPreview(doc['commentPreview'], doc.metadata.isFromCache);
     this.unseenTaskCommentMembers = _coerceUnseenTaskCommentMembers(doc['unseenTaskCommentMembers']);
+    this.metadata = TaskMetadata.fromMap(doc['metadata']);
   }
   
   Map<String, dynamic> toMap() {
@@ -71,6 +75,7 @@ class TaskModel {
       'assignedTo': this.assignedTo,
       'commentPreview': _convertCommentPreviewToMapCollection(),
       'unseenTaskCommentMembers': this.unseenTaskCommentMembers ?? <String, dynamic>{},
+      'metadata' : this.metadata?.toMap() ?? <dynamic, dynamic>{},
     };
   }
 
@@ -92,6 +97,7 @@ class TaskModel {
   String assignedTo,
   List<CommentModel> commentPreview,
   Map<String, String> unseenTaskCommentMembers,
+  TaskMetadata metadata,
   }) {
     return TaskModel(
       uid: uid ?? this.uid,
@@ -107,6 +113,7 @@ class TaskModel {
       assignedTo: assignedTo ?? this.assignedTo,
       commentPreview: commentPreview ?? this.commentPreview,
       unseenTaskCommentMembers: unseenTaskCommentMembers ?? this.unseenTaskCommentMembers,
+      metadata: metadata ?? this.metadata
     );
   }
 

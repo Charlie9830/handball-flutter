@@ -3,7 +3,7 @@ import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/ChecklistSettings.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskListSettings.dart';
-import 'package:handball_flutter/utilities/coerceDateAdded.dart';
+import 'package:handball_flutter/utilities/coerceDate.dart';
 import 'package:meta/meta.dart';
 
 class TaskListModel {

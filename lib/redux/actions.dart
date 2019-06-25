@@ -22,6 +22,7 @@ import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/TaskListSettings.dart';
+import 'package:handball_flutter/models/TaskMetadata.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialog.dart';
@@ -513,27 +514,37 @@ ThunkAction<AppState> changeAccount(
   };
 }
 
-ThunkAction<AppState> updateTaskPriority(
-    bool newValue, String taskId, String projectId) {
+ThunkAction<AppState> updateTaskPriority(bool newValue, String taskId,
+    String projectId, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     var ref = _getTasksCollectionRef(projectId, store).document(taskId);
 
     try {
       await ref.updateData({'isHighPriority': newValue});
+      await ref.updateData({
+        'metadata': _getUpdatedTaskMetadata(existingMetadata,
+                TaskMetadataUpdateType.updated, store.state.user.displayName)
+            .toMap()
+      });
     } catch (error) {
       throw error;
     }
   };
 }
 
-ThunkAction<AppState> updateTaskNote(
-    String newValue, String taskId, String projectId) {
+ThunkAction<AppState> updateTaskNote(String newValue, String taskId,
+    String projectId, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     var ref = _getTasksCollectionRef(projectId, store).document(taskId);
     var coercedValue = newValue ?? '';
 
     try {
       await ref.updateData({'note': coercedValue});
+      await ref.updateData({
+        'metadata': _getUpdatedTaskMetadata(existingMetadata,
+                TaskMetadataUpdateType.updated, store.state.user.displayName)
+            .toMap()
+      });
     } catch (error) {
       throw error;
     }
@@ -733,7 +744,9 @@ ThunkAction<AppState> closeTaskCommentsScreen(String projectId, String taskId) {
     var previewComments = _generateTaskCommentPreview(taskComments);
     if (_doesTaskCommentPreviewSeenByNeedUpdate(previewComments, userId)) {
       batch.updateData(taskRef, {
-        'commentPreview': _seeComments(previewComments, userId).map( (item) => item.toMap()).toList()
+        'commentPreview': _seeComments(previewComments, userId)
+            .map((item) => item.toMap())
+            .toList()
       });
     }
 
@@ -772,8 +785,9 @@ ThunkAction<AppState> closeTaskCommentsScreen(String projectId, String taskId) {
   };
 }
 
-List<CommentModel> _seeComments(List<CommentModel> previewComments, String userId) {
-  return previewComments.map( (item) => item..seenBy.add(userId)).toList();
+List<CommentModel> _seeComments(
+    List<CommentModel> previewComments, String userId) {
+  return previewComments.map((item) => item..seenBy.add(userId)).toList();
 }
 
 bool _doesTaskCommentPreviewSeenByNeedUpdate(
@@ -1389,12 +1403,17 @@ ThunkAction<AppState> updateListSorting(
   };
 }
 
-ThunkAction<AppState> updateTaskName(
-    String newValue, String taskId, String projectId) {
+ThunkAction<AppState> updateTaskName(String newValue, String taskId,
+    String projectId, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     var ref = _getTasksCollectionRef(projectId, store).document(taskId);
     try {
       await ref.updateData({'taskName': newValue});
+      await ref.updateData({
+        'metadata': _getUpdatedTaskMetadata(existingMetadata,
+                TaskMetadataUpdateType.updated, store.state.user.displayName)
+            .toMap()
+      });
     } catch (error) {
       throw error;
     }
@@ -1440,15 +1459,18 @@ ThunkAction<AppState> addNewTaskWithDialog(
         // New Task
         var taskRef = _getTasksCollectionRef(projectId, store).document();
         var task = TaskModel(
-          uid: taskRef.documentID,
-          taskList: newTaskList.uid,
-          project: projectId,
-          userId: store.state.user.userId,
-          taskName: result.taskName,
-          dueDate: result.selectedDueDate,
-          isHighPriority: result.isHighPriority,
-          dateAdded: DateTime.now(),
-        );
+            uid: taskRef.documentID,
+            taskList: newTaskList.uid,
+            project: projectId,
+            userId: store.state.user.userId,
+            taskName: result.taskName,
+            dueDate: result.selectedDueDate,
+            isHighPriority: result.isHighPriority,
+            dateAdded: DateTime.now(),
+            metadata: TaskMetadata(
+              createdBy: store.state.user.displayName,
+              createdOn: DateTime.now(),
+            ));
 
         batch.setData(taskRef, task.toMap());
         batch.setData(taskListRef, newTaskList.toMap());
@@ -1471,15 +1493,17 @@ ThunkAction<AppState> addNewTaskWithDialog(
             taskListId; // Use the taskListId parameter if Dialog returns a null taskListId.
 
         var task = TaskModel(
-          uid: taskRef.documentID,
-          taskList: targetTaskListId,
-          userId: store.state.user.userId,
-          project: projectId,
-          taskName: result.taskName,
-          dueDate: result.selectedDueDate,
-          isHighPriority: result.isHighPriority,
-          dateAdded: DateTime.now(),
-        );
+            uid: taskRef.documentID,
+            taskList: targetTaskListId,
+            userId: store.state.user.userId,
+            project: projectId,
+            taskName: result.taskName,
+            dueDate: result.selectedDueDate,
+            isHighPriority: result.isHighPriority,
+            dateAdded: DateTime.now(),
+            metadata: TaskMetadata(
+                createdBy: store.state.user.displayName,
+                createdOn: DateTime.now()));
 
         // Push the new value to lastUsedTaskLists
         store.dispatch(PushLastUsedTaskList(
@@ -1532,13 +1556,22 @@ TaskListModel _getAddTaskDialogPreselectedTaskList(
   return null;
 }
 
-ThunkAction<AppState> updateTaskComplete(String taskId, bool newValue) {
+ThunkAction<AppState> updateTaskComplete(
+    String taskId, bool newValue, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     var userId = store.state.user.userId;
-
-    await _getTasksCollectionRef(store.state.selectedProjectId, store)
-        .document(taskId)
-        .updateData({'isComplete': newValue});
+    var ref = _getTasksCollectionRef(store.state.selectedProjectId, store)
+        .document(taskId);
+    try {
+      await ref.updateData({'isComplete': newValue});
+      await ref.updateData({
+        'metadata': _getUpdatedTaskMetadata(existingMetadata,
+                TaskMetadataUpdateType.completed, store.state.user.displayName)
+            .toMap(),
+      });
+    } catch (error) {
+      throw error;
+    }
   };
 }
 
@@ -1922,4 +1955,35 @@ int _getTaskAnimationIndex(Map<String, int> indices, DocumentSnapshot doc) {
 
 GlobalKey<AnimatedListState> _getAnimatedListStateKey(String taskListId) {
   return taskListAnimatedListStateKeys[taskListId];
+}
+
+TaskMetadata _getUpdatedTaskMetadata(
+    TaskMetadata existingMetadata, TaskMetadataUpdateType type, String by) {
+  var metadata = existingMetadata ?? TaskMetadata();
+
+  switch (type) {
+    case TaskMetadataUpdateType.created:
+      return metadata.copyWith(createdBy: by, createdOn: DateTime.now());
+
+    case TaskMetadataUpdateType.completed:
+      return metadata.copyWith(
+        completedBy: by,
+        completedOn: DateTime.now(),
+      );
+
+    case TaskMetadataUpdateType.updated:
+      // Ignore any calls to update metadata if it hasn't been at least two minutes since metadata creation.
+      if (metadata.createdOn != null &&
+          DateTime.now().difference(metadata.createdOn).inMinutes > 2) {
+        return metadata.copyWith(
+          updatedBy: by,
+          updatedOn: DateTime.now(),
+        );
+      }
+
+      return metadata.copyWith();
+
+    default:
+      return metadata.copyWith();
+  }
 }

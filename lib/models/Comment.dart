@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:handball_flutter/utilities/coerceDateAdded.dart';
+import 'package:handball_flutter/utilities/coerceDate.dart';
 import 'package:handball_flutter/utilities/coerceFirestoreTimestamp.dart';
 import 'package:handball_flutter/utilities/coerceStringList.dart';
 import 'package:meta/meta.dart';
