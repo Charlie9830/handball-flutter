@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/keys.dart';
+import 'package:handball_flutter/presentation/Nothing.dart';
 import 'package:sticky_headers/sticky_headers.dart';
 
 class TaskList extends StatelessWidget {
@@ -32,6 +33,10 @@ class TaskList extends StatelessWidget {
         shrinkWrap: true,
         initialItemCount: children.length,
         itemBuilder: (context, index, animation) {
+          if (index >= children.length) {
+            return Nothing();
+          }
+          
           return SizeTransition(
             sizeFactor: animation.drive(Tween(begin: 0, end: 1)),
             child: children[index],
