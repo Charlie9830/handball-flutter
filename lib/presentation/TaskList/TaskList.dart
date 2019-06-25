@@ -34,6 +34,7 @@ class TaskList extends StatelessWidget {
         initialItemCount: children.length,
         itemBuilder: (context, index, animation) {
           if (index >= children.length) {
+            print("IT FUCKED UP");
             return Nothing();
           }
           

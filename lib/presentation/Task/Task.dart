@@ -69,7 +69,7 @@ class Task extends StatelessWidget {
           caption: 'Move',
           color: Colors.blueAccent,
           icon: Icons.move_to_inbox,
-          onTap: () {},
+          onTap: model.onMove,
         ),
       ],
       secondaryActions: <Widget>[

@@ -20,8 +20,7 @@ class HomeScreenContainer extends StatelessWidget {
         });
   }
 
-  HomeScreenViewModel _converter(
-      Store<AppState> store, BuildContext context) {
+  HomeScreenViewModel _converter(Store<AppState> store, BuildContext context) {
     var projectId = store.state.selectedProjectId;
 
     return HomeScreenViewModel(
@@ -32,9 +31,13 @@ class HomeScreenContainer extends StatelessWidget {
           .dispatch(addNewTaskWithDialog(projectId, context, taskListId: null)),
       onAddNewTaskListFabButtonPressed: () =>
           store.dispatch(addNewTaskListWithDialog(projectId, context)),
-      onShareProjectButtonPressed: projectId != '-1' ? () => store.dispatch(OpenShareProjectScreen(projectId: projectId)) : null,
-      onSetListSorting: (sorting) => store.dispatch(updateListSorting(projectId, sorting, context)),
-      listSorting: store.state.inflatedProject?.taskListSorting ?? TaskListSorting.dateAdded,
+      onShareProjectButtonPressed: projectId != '-1'
+          ? () => store.dispatch(OpenShareProjectScreen(projectId: projectId))
+          : null,
+      onSetListSorting: (sorting) =>
+          store.dispatch(updateListSorting(projectId, sorting, context)),
+      listSorting: store.state.inflatedProject?.taskListSorting ??
+          TaskListSorting.dateAdded,
     );
   }
 
@@ -54,10 +57,17 @@ class HomeScreenContainer extends StatelessWidget {
     return tasks.map((task) {
       return TaskViewModel(
         data: task,
-        onCheckboxChanged: (newValue) =>
-            store.dispatch(updateTaskComplete(task.uid, newValue, task.metadata)),
+        onCheckboxChanged: (newValue) => store
+            .dispatch(updateTaskComplete(task.uid, newValue, task.metadata)),
         onSelect: (stumped) {},
         onDelete: () => store.dispatch(deleteTaskWithDialog(task.uid, context)),
+        onMove: () => store.dispatch(moveTasksToListWithDialog(
+            <TaskModel>[task],
+            task.project,
+            store.state.inflatedProject.inflatedTaskLists
+                .map((item) => item.data)
+                .toList(),
+            context)),
         onTaskInspectorOpen: () =>
             store.dispatch(OpenTaskInspector(taskEntity: task)),
       );
@@ -90,9 +100,8 @@ class HomeScreenContainer extends StatelessWidget {
             taskList.data.uid,
             taskList.data.settings,
             sorting)),
-        onOpenChecklistSettings: () => store.dispatch(openChecklistSettings(
-            taskList.data,
-            context)),
+        onOpenChecklistSettings: () =>
+            store.dispatch(openChecklistSettings(taskList.data, context)),
       );
     }).toList();
   }

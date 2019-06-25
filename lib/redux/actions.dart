@@ -28,9 +28,8 @@ import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/DelegateOwnerDialog/DelegateOwnerDialog.dart';
+import 'package:handball_flutter/presentation/Dialogs/MoveTasksDialog/MoveTaskBottomSheet.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
-import 'package:handball_flutter/presentation/Nothing.dart';
-import 'package:handball_flutter/presentation/Screens/AppDrawer/ProjectInviteListTile.dart';
 import 'package:handball_flutter/presentation/Screens/ListSortingScreen/ListSortingScreen.dart';
 import 'package:handball_flutter/presentation/Screens/SignUp/SignUpBase.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
@@ -384,6 +383,72 @@ void removeProccessingProjectInviteId(String projectId, Store<AppState> store) {
       SetProcessingProjectInviteIds(processingProjectInviteIds: newList));
 }
 
+ThunkAction<AppState> moveTasksToListWithDialog(
+    List<TaskModel> tasks,
+    String projectId,
+    List<TaskListModel> sortedTaskLists,
+    BuildContext context) {
+  return (Store<AppState> store) async {
+    if (tasks.length == 1 && sortedTaskLists.length < 2) {
+      // If the user is only wanting to move one task and they only have 1 List, we shouldn't let them continue.
+      return;
+    }
+
+    // Build a Map of the TaskListIds we want to filter out so we don't fall into an O^n Pit.
+    var dissmisbleTaskListIds = Map<String, String>.fromIterable(tasks,
+        key: (task) {
+          var taskModel = task as TaskModel;
+          return taskModel.taskList;
+        },
+        value: (_) => '');
+
+    var taskListOptions = sortedTaskLists
+        .where((taskList) =>
+            dissmisbleTaskListIds.containsKey(taskList.uid) == false)
+        .toList();
+
+    var destinationTaskListId = await showModalBottomSheet(
+        context: context,
+        builder: (context) => MoveTasksBottomSheet(
+              isMovingMultiple: tasks.length > 1,
+              taskListOptions: taskListOptions,
+            ));
+
+    if (destinationTaskListId == null || destinationTaskListId == '') {
+      return;
+    }
+
+    var requests = tasks.map((task) => moveTask(
+        task.uid,
+        destinationTaskListId,
+        projectId,
+        _getUpdatedTaskMetadata(task.metadata, TaskMetadataUpdateType.updated,
+            store.state.user.displayName)));
+
+    try {
+      await Future.wait(requests);
+    } catch (error) {
+      throw error;
+    }
+  };
+}
+
+Future<void> moveTask(String taskId, String destinationTaskListId,
+    String projectId, TaskMetadata updatedMetadata) async {
+  if (taskId == null || destinationTaskListId == null || projectId == null) {
+    return Future.value();
+  }
+
+  var batch = Firestore.instance.batch();
+  var taskRef = _getTasksCollectionRef(projectId).document(taskId);
+
+  print(destinationTaskListId);
+  batch.updateData(taskRef, {'taskList': destinationTaskListId});
+  batch.updateData(taskRef, {'metadata': updatedMetadata.toMap()});
+
+  return batch.commit();
+}
+
 ThunkAction<AppState> denyProjectInvite(String projectId) {
   return (Store<AppState> store) async {
     addProcessingProjectInviteId(projectId, store);
@@ -396,6 +461,10 @@ ThunkAction<AppState> denyProjectInvite(String projectId) {
       throw error;
     }
   };
+}
+
+ThunkAction<AppState> moveTasksWithDialog() {
+  return (Store<AppState> store) async {};
 }
 
 Future<void> _removeProjectInvite(String userId, String projectId) async {
@@ -517,7 +586,7 @@ ThunkAction<AppState> changeAccount(
 ThunkAction<AppState> updateTaskPriority(bool newValue, String taskId,
     String projectId, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
-    var ref = _getTasksCollectionRef(projectId, store).document(taskId);
+    var ref = _getTasksCollectionRef(projectId).document(taskId);
 
     try {
       await ref.updateData({'isHighPriority': newValue});
@@ -532,14 +601,14 @@ ThunkAction<AppState> updateTaskPriority(bool newValue, String taskId,
   };
 }
 
-ThunkAction<AppState> updateTaskNote(String newValue, String oldValue, String taskId,
-    String projectId, TaskMetadata existingMetadata) {
+ThunkAction<AppState> updateTaskNote(String newValue, String oldValue,
+    String taskId, String projectId, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     if (newValue?.trim() == oldValue?.trim()) {
       return;
     }
 
-    var ref = _getTasksCollectionRef(projectId, store).document(taskId);
+    var ref = _getTasksCollectionRef(projectId).document(taskId);
     var coercedValue = newValue ?? '';
 
     try {
@@ -555,22 +624,23 @@ ThunkAction<AppState> updateTaskNote(String newValue, String oldValue, String ta
   };
 }
 
-ThunkAction<AppState> updateTaskDueDate(
-    String taskId, DateTime newValue, DateTime oldValue, TaskMetadata existingMetadata) {
+ThunkAction<AppState> updateTaskDueDate(String taskId, DateTime newValue,
+    DateTime oldValue, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     if (newValue == oldValue) {
       return;
     }
 
-    var ref = _getTasksCollectionRef(store.state.selectedProjectId, store)
-        .document(taskId);
+    var ref =
+        _getTasksCollectionRef(store.state.selectedProjectId).document(taskId);
     String coercedValue = newValue == null ? '' : newValue.toIso8601String();
 
     try {
       await ref.updateData({'dueDate': coercedValue});
       await ref.updateData({
         'metadata': _getUpdatedTaskMetadata(existingMetadata,
-            TaskMetadataUpdateType.updated, store.state.user.displayName).toMap(),
+                TaskMetadataUpdateType.updated, store.state.user.displayName)
+            .toMap(),
       });
     } catch (error) {
       throw error;
@@ -749,7 +819,7 @@ ThunkAction<AppState> closeTaskCommentsScreen(String projectId, String taskId) {
 
     var taskComments = store.state.taskComments.toList();
     var userId = store.state.user.userId;
-    var taskRef = _getTasksCollectionRef(projectId, store).document(taskId);
+    var taskRef = _getTasksCollectionRef(projectId).document(taskId);
     var batch = Firestore.instance.batch();
 
     // Posting and Deleting Comments already re-generates the Comment Preview. We only need to do so here, if we have
@@ -868,7 +938,7 @@ ThunkAction<AppState> postTaskComment(
     var members = store.state.members[projectId];
 
     var batch = Firestore.instance.batch();
-    var taskRef = _getTasksCollectionRef(projectId, store).document(taskId);
+    var taskRef = _getTasksCollectionRef(projectId).document(taskId);
     var commentRef = _getTaskCommentCollectionRef(projectId, taskId).document();
 
     var comment = CommentModel(
@@ -947,7 +1017,7 @@ ThunkAction<AppState> deleteTaskComment(
 
     var commentRef =
         _getTaskCommentCollectionRef(projectId, taskId).document(commentId);
-    var taskRef = _getTasksCollectionRef(projectId, store).document(taskId);
+    var taskRef = _getTasksCollectionRef(projectId).document(taskId);
     var batch = Firestore.instance.batch();
 
     var commentPreview = _generateTaskCommentPreview(newTaskComments)
@@ -1138,7 +1208,7 @@ Future<void> _deleteProject(String projectId, Store<AppState> store) async {
 
   // Build Tasks into Batch
   for (var id in taskIds) {
-    batch.delete(_getTasksCollectionRef(projectId, store).document(id));
+    batch.delete(_getTasksCollectionRef(projectId).document(id));
   }
 
   // Build TaskLists into Batch.
@@ -1233,8 +1303,7 @@ ThunkAction<AppState> deleteTaskListWithDialog(
 Future _deleteTaskList(
     String taskListId, Store<AppState> store, String userId) async {
   var taskIds = _getListRelatedTaskIds(taskListId, store.state.tasks);
-  var baseTaskRef =
-      _getTasksCollectionRef(store.state.selectedProjectId, store);
+  var baseTaskRef = _getTasksCollectionRef(store.state.selectedProjectId);
   var taskListRef =
       _getTaskListsCollectionRef(store.state.selectedProjectId, store)
           .document(taskListId);
@@ -1278,7 +1347,7 @@ ThunkAction<AppState> deleteTaskWithDialog(
     var userId = store.state.user.userId;
 
     try {
-      await _getTasksCollectionRef(store.state.selectedProjectId, store)
+      await _getTasksCollectionRef(store.state.selectedProjectId)
           .document(taskId)
           .delete();
     } catch (error) {
@@ -1421,14 +1490,14 @@ ThunkAction<AppState> updateListSorting(
   };
 }
 
-ThunkAction<AppState> updateTaskName(String newValue, String oldValue, String taskId,
-    String projectId, TaskMetadata existingMetadata) {
+ThunkAction<AppState> updateTaskName(String newValue, String oldValue,
+    String taskId, String projectId, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     if (newValue?.trim() == oldValue?.trim()) {
       return;
     }
 
-    var ref = _getTasksCollectionRef(projectId, store).document(taskId);
+    var ref = _getTasksCollectionRef(projectId).document(taskId);
     try {
       await ref.updateData({'taskName': newValue});
       await ref.updateData({
@@ -1479,7 +1548,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
         );
 
         // New Task
-        var taskRef = _getTasksCollectionRef(projectId, store).document();
+        var taskRef = _getTasksCollectionRef(projectId).document();
         var task = TaskModel(
             uid: taskRef.documentID,
             taskList: newTaskList.uid,
@@ -1510,7 +1579,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
         }
       } else {
         // User selected an existing TaskList.
-        var taskRef = _getTasksCollectionRef(projectId, store).document();
+        var taskRef = _getTasksCollectionRef(projectId).document();
         var targetTaskListId = result.taskListId ??
             taskListId; // Use the taskListId parameter if Dialog returns a null taskListId.
 
@@ -1582,8 +1651,8 @@ ThunkAction<AppState> updateTaskComplete(
     String taskId, bool newValue, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     var userId = store.state.user.userId;
-    var ref = _getTasksCollectionRef(store.state.selectedProjectId, store)
-        .document(taskId);
+    var ref =
+        _getTasksCollectionRef(store.state.selectedProjectId).document(taskId);
     try {
       await ref.updateData({'isComplete': newValue});
       await ref.updateData({
@@ -1648,7 +1717,7 @@ void renewChecklist(TaskListModel checklist, Store<AppState> store,
 
   // 'unComplete' related Tasks.
   var batch = Firestore.instance.batch();
-  var snapshot = await _getTasksCollectionRef(checklist.project, store)
+  var snapshot = await _getTasksCollectionRef(checklist.project)
       .where('taskList', isEqualTo: checklist.uid)
       .getDocuments();
 
@@ -1863,9 +1932,7 @@ CollectionReference _getMembersCollectionRef(
       .collection('members');
 }
 
-CollectionReference _getTasksCollectionRef(
-    String projectId, Store<AppState> store) {
-  // TODO: You don't need to provide Store here anymore.
+CollectionReference _getTasksCollectionRef(String projectId) {
   return Firestore.instance
       .collection('projects')
       .document(projectId)

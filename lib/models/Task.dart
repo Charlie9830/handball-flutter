@@ -157,6 +157,7 @@ class TaskViewModel {
   final dynamic onCheckboxChanged;
   final dynamic onDelete;
   final dynamic onTaskInspectorOpen;
+  final dynamic onMove;
 
   bool get hasNote {
     return data.note.trim().isNotEmpty;
@@ -170,5 +171,6 @@ class TaskViewModel {
     this.onCheckboxChanged,
     this.onDelete,
     this.onTaskInspectorOpen,
+    this.onMove,
   });
 }
