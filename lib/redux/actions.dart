@@ -1788,19 +1788,29 @@ void _handleTasksSnapshot(
     tasks.add(TaskModel.fromDoc(doc, store.state.user.userId));
   });
 
-  // Animation.
-  // In order for the correct Index to be found within state.taskIndicies, we have to Process the animation for any removals,
-  // then dispatch the changes to the store (So that Task Indices gets reprocessed), then process the additions.
-  var groupedDocumentChanges =
-      _getGroupedDocumentChanges(snapshot.documentChanges);
+  if (store.state.selectedProjectId == originProjectId) {
+    // Animation.
+    // In order for the correct Index to be found within state.taskIndicies, we have to Process the animation for any removals,
+    // then dispatch the changes to the store (So that Task Indices gets reprocessed), then process the additions.
+    var groupedDocumentChanges = _getGroupedTaskDocumentChanges(
+        snapshot.documentChanges,
+        store.state.inflatedProject,
+        store.state.tasksByProject[originProjectId]);
 
-  _driveTaskRemovalAnimations(store.state.inflatedProject,
-      groupedDocumentChanges.removed, store.state.user.userId);
+    _driveTaskRemovalAnimations(store.state.inflatedProject,
+        groupedDocumentChanges.removed, store.state.user.userId);
 
-  store.dispatch(ReceiveTasks(tasks: tasks, originProjectId: originProjectId));
+    store
+        .dispatch(ReceiveTasks(tasks: tasks, originProjectId: originProjectId));
 
-  _driveTaskAdditionAnimations(
-      store.state.inflatedProject, groupedDocumentChanges.added);
+    _driveTaskAdditionAnimations(
+        store.state.inflatedProject, groupedDocumentChanges.added);
+  }
+
+  else {
+    // No animation required. Just dispatch the changes to the store.
+    store.dispatch(ReceiveTasks(tasks: tasks, originProjectId: originProjectId));
+  }
 }
 
 StreamSubscription<QuerySnapshot> _subscribeToProjectIds(
@@ -1965,52 +1975,111 @@ CollectionReference _getProjectsCollectionRef(Store<AppState> store) {
   return Firestore.instance.collection('projects');
 }
 
-GroupedDocumentChanges _getGroupedDocumentChanges(
-    List<DocumentChange> docChanges) {
-  var groupedChanges = GroupedDocumentChanges();
+GroupedTaskDocumentChanges _getGroupedTaskDocumentChanges(
+    List<DocumentChange> firestoreDocChanges,
+    InflatedProjectModel currentInflatedProject,
+    List<TaskModel> existingTasks) {
+  var groupedChanges = GroupedTaskDocumentChanges();
 
-  for (var change in docChanges) {
+  for (var change in firestoreDocChanges) {
     if (change.type == DocumentChangeType.removed) {
-      groupedChanges.removed.add(change);
+      groupedChanges.removed.add(CustomDocumentChange(
+        uid: change.document.documentID,
+        taskList: change.document.data['taskList'],
+        document: change.document,
+      ));
     }
 
     if (change.type == DocumentChangeType.modified) {
-      groupedChanges.modified.add(change);
+      groupedChanges.modified.add(CustomDocumentChange(
+        uid: change.document.documentID,
+        taskList: change.document.data['taskList'],
+        document: change.document,
+      ));
+
+      print("Modifcation FOund");
+      print('currentInflatedProject: $currentInflatedProject');
+      print(
+          'Uid Equality: ${currentInflatedProject.data.uid == change.document.data['project']}');
+      print(
+          'didMoveTaskList : ${_didMoveTaskList(change.document, existingTasks)}');
+
+      if (currentInflatedProject != null &&
+          currentInflatedProject.data.uid == change.document.data['project'] &&
+          _didMoveTaskList(change.document, existingTasks)) {
+        print("Caught ourselves a Task on the run!");
+        // A Task has moved. Whilst the project is selected. The Animation system won't catch it if we leave it
+        // simply as a modified Task. Therefore, we need to add the old version of the Task to the removed collection then
+        // add the new version (with the updated taskList field) to the added collection.
+        var oldTask = existingTasks.firstWhere(
+            (item) => item.uid == change.document.documentID,
+            orElse: () => null);
+
+        if (oldTask != null) {
+          groupedChanges.removed.add(CustomDocumentChange(
+            uid: change.document.documentID,
+            taskList: oldTask.taskList,
+            document: change.document,
+          ));
+
+          groupedChanges.added.add(CustomDocumentChange(
+            uid: change.document.documentID,
+            taskList: change.document.data['taskList'],
+            document: change.document,
+          ));
+        }
+      }
     }
 
     if (change.type == DocumentChangeType.added) {
-      groupedChanges.added.add(change);
+      groupedChanges.added.add(CustomDocumentChange(
+        uid: change.document.documentID,
+        taskList: change.document.data['taskList'],
+        document: change.document,
+      ));
     }
   }
 
   return groupedChanges;
 }
 
+bool _didMoveTaskList(
+    DocumentSnapshot incomingDoc, List<TaskModel> existingTasks) {
+  var taskId = incomingDoc.documentID;
+  var existingTask = existingTasks.firstWhere((item) => item.uid == taskId,
+      orElse: () => null);
+
+  if (existingTask == null) {
+    print('Bailing due to existingTask being null');
+    return false;
+  }
+
+  return existingTask.taskList != incomingDoc.data['taskList'];
+}
+
 void _driveTaskAdditionAnimations(InflatedProjectModel inflatedProject,
-    List<DocumentChange> addedDocChanges) {
+    List<CustomDocumentChange> addedDocChanges) {
   if (inflatedProject == null) {
     return;
   }
 
   for (var docChange in addedDocChanges) {
-    if (docChange.type == DocumentChangeType.added) {
-      // Determine Destination Index.
-      var index = _getTaskAnimationIndex(
-          inflatedProject.taskIndices, docChange.document);
-      var animatedListStateKey =
-          _getAnimatedListStateKey(docChange.document['taskList']);
+    // Determine Destination Index.
+    var index = _getTaskAnimationIndex(
+        inflatedProject.taskIndices, docChange.document.documentID);
+    var animatedListStateKey =
+        _getAnimatedListStateKey(docChange.document['taskList']);
 
-      if (index == null || animatedListStateKey == null) {
-        return;
-      }
-
-      animatedListStateKey.currentState.insertItem(index);
+    if (index == null || animatedListStateKey == null) {
+      return;
     }
+
+    animatedListStateKey.currentState.insertItem(index);
   }
 }
 
 void _driveTaskRemovalAnimations(InflatedProjectModel inflatedProject,
-    List<DocumentChange> removalDocChanges, String userId) {
+    List<CustomDocumentChange> removalDocChanges, String userId) {
   if (inflatedProject == null) {
     return;
   }
@@ -2019,8 +2088,8 @@ void _driveTaskRemovalAnimations(InflatedProjectModel inflatedProject,
     // Determine Index.
     var task = TaskModel.fromDoc(docChange.document, userId);
     var index =
-        _getTaskAnimationIndex(inflatedProject.taskIndices, docChange.document);
-    var animatedListStateKey = _getAnimatedListStateKey(task.taskList);
+        _getTaskAnimationIndex(inflatedProject.taskIndices, docChange.uid);
+    var animatedListStateKey = _getAnimatedListStateKey(docChange.taskList);
 
     if (index == null || animatedListStateKey == null) {
       return;
@@ -2038,8 +2107,8 @@ void _driveTaskRemovalAnimations(InflatedProjectModel inflatedProject,
   }
 }
 
-int _getTaskAnimationIndex(Map<String, int> indices, DocumentSnapshot doc) {
-  return indices[doc.documentID];
+int _getTaskAnimationIndex(Map<String, int> indices, String taskId) {
+  return indices[taskId];
 }
 
 GlobalKey<AnimatedListState> _getAnimatedListStateKey(String taskListId) {
