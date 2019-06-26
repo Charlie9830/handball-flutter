@@ -153,11 +153,14 @@ class TaskModel {
 }
 
 class TaskViewModel {
-  final dynamic onSelect;
+  final bool isInMultiSelectMode;
+  final bool isMultiSelected;
+  final dynamic onRadioChanged;
   final dynamic onCheckboxChanged;
   final dynamic onDelete;
   final dynamic onTaskInspectorOpen;
   final dynamic onMove;
+  final dynamic onLongPress;
 
   bool get hasNote {
     return data.note.trim().isNotEmpty;
@@ -167,10 +170,13 @@ class TaskViewModel {
 
   TaskViewModel({
     @required this.data,
-    this.onSelect,
+    this.isInMultiSelectMode = false,
+    this.isMultiSelected = false,
+    this.onRadioChanged,
     this.onCheckboxChanged,
     this.onDelete,
     this.onTaskInspectorOpen,
     this.onMove,
+    this.onLongPress,
   });
 }

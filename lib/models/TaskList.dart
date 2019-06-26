@@ -43,6 +43,7 @@ class TaskListModel {
 class TaskListViewModel {
   TaskListModel data;
   List<TaskViewModel> childTaskViewModels = [];
+  bool isMenuDisabled;
   bool isFocused;
   final onDelete;
   final onRename;
@@ -55,6 +56,7 @@ class TaskListViewModel {
   TaskListViewModel({
     this.data,
     this.childTaskViewModels,
+    this.isMenuDisabled,
     this.onTaskListFocus,
     this.isFocused,
     this.onDelete,

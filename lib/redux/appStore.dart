@@ -53,6 +53,8 @@ final initialAppState = AppState(
   isTaskCommentPaginationComplete: false,
   isGettingTaskComments: false,
   isPaginatingTaskComments: false,
+  multiSelectedTasks: <String, TaskModel>{},
+  isInMultiSelectTaskMode: false,
 );
 
 final appStore = new Store<AppState> (

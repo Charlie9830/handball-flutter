@@ -33,11 +33,6 @@ class TaskList extends StatelessWidget {
         shrinkWrap: true,
         initialItemCount: children.length,
         itemBuilder: (context, index, animation) {
-          if (index >= children.length) {
-            print("IT FUCKED UP");
-            return Nothing();
-          }
-          
           return SizeTransition(
             sizeFactor: animation.drive(Tween(begin: 0, end: 1)),
             child: children[index],

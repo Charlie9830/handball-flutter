@@ -38,6 +38,8 @@ class AppState {
   final bool isTaskCommentPaginationComplete;
   final bool isGettingTaskComments;
   final bool isPaginatingTaskComments;
+  final Map<String, TaskModel> multiSelectedTasks;
+  final bool isInMultiSelectTaskMode;
 
 
   final TextInputDialogModel textInputDialog;
@@ -70,7 +72,9 @@ class AppState {
     this.taskComments,
     this.isTaskCommentPaginationComplete,
     this.isGettingTaskComments,
-    this.isPaginatingTaskComments
+    this.isPaginatingTaskComments,
+    this.multiSelectedTasks,
+    this.isInMultiSelectTaskMode,
     });
 
   AppState copyWith({
@@ -103,6 +107,8 @@ class AppState {
     bool isTaskCommentPaginationComplete,
     bool isGettingTaskComments,
     bool isPaginatingTaskComments,
+    Map<String, TaskModel> multiSelectedTasks,
+    bool isInMultiSelectTaskMode,
 
   }) {
     return AppState(
@@ -133,6 +139,8 @@ class AppState {
       isTaskCommentPaginationComplete: isTaskCommentPaginationComplete ?? this.isTaskCommentPaginationComplete,
       isGettingTaskComments: isGettingTaskComments ?? this.isGettingTaskComments,
       isPaginatingTaskComments: isPaginatingTaskComments ?? this.isPaginatingTaskComments,
+      multiSelectedTasks: multiSelectedTasks ?? this.multiSelectedTasks,
+      isInMultiSelectTaskMode: isInMultiSelectTaskMode ?? this.isInMultiSelectTaskMode,
     );
   }
 }

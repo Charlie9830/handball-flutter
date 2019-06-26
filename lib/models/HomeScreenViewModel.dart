@@ -8,19 +8,25 @@ class HomeScreenViewModel {
   final String projectName;
   final List<TaskListViewModel> taskListViewModels;
   final TaskListSorting listSorting;
+  final bool isInMultiSelectTaskMode;
   final onAddNewTaskFabButtonPressed;
   final onAddNewTaskListFabButtonPressed;
   final onShareProjectButtonPressed;
   final onSetListSorting;
+  final dynamic onCancelMultiSelectTaskMode;
+  final dynamic onMoveTasksButtonPressed;
 
   HomeScreenViewModel({
     this.projectId,
     this.projectName,
     this.taskListViewModels,
+    this.isInMultiSelectTaskMode,
     this.onAddNewTaskFabButtonPressed,
     this.onAddNewTaskListFabButtonPressed,
     this.onShareProjectButtonPressed,
     this.onSetListSorting,
     this.listSorting,
+    this.onCancelMultiSelectTaskMode,
+    this.onMoveTasksButtonPressed,
     });
 }

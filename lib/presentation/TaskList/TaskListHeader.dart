@@ -7,6 +7,7 @@ class TaskListHeader extends StatelessWidget {
   final String name;
   final TaskSorting sorting;
   final bool isChecklist;
+  final bool isMenuDisabled;
   final onDelete;
   final onRename;
   final onAddTaskButtonPressed;
@@ -16,6 +17,7 @@ class TaskListHeader extends StatelessWidget {
   TaskListHeader({
     Key key,
     this.name,
+    this.isMenuDisabled,
     this.isChecklist,
     this.sorting,
     this.onDelete,
@@ -33,6 +35,7 @@ class TaskListHeader extends StatelessWidget {
       child: Row(
         children: <Widget>[
           TaskListSettingsMenu(
+            isDisabled: isMenuDisabled,
             onDelete: onDelete,
             onRename: onRename,
             onSortingChange: onSortingChange,
@@ -41,8 +44,10 @@ class TaskListHeader extends StatelessWidget {
           ),
           if (isChecklist == true)
             IconButton(
-              icon: Icon(Icons.playlist_add_check),
-              onPressed: () => onOpenChecklistSettings()),
+                icon: Icon(Icons.playlist_add_check),
+                onPressed: isMenuDisabled == true
+                    ? null
+                    : () => onOpenChecklistSettings()),
           Expanded(
               child: Text(
             name,

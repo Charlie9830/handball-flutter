@@ -5,6 +5,7 @@ import 'package:handball_flutter/models/HomeScreenViewModel.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/presentation/ProjectMenu.dart';
+import 'package:handball_flutter/presentation/Screens/HomeScreen/MultiSelectTaskAppBar.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/presentation/TaskList/TaskList.dart';
 import 'package:handball_flutter/presentation/TaskList/TaskListHeader.dart';
@@ -18,20 +19,19 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
         key: homeScreenScaffoldKey,
-        appBar: AppBar(
-          title: Text(viewModel.projectName ?? ''),
-          actions: <Widget>[
-            IconButton(
-              icon: Icon(Icons.share),
-              onPressed: viewModel.onShareProjectButtonPressed,
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(54),
+          child: AnimatedCrossFade(
+            firstChild: _getStandardAppBar(),
+            secondChild: MultiSelectTaskAppBar(
+              onCancel: viewModel.onCancelMultiSelectTaskMode,
+              onMoveTasks: viewModel.onMoveTasksButtonPressed,
             ),
-            ProjectMenu(
-              onSetListSorting: viewModel.onSetListSorting,
-              listSorting: viewModel.listSorting,
-            )
-            
-          ],
+            crossFadeState: viewModel.isInMultiSelectTaskMode ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            duration: Duration(milliseconds: 250),
+          )
         ),
+        
         drawer: Drawer(
           child: AppDrawerContainer(),
         ),
@@ -54,6 +54,7 @@ class HomeScreen extends StatelessWidget {
           onTap: vm.onTaskListFocus,
           header: TaskListHeader(
             name: vm.data.taskListName,
+            isMenuDisabled: vm.isMenuDisabled,
             isChecklist: vm.data.settings.checklistSettings.isChecklist,
             onDelete: vm.onDelete,
             onRename: vm.onRename,
@@ -66,5 +67,22 @@ class HomeScreen extends StatelessWidget {
               .map((taskVm) => Task(key: Key(taskVm.data.uid), model: taskVm))
               .toList());
     }).toList();
+  }
+
+  Widget _getStandardAppBar() {
+    return AppBar(
+          title: Text(viewModel.projectName ?? ''),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.share),
+              onPressed: viewModel.onShareProjectButtonPressed,
+            ),
+            ProjectMenu(
+              onSetListSorting: viewModel.onSetListSorting,
+              listSorting: viewModel.listSorting,
+            )
+            
+          ],
+        );
   }
 }

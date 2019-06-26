@@ -60,6 +60,25 @@ class ReceiveTaskComments {
   ReceiveTaskComments({this.taskComments});
 }
 
+class AddMultiSelectedTask {
+  final TaskModel task;
+
+  AddMultiSelectedTask({this.task});
+}
+
+class RemoveMultiSelectedTask {
+  final TaskModel task;
+  RemoveMultiSelectedTask({this.task});
+}
+
+class SetIsInMultiSelectTaskMode {
+  final bool isInMultiSelectTaskMode;
+
+  SetIsInMultiSelectTaskMode({
+    this.isInMultiSelectTaskMode,
+  });
+}
+
 class SetIsGettingTaskComments {
   final bool isGettingTaskComments;
 

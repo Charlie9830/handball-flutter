@@ -51,7 +51,8 @@ AppState appReducer(AppState state, dynamic action) {
         tasksByProject: tasksByProject,
         selectedTaskEntity:
             _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
-        projectIndicatorGroups: getProjectIndicatorGroups(tasks, state.user.userId),
+        projectIndicatorGroups:
+            getProjectIndicatorGroups(tasks, state.user.userId),
         inflatedProject: _buildInflatedProject(
           tasks: filteredTasks,
           taskLists: state.filteredTaskLists,
@@ -82,6 +83,41 @@ AppState appReducer(AppState state, dynamic action) {
               state.members, state.selectedProjectId, state.user.userId),
           listSorting: state.listSorting,
         ));
+  }
+
+  if (action is AddMultiSelectedTask) {
+    if (action.task == null) {
+      return state;
+    }
+
+    var newMap = Map<String, TaskModel>.from(state.multiSelectedTasks);
+    newMap[action.task.uid] = action.task;
+    return state.copyWith(
+      multiSelectedTasks: newMap,
+    );
+  }
+
+  if (action is RemoveMultiSelectedTask) {
+    if (action.task == null) {
+      return state;
+    }
+
+    return state.copyWith(
+      multiSelectedTasks: Map<String, TaskModel>.from(state.multiSelectedTasks)
+        ..remove(action.task.uid),
+    );
+  }
+
+  if (action is SetIsInMultiSelectTaskMode) {
+    // Clear MultiSelectedTasks if we are leaving MultiSelectTaskMode.
+    var multiSelectedTasks = action.isInMultiSelectTaskMode == true
+        ? state.multiSelectedTasks
+        : initialAppState.multiSelectedTasks;
+
+    return state.copyWith(
+      isInMultiSelectTaskMode: action.isInMultiSelectTaskMode,
+      multiSelectedTasks: multiSelectedTasks,
+    );
   }
 
   if (action is SetFocusedTaskListId) {
@@ -119,7 +155,8 @@ AppState appReducer(AppState state, dynamic action) {
       filteredTasks: _filterTasks(projectId, state.tasksByProject),
       selectedTaskEntity:
           _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
-      projectIndicatorGroups: getProjectIndicatorGroups(tasks, state.user.userId),
+      projectIndicatorGroups:
+          getProjectIndicatorGroups(tasks, state.user.userId),
       members: members,
     );
   }
@@ -199,10 +236,7 @@ AppState appReducer(AppState state, dynamic action) {
             listSorting: state.listSorting)
         : state.inflatedProject;
 
-    return state.copyWith(
-      members: members,
-      inflatedProject: inflatedProject
-    );
+    return state.copyWith(members: members, inflatedProject: inflatedProject);
   }
 
   if (action is SetIsInvitingUser) {
@@ -226,8 +260,7 @@ AppState appReducer(AppState state, dynamic action) {
         : state.inflatedProject;
 
     return state.copyWith(
-        listSorting: listSorting,
-        inflatedProject: inflatedProject);
+        listSorting: listSorting, inflatedProject: inflatedProject);
   }
 
   if (action is ReceiveTaskComments) {

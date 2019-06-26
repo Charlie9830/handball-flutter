@@ -16,19 +16,19 @@ class DueDateChit extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return Container(
+      width: size == DueDateChitSize.small ? 32 : 48,
+      height: size == DueDateChitSize.small ? 32 : 48,
+      padding: EdgeInsets.all(size == DueDateChitSize.small ? 4 : 8),
       child: Container(
-        width: size == DueDateChitSize.small ? 32 : 48,
-        height: size == DueDateChitSize.small ? 32 : 48,
-        padding: EdgeInsets.all(size == DueDateChitSize.small ? 4 : 8),
-        child: Container(
-            decoration: BoxDecoration(
-              color: _getBackgroundColor(color, context),
-              shape: BoxShape.circle,
-            ),
-            child: Center(child: Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)))),
-      ),
-      onTap: onTap,
+          decoration: BoxDecoration(
+            color: _getBackgroundColor(color, context),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+              child: Text(text,
+                  style:
+                      TextStyle(fontSize: 10, fontWeight: FontWeight.bold)))),
     );
   }
 
@@ -41,7 +41,7 @@ class DueDateChit extends StatelessWidget {
       case DueDateType.soon:
         return Colors.deepOrange;
         break;
-      
+
       case DueDateType.today:
         return Colors.blue;
         break;

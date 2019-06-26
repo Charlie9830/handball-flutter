@@ -5,7 +5,7 @@ import 'package:handball_flutter/models/HomeScreenViewModel.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
-import 'package:handball_flutter/presentation/Screens/HomeScreen.dart';
+import 'package:handball_flutter/presentation/Screens/HomeScreen/HomeScreen.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:redux/redux.dart';
 import 'package:handball_flutter/redux/actions.dart';
@@ -38,6 +38,18 @@ class HomeScreenContainer extends StatelessWidget {
           store.dispatch(updateListSorting(projectId, sorting, context)),
       listSorting: store.state.inflatedProject?.taskListSorting ??
           TaskListSorting.dateAdded,
+      isInMultiSelectTaskMode: store.state.isInMultiSelectTaskMode,
+      onCancelMultiSelectTaskMode: () => store
+          .dispatch(SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: false)),
+      onMoveTasksButtonPressed: store.state.multiSelectedTasks.length > 0
+          ? () => store.dispatch(moveTasksToListWithDialog(
+              store.state.multiSelectedTasks.values.toList(),
+              projectId,
+              store.state.inflatedProject.inflatedTaskLists
+                  .map((item) => item.data)
+                  .toList(),
+              context))
+          : null,
     );
   }
 
@@ -59,7 +71,6 @@ class HomeScreenContainer extends StatelessWidget {
         data: task,
         onCheckboxChanged: (newValue) => store
             .dispatch(updateTaskComplete(task.uid, newValue, task.metadata)),
-        onSelect: (stumped) {},
         onDelete: () => store.dispatch(deleteTaskWithDialog(task.uid, context)),
         onMove: () => store.dispatch(moveTasksToListWithDialog(
             <TaskModel>[task],
@@ -70,6 +81,15 @@ class HomeScreenContainer extends StatelessWidget {
             context)),
         onTaskInspectorOpen: () =>
             store.dispatch(OpenTaskInspector(taskEntity: task)),
+        onLongPress: () => store.dispatch(
+            SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: true)),
+        isMultiSelected: store.state.multiSelectedTasks.containsKey(task.uid),
+        onRadioChanged: (value) {
+          value == true
+              ? store.dispatch(AddMultiSelectedTask(task: task))
+              : store.dispatch(RemoveMultiSelectedTask(task: task));
+        },
+        isInMultiSelectMode: store.state.isInMultiSelectTaskMode,
       );
     }).toList();
   }
@@ -83,6 +103,7 @@ class HomeScreenContainer extends StatelessWidget {
     return store.state.inflatedProject.inflatedTaskLists.map((taskList) {
       return TaskListViewModel(
         data: taskList.data,
+        isMenuDisabled: store.state.isInMultiSelectTaskMode,
         childTaskViewModels:
             _buildTaskViewModels(taskList.tasks, store, context),
         isFocused: store.state.focusedTaskListId == taskList.data.uid,
@@ -92,9 +113,11 @@ class HomeScreenContainer extends StatelessWidget {
             taskList.data.uid, taskList.data.taskListName, context)),
         onRename: () => store.dispatch(renameTaskListWithDialog(
             taskList.data.uid, taskList.data.taskListName, context)),
-        onAddNewTaskButtonPressed: () => store.dispatch(addNewTaskWithDialog(
-            taskList.data.project, context,
-            taskListId: taskList.data.uid)),
+        onAddNewTaskButtonPressed: store.state.isInMultiSelectTaskMode == true
+            ? null
+            : () => store.dispatch(addNewTaskWithDialog(
+                taskList.data.project, context,
+                taskListId: taskList.data.uid)),
         onSortingChange: (sorting) => store.dispatch(updateTaskSorting(
             taskList.data.project,
             taskList.data.uid,
