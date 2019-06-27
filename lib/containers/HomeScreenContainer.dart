@@ -79,16 +79,13 @@ class HomeScreenContainer extends StatelessWidget {
                 .map((item) => item.data)
                 .toList(),
             context)),
-        onTaskInspectorOpen: () =>
-            store.dispatch(OpenTaskInspector(taskEntity: task)),
-        onLongPress: () => store.dispatch(
-            SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: true)),
+        onTap: store.state.isInMultiSelectTaskMode == true
+            ? () => _handleTaskMultiSelectChange(!store.state.multiSelectedTasks.containsKey(task.uid), task, store)
+            : () => store.dispatch(OpenTaskInspector(taskEntity: task)),
+        onLongPress: () => store.dispatch(SetIsInMultiSelectTaskMode(
+            isInMultiSelectTaskMode: true, initialSelection: task)),
         isMultiSelected: store.state.multiSelectedTasks.containsKey(task.uid),
-        onRadioChanged: (value) {
-          value == true
-              ? store.dispatch(AddMultiSelectedTask(task: task))
-              : store.dispatch(RemoveMultiSelectedTask(task: task));
-        },
+        onRadioChanged: (value) => _handleTaskMultiSelectChange(value, task, store),
         isInMultiSelectMode: store.state.isInMultiSelectTaskMode,
       );
     }).toList();
@@ -127,5 +124,15 @@ class HomeScreenContainer extends StatelessWidget {
             store.dispatch(openChecklistSettings(taskList.data, context)),
       );
     }).toList();
+  }
+
+  void _handleTaskMultiSelectChange(bool value, TaskModel task, Store<AppState> store) {
+    if (value == true) {
+      store.dispatch(AddMultiSelectedTask(task: task));
+    }
+
+    else {
+      store.dispatch(RemoveMultiSelectedTask(task: task));
+    }
   }
 }

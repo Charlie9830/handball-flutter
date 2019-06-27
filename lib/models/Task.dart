@@ -158,7 +158,7 @@ class TaskViewModel {
   final dynamic onRadioChanged;
   final dynamic onCheckboxChanged;
   final dynamic onDelete;
-  final dynamic onTaskInspectorOpen;
+  final dynamic onTap;
   final dynamic onMove;
   final dynamic onLongPress;
 
@@ -175,7 +175,7 @@ class TaskViewModel {
     this.onRadioChanged,
     this.onCheckboxChanged,
     this.onDelete,
-    this.onTaskInspectorOpen,
+    this.onTap,
     this.onMove,
     this.onLongPress,
   });

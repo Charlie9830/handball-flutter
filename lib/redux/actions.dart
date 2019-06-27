@@ -34,6 +34,7 @@ import 'package:handball_flutter/presentation/Screens/ListSortingScreen/ListSort
 import 'package:handball_flutter/presentation/Screens/SignUp/SignUpBase.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/redux/appState.dart';
+import 'package:handball_flutter/utilities/TaskAnimationUpdate.dart';
 import 'package:handball_flutter/utilities/convertMemberRole.dart';
 import 'package:handball_flutter/utilities/listSortingHelpers.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
@@ -73,9 +74,11 @@ class RemoveMultiSelectedTask {
 
 class SetIsInMultiSelectTaskMode {
   final bool isInMultiSelectTaskMode;
+  final TaskModel initialSelection;
 
   SetIsInMultiSelectTaskMode({
     this.isInMultiSelectTaskMode,
+    this.initialSelection,
   });
 }
 
@@ -408,62 +411,74 @@ ThunkAction<AppState> moveTasksToListWithDialog(
     List<TaskListModel> sortedTaskLists,
     BuildContext context) {
   return (Store<AppState> store) async {
-    if (tasks.length == 1 && sortedTaskLists.length < 2) {
-      // If the user is only wanting to move one task and they only have 1 List, we shouldn't let them continue.
+    store.dispatch(SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: false));
+    if (tasks == null || tasks.length == 0 || sortedTaskLists == null) {
       return;
     }
 
-    // Build a Map of the TaskListIds we want to filter out so we don't fall into an O^n Pit.
-    var dissmisbleTaskListIds = Map<String, String>.fromIterable(tasks,
-        key: (task) {
-          var taskModel = task as TaskModel;
-          return taskModel.taskList;
-        },
-        value: (_) => '');
+    // If the user is only moving one task. Filter out the taskList that already contains that task. Otherwise, provide all
+    // options.
+    var taskListOptions = tasks.length == 1
+        ? sortedTaskLists
+            .where((item) => item.uid != tasks.first.taskList)
+            .toList()
+        : sortedTaskLists;
 
-    var taskListOptions = sortedTaskLists
-        .where((taskList) =>
-            dissmisbleTaskListIds.containsKey(taskList.uid) == false)
-        .toList();
-
-    var destinationTaskListId = await showModalBottomSheet(
+    var moveTasksResult = await showModalBottomSheet(
         context: context,
         builder: (context) => MoveTasksBottomSheet(
-              isMovingMultiple: tasks.length > 1,
               taskListOptions: taskListOptions,
             ));
 
-    if (destinationTaskListId == null || destinationTaskListId == '') {
+    if (moveTasksResult == null) {
       return;
     }
 
-    var requests = tasks.map((task) => moveTask(
-        task.uid,
-        destinationTaskListId,
-        projectId,
-        _getUpdatedTaskMetadata(task.metadata, TaskMetadataUpdateType.updated,
-            store.state.user.displayName)));
+    if (moveTasksResult is MoveTaskBottomSheetResult) {
+      String destinationTaskListId;
+      var batch = Firestore.instance.batch();
 
-    try {
-      await Future.wait(requests);
-    } catch (error) {
-      throw error;
+      if (moveTasksResult.isNewTaskList == true) {
+        // Create a new TaskList before proceeding.
+        var ref = _getTaskListsCollectionRef(projectId, store).document();
+        var taskList = TaskListModel(
+          dateAdded: DateTime.now(),
+          project: projectId,
+          uid: ref.documentID,
+          taskListName: moveTasksResult.taskListName,
+        );
+
+        destinationTaskListId = taskList.uid;
+        batch.setData(ref, taskList.toMap());
+      } else {
+        destinationTaskListId = moveTasksResult.taskListId;
+      }
+
+      var actuallyMovingTasks = tasks
+          .where((item) => item.taskList != destinationTaskListId)
+          .toList();
+
+      try {
+        moveTasks(actuallyMovingTasks, destinationTaskListId, projectId, batch,
+            store.state.user.displayName);
+      } catch (error) {
+        throw error;
+      }
     }
   };
 }
 
-Future<void> moveTask(String taskId, String destinationTaskListId,
-    String projectId, TaskMetadata updatedMetadata) async {
-  if (taskId == null || destinationTaskListId == null || projectId == null) {
-    return Future.value();
+Future<void> moveTasks(List<TaskModel> tasks, String destinationTaskListId,
+    String projectId, WriteBatch batch, String displayName) {
+  for (var task in tasks) {
+    var ref = _getTasksCollectionRef(projectId).document(task.uid);
+    batch.updateData(ref, {'taskList': destinationTaskListId});
+    batch.updateData(ref, {
+      'metadata': _getUpdatedTaskMetadata(
+              task.metadata, TaskMetadataUpdateType.updated, displayName)
+          .toMap(),
+    });
   }
-
-  var batch = Firestore.instance.batch();
-  var taskRef = _getTasksCollectionRef(projectId).document(taskId);
-
-  print(destinationTaskListId);
-  batch.updateData(taskRef, {'taskList': destinationTaskListId});
-  batch.updateData(taskRef, {'metadata': updatedMetadata.toMap()});
 
   return batch.commit();
 }
@@ -480,10 +495,6 @@ ThunkAction<AppState> denyProjectInvite(String projectId) {
       throw error;
     }
   };
-}
-
-ThunkAction<AppState> moveTasksWithDialog() {
-  return (Store<AppState> store) async {};
 }
 
 Future<void> _removeProjectInvite(String userId, String projectId) async {
@@ -1809,26 +1820,26 @@ void _handleTasksSnapshot(
 
   if (store.state.selectedProjectId == originProjectId) {
     // Animation.
-    // In order for the correct Index to be found within state.taskIndicies, we have to Process the animation for any removals,
-    // then dispatch the changes to the store (So that Task Indices gets reprocessed), then process the additions.
     var groupedDocumentChanges = _getGroupedTaskDocumentChanges(
         snapshot.documentChanges,
         store.state.inflatedProject,
         store.state.tasksByProject[originProjectId]);
 
-    _driveTaskRemovalAnimations(store.state.inflatedProject,
-        groupedDocumentChanges.removed, store.state.user.userId);
+    var preMutationTaskIndices =
+        Map<String, int>.from(store.state.inflatedProject.taskIndices);
 
     store
         .dispatch(ReceiveTasks(tasks: tasks, originProjectId: originProjectId));
 
-    _driveTaskAdditionAnimations(
-        store.state.inflatedProject, groupedDocumentChanges.added);
-  }
+    _driveTaskRemovalAnimations(preMutationTaskIndices,
+        groupedDocumentChanges.removed, store.state.user.userId);
 
-  else {
+    _driveTaskAdditionAnimations(
+        store.state.inflatedProject.taskIndices, groupedDocumentChanges.added);
+  } else {
     // No animation required. Just dispatch the changes to the store.
-    store.dispatch(ReceiveTasks(tasks: tasks, originProjectId: originProjectId));
+    store
+        .dispatch(ReceiveTasks(tasks: tasks, originProjectId: originProjectId));
   }
 }
 
@@ -2016,17 +2027,9 @@ GroupedTaskDocumentChanges _getGroupedTaskDocumentChanges(
         document: change.document,
       ));
 
-      print("Modifcation FOund");
-      print('currentInflatedProject: $currentInflatedProject');
-      print(
-          'Uid Equality: ${currentInflatedProject.data.uid == change.document.data['project']}');
-      print(
-          'didMoveTaskList : ${_didMoveTaskList(change.document, existingTasks)}');
-
       if (currentInflatedProject != null &&
           currentInflatedProject.data.uid == change.document.data['project'] &&
           _didMoveTaskList(change.document, existingTasks)) {
-        print("Caught ourselves a Task on the run!");
         // A Task has moved. Whilst the project is selected. The Animation system won't catch it if we leave it
         // simply as a modified Task. Therefore, we need to add the old version of the Task to the removed collection then
         // add the new version (with the updated taskList field) to the added collection.
@@ -2076,53 +2079,77 @@ bool _didMoveTaskList(
   return existingTask.taskList != incomingDoc.data['taskList'];
 }
 
-void _driveTaskAdditionAnimations(InflatedProjectModel inflatedProject,
-    List<CustomDocumentChange> addedDocChanges) {
-  if (inflatedProject == null) {
-    return;
-  }
+void _driveTaskAdditionAnimations(
+    Map<String, int> taskIndices, List<CustomDocumentChange> addedDocChanges) {
+  /*
+    WHAT THE F**K?
+    AnimatedLists and their component removeItem() and insertItem() methods are designed to really only deal with single
+    mutations at a time. When you try and make multiple mutations in one pass, you have to make sure that the index is
+    updated for each following item, otherwise the AnimatedList will try to start removing items at incorrect indexes,
+    throwing an out of range index exception. The easiest way to do this is to Build the doc changes into a List of
+    TaskAnimationUpdate objects, then sort them by TaskList, then index in descending order. That way, we don't have to
+    adjust any following indexes as we are mutating the AnimatedList.
+  */
 
-  for (var docChange in addedDocChanges) {
-    // Determine Destination Index.
-    var index = _getTaskAnimationIndex(
-        inflatedProject.taskIndices, docChange.document.documentID);
-    var animatedListStateKey =
-        _getAnimatedListStateKey(docChange.document['taskList']);
+  var animationUpdates = addedDocChanges.map((docChange) {
+    return TaskAnimationUpdate(
+      index: _getTaskAnimationIndex(taskIndices, docChange.document.documentID),
+      listStateKey:
+          _getAnimatedListStateKey(docChange.document.data['taskList']),
+      task: null, // Additions don't require the actual Task.
+    );
+  }).toList();
 
-    if (index == null || animatedListStateKey == null) {
-      return;
+  animationUpdates.sort(TaskAnimationUpdate.additionSorter);
+
+  for (var update in animationUpdates) {
+    var index = update.index;
+    var listStateKey = update.listStateKey;
+
+    if (index != null && listStateKey?.currentState != null) {
+      listStateKey.currentState.insertItem(index);
     }
-
-    animatedListStateKey.currentState.insertItem(index);
   }
 }
 
-void _driveTaskRemovalAnimations(InflatedProjectModel inflatedProject,
+void _driveTaskRemovalAnimations(Map<String, int> taskIndices,
     List<CustomDocumentChange> removalDocChanges, String userId) {
-  if (inflatedProject == null) {
-    return;
-  }
+  /*
+    WHAT THE F**K?
+    AnimatedLists and their component removeItem() and insertItem() methods are designed to really only deal with single
+    mutations at a time. When you try and make multiple mutations in one pass, you have to make sure that the index is
+    updated for each following item, otherwise the AnimatedList will try to start removing items at incorrect indexes,
+    throwing an out of range index exception. The easiest way to do this is to Build the doc changes into a List of
+    TaskAnimationUpdate objects, then sort them by TaskList, then index in descending order. That way, we don't have to
+    adjust any following indexes as we are mutating the AnimatedList.
+  */
 
-  for (var docChange in removalDocChanges) {
-    // Determine Index.
-    var task = TaskModel.fromDoc(docChange.document, userId);
-    var index =
-        _getTaskAnimationIndex(inflatedProject.taskIndices, docChange.uid);
-    var animatedListStateKey = _getAnimatedListStateKey(docChange.taskList);
+  var animationUpdates = removalDocChanges.map((change) {
+    return TaskAnimationUpdate(
+      task: TaskModel.fromDoc(change.document, userId),
+      index: _getTaskAnimationIndex(taskIndices, change.uid),
+      listStateKey: _getAnimatedListStateKey(change.taskList),
+    );
+  }).toList();
 
-    if (index == null || animatedListStateKey == null) {
-      return;
+  animationUpdates.sort(TaskAnimationUpdate.removalSorter);
+
+  for (var update in animationUpdates) {
+    var index = update.index;
+    var listStateKey = update.listStateKey;
+    var task = update.task;
+
+    if (index != null && listStateKey?.currentState != null) {
+      listStateKey.currentState.removeItem(index, (context, animation) {
+        return SizeTransition(
+            sizeFactor: animation.drive(Tween(begin: 1, end: 0)),
+            axis: Axis.vertical,
+            child: Task(
+              key: Key(task.uid),
+              model: TaskViewModel(data: task),
+            ));
+      });
     }
-
-    animatedListStateKey.currentState.removeItem(index, (context, animation) {
-      return SizeTransition(
-          sizeFactor: animation.drive(Tween(begin: 1, end: 0)),
-          axis: Axis.vertical,
-          child: Task(
-            key: Key(task.uid),
-            model: TaskViewModel(data: task),
-          ));
-    });
   }
 }
 

@@ -114,6 +114,12 @@ AppState appReducer(AppState state, dynamic action) {
         ? state.multiSelectedTasks
         : initialAppState.multiSelectedTasks;
 
+    if (action.isInMultiSelectTaskMode == true && action.initialSelection != null) {
+      // Add the initial Selection.
+      multiSelectedTasks = Map<String, TaskModel>.from(multiSelectedTasks);
+      multiSelectedTasks[action.initialSelection.uid] = action.initialSelection;
+    }
+
     return state.copyWith(
       isInMultiSelectTaskMode: action.isInMultiSelectTaskMode,
       multiSelectedTasks: multiSelectedTasks,

@@ -22,7 +22,7 @@ class Task extends StatelessWidget {
       delegate: new SlidableDrawerDelegate(),
       actionExtentRatio: 0.25,
       child: InkWell(
-          onTap: model.onTaskInspectorOpen,
+          onTap: model.onTap,
           onLongPress: model.onLongPress,
           child: Row(
         children: <Widget>[
