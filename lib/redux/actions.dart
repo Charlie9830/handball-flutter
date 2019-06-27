@@ -2107,6 +2107,9 @@ void _driveTaskAdditionAnimations(
     var listStateKey = update.listStateKey;
 
     if (index != null && listStateKey?.currentState != null) {
+      // If the index is null, that means that the parent TaskList isn't on Device yet, Don't PANIC! We can just ignore
+      // the Animation Update of that Task because once the TaskList arrives, it will be rendered in the initialRender of
+      // list anyway.
       listStateKey.currentState.insertItem(index);
     }
   }

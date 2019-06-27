@@ -12,7 +12,7 @@ import 'package:redux_thunk/redux_thunk.dart';
 import 'package:redux/redux.dart';
 import './appState.dart';
 import './appReducer.dart';
-import './middleware.dart';
+import 'package:handball_flutter/redux/middleware/navigationMiddleware.dart';
 import 'package:redux_logging/redux_logging.dart';
 
 final initialAppState = AppState(
