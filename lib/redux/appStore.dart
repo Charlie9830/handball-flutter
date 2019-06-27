@@ -55,6 +55,7 @@ final initialAppState = AppState(
   isPaginatingTaskComments: false,
   multiSelectedTasks: <String, TaskModel>{},
   isInMultiSelectTaskMode: false,
+  memberLookup: <String, MemberModel>{},
 );
 
 final appStore = new Store<AppState> (

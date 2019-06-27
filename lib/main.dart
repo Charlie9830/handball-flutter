@@ -34,7 +34,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
 
       // var user = await FirebaseAuth.instance.currentUser();
       // var updateInfo = UserUpdateInfo();
-      // updateInfo.displayName = 'User A';
+      // updateInfo.displayName = 'User E';
       // await user.updateProfile(updateInfo);
 
       // print("User Info Updated");

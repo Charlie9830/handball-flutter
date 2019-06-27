@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/models/Assignment.dart';
 import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/TaskInspectorScreenViewModel.dart';
 import 'package:handball_flutter/presentation/CommentPanel/CommentPanel.dart';
@@ -62,6 +63,10 @@ class TaskInspectorScreen extends StatelessWidget {
                     note: viewModel.taskEntity.note,
                     onNoteChange: viewModel.onNoteChange,
                     taskName: viewModel.taskEntity.taskName,
+                    assignmentOptions: viewModel.assignmentOptions,
+                    assignments: viewModel.assignments,
+                    onAssignmentsChange: viewModel.onAssignmentsChange,
+                    isAssignmentInputVisible: viewModel.isAssignmentInputVisible,
                   ),
                   Card(
                       child: Padding(

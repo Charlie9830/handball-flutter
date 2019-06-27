@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/models/AppDrawerScreenViewModel.dart';
+import 'package:handball_flutter/models/Assignment.dart';
 import 'package:handball_flutter/models/Comment.dart';
+import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
+import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskInspectorScreenViewModel.dart';
 import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/TaskInspectorScreen.dart';
 import 'package:handball_flutter/redux/actions.dart';
@@ -22,11 +25,21 @@ class TaskInspectorScreenContainer extends StatelessWidget {
   _converter(Store<AppState> store, BuildContext context) {
     var selectedTaskEntity = store.state.selectedTaskEntity;
 
+
+    print(selectedTaskEntity.getAssignments(store.state.memberLookup).runtimeType.toString());
     return new TaskInspectorScreenViewModel(
         onClose: () => store.dispatch(CloseTaskInspector()),
         taskEntity: selectedTaskEntity,
-        onDueDateChange: (newValue) => store.dispatch(
-            updateTaskDueDate(selectedTaskEntity.uid, newValue, selectedTaskEntity.dueDate, selectedTaskEntity.metadata)),
+        isAssignmentInputVisible: _isAssignmentInputVisible(store, selectedTaskEntity),
+        assignments:
+            selectedTaskEntity.getAssignments(store.state.memberLookup),
+        assignmentOptions: _getAssignmentOptions(
+            store.state.members[selectedTaskEntity.project]),
+        onDueDateChange: (newValue) => store.dispatch(updateTaskDueDate(
+            selectedTaskEntity.uid,
+            newValue,
+            selectedTaskEntity.dueDate,
+            selectedTaskEntity.metadata)),
         onNoteChange: (newValue) => store.dispatch(updateTaskNote(
             newValue,
             selectedTaskEntity.note,
@@ -45,11 +58,34 @@ class TaskInspectorScreenContainer extends StatelessWidget {
             selectedTaskEntity.project,
             selectedTaskEntity.metadata)),
         onOpenTaskCommentScreen: () => store.dispatch(openTaskCommentsScreen(
-            selectedTaskEntity.project,
-            selectedTaskEntity.uid)),
-        commentPreviewViewModels: _buildCommentPreviewViewModels(
-            selectedTaskEntity?.commentPreview,
-            store.state.user.userId));
+            selectedTaskEntity.project, selectedTaskEntity.uid)),
+        commentPreviewViewModels: _buildCommentPreviewViewModels(selectedTaskEntity?.commentPreview, store.state.user.userId),
+        onAssignmentsChange: (newAssignmentIds) => store.dispatch(updateTaskAssignments(
+          newAssignmentIds,
+          selectedTaskEntity.assignedTo, 
+          selectedTaskEntity.uid, 
+          selectedTaskEntity.project,
+          selectedTaskEntity.metadata
+          )));
+  }
+
+  bool _isAssignmentInputVisible(Store<AppState> store, TaskModel selectedTaskEntity) {
+    var members = store.state.members[selectedTaskEntity.project];
+
+    return members != null && members.length > 1;
+  }
+
+  List<Assignment> _getAssignmentOptions(List<MemberModel> projectMembers) {
+    if (projectMembers == null) {
+      return <Assignment>[];
+    }
+
+    return projectMembers
+        .map((item) => Assignment(
+              displayName: item.displayName,
+              userId: item.userId,
+            ))
+        .toList();
   }
 
   List<CommentViewModel> _buildCommentPreviewViewModels(

@@ -31,6 +31,7 @@ class AppState {
   final List<ProjectInviteModel> projectInvites;
   final List<String> processingProjectInviteIds;
   final Map<String, List<MemberModel>> members;
+  final Map<String, MemberModel> memberLookup;
   final bool isInvitingUser;
   final List<String> processingMembers;
   final TaskListSorting listSorting;
@@ -75,6 +76,7 @@ class AppState {
     this.isPaginatingTaskComments,
     this.multiSelectedTasks,
     this.isInMultiSelectTaskMode,
+    this.memberLookup,
     });
 
   AppState copyWith({
@@ -109,6 +111,7 @@ class AppState {
     bool isPaginatingTaskComments,
     Map<String, TaskModel> multiSelectedTasks,
     bool isInMultiSelectTaskMode,
+    Map<String, MemberModel> memberLookup,
 
   }) {
     return AppState(
@@ -141,6 +144,7 @@ class AppState {
       isPaginatingTaskComments: isPaginatingTaskComments ?? this.isPaginatingTaskComments,
       multiSelectedTasks: multiSelectedTasks ?? this.multiSelectedTasks,
       isInMultiSelectTaskMode: isInMultiSelectTaskMode ?? this.isInMultiSelectTaskMode,
+      memberLookup: memberLookup ?? this.memberLookup,
     );
   }
 }

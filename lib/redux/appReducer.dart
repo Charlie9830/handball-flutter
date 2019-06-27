@@ -208,6 +208,7 @@ AppState appReducer(AppState state, dynamic action) {
       projectInvites: initialAppState.projectInvites,
       processingProjectInviteIds: initialAppState.processingProjectInviteIds,
       members: initialAppState.members,
+      memberLookup: initialAppState.memberLookup,
     );
   }
 
@@ -245,7 +246,11 @@ AppState appReducer(AppState state, dynamic action) {
             listSorting: state.listSorting)
         : state.inflatedProject;
 
-    return state.copyWith(members: members, inflatedProject: inflatedProject);
+    return state.copyWith(
+      members: members,
+      memberLookup: _updateMemberLookup(state.memberLookup, action.membersList),
+      inflatedProject: inflatedProject
+      );
   }
 
   if (action is SetIsInvitingUser) {
@@ -378,6 +383,16 @@ int _taskListSorter(TaskListModel a, TaskListModel b) {
   int dateB = b.dateAdded?.millisecondsSinceEpoch ?? 0;
 
   return dateA - dateB;
+}
+
+Map<String, MemberModel> _updateMemberLookup(Map<String, MemberModel> existingMemberLookup, List<MemberModel> incomingMembers) {
+  var map = Map<String, MemberModel>.from(existingMemberLookup);
+
+  for (var member in incomingMembers) {
+    map[member.userId] = member;
+  }
+
+  return map;
 }
 
 List<TaskListModel> _sortTaskLists(TaskListSorting sorting,
@@ -592,8 +607,9 @@ int _taskDateAddedSorter(TaskModel a, TaskModel b) {
 }
 
 int _taskAssigneeSorter(TaskModel a, TaskModel b) {
-  var coercedA = a.assignedTo ?? '';
-  var coercedB = b.assignedTo ?? '';
+  int foldedA = a.assignedTo.fold(0, (prev, item) => prev.hashCode + item.hashCode);
+  int foldedB = b.assignedTo.fold(0, (prev, item) => prev.hashCode + item.hashCode);
+  
 
-  return coercedA.compareTo(coercedB);
+  return foldedA - foldedB;
 }

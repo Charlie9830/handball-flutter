@@ -69,6 +69,8 @@ class HomeScreenContainer extends StatelessWidget {
     return tasks.map((task) {
       return TaskViewModel(
         data: task,
+        isAssigned: task.isAssigned,
+        assignments: task.getAssignments(store.state.memberLookup),
         onCheckboxChanged: (newValue) => store
             .dispatch(updateTaskComplete(task.uid, newValue, task.metadata)),
         onDelete: () => store.dispatch(deleteTaskWithDialog(task.uid, context)),

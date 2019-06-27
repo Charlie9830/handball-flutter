@@ -654,6 +654,31 @@ ThunkAction<AppState> updateTaskNote(String newValue, String oldValue,
   };
 }
 
+ThunkAction<AppState> updateTaskAssignments(
+    List<String> newAssignments,
+    List<String> oldAssignments,
+    String taskId,
+    String projectId,
+    TaskMetadata existingMetadata) {
+  return (Store<AppState> store) async {
+    var batch = Firestore.instance.batch();
+    var ref = _getTasksCollectionRef(projectId).document(taskId);
+
+    batch.updateData(ref, {'assignedTo': newAssignments});
+    batch.updateData(ref, {
+      'metadata': _getUpdatedTaskMetadata(existingMetadata,
+              TaskMetadataUpdateType.updated, store.state.user.userId)
+          .toMap()
+    });
+
+    try {
+      await batch.commit();
+    } catch(error) {
+      throw error;
+    }
+  };
+}
+
 ThunkAction<AppState> updateTaskDueDate(String taskId, DateTime newValue,
     DateTime oldValue, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
