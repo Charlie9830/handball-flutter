@@ -21,6 +21,7 @@ class Task extends StatelessWidget {
     return new Slidable(
       delegate: new SlidableDrawerDelegate(),
       actionExtentRatio: 0.25,
+      enabled: model.isInMultiSelectMode == false,
       child: InkWell(
           onTap: model.onTap,
           onLongPress: model.onLongPress,

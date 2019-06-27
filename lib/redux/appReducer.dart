@@ -30,7 +30,10 @@ AppState appReducer(AppState state, dynamic action) {
           listCustomSortOrder: _extractListCustomSortOrder(
               state.members, action.uid, state.user.userId),
           listSorting: state.listSorting,
-        ));
+        ),
+        isInMultiSelectTaskMode: false,
+        multiSelectedTasks: initialAppState.multiSelectedTasks,
+        );
   }
 
   if (action is ReceiveProject) {

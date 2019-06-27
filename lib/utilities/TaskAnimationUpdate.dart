@@ -13,11 +13,14 @@ class TaskAnimationUpdate {
   });
 
   static int removalSorter( TaskAnimationUpdate a, TaskAnimationUpdate b ) {
-    if (a.listStateKey.hashCode < b.listStateKey.hashCode) {
+    int hashCodeA = a.listStateKey?.hashCode ?? 0;
+    int hashCodeB = b.listStateKey?.hashCode ?? 0;
+
+    if (hashCodeA < hashCodeB) {
       return 1;
     }
 
-    if (a.listStateKey.hashCode > b.listStateKey.hashCode) {
+    if (hashCodeA > hashCodeB) {
       return -1;
     }
 
@@ -27,12 +30,19 @@ class TaskAnimationUpdate {
   }
 
   static int additionSorter( TaskAnimationUpdate a, TaskAnimationUpdate b ) {
-    if (a.listStateKey.hashCode < b.listStateKey.hashCode) {
+    int hashCodeA = a.listStateKey?.hashCode ?? 0;
+    int hashCodeB = b.listStateKey?.hashCode ?? 0;
+
+    if (hashCodeA < hashCodeB) {
       return 1;
     }
 
-    if (a.listStateKey.hashCode > b.listStateKey.hashCode) {
+    if (hashCodeA > hashCodeB) {
       return -1;
+    }
+
+    if (a.index == null || b.index == null) {
+      print('AN INDEX IS NULL');
     }
 
     else {

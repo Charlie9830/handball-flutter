@@ -4,6 +4,7 @@ import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/HomeScreenViewModel.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
+import 'package:handball_flutter/presentation/Nothing.dart';
 import 'package:handball_flutter/presentation/ProjectMenu.dart';
 import 'package:handball_flutter/presentation/Screens/HomeScreen/MultiSelectTaskAppBar.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
@@ -18,8 +19,8 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        key: homeScreenScaffoldKey,
-        appBar: PreferredSize(
+      key: homeScreenScaffoldKey,
+      appBar: PreferredSize(
           preferredSize: Size.fromHeight(54),
           child: AnimatedCrossFade(
             firstChild: _getStandardAppBar(),
@@ -27,22 +28,23 @@ class HomeScreen extends StatelessWidget {
               onCancel: viewModel.onCancelMultiSelectTaskMode,
               onMoveTasks: viewModel.onMoveTasksButtonPressed,
             ),
-            crossFadeState: viewModel.isInMultiSelectTaskMode ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            crossFadeState: viewModel.isInMultiSelectTaskMode
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
             duration: Duration(milliseconds: 250),
-          )
-        ),
-        
-        drawer: Drawer(
-          child: AppDrawerContainer(),
-        ),
-        
-        body: ListView(
-            children: _buildTaskLists(context, viewModel.taskListViewModels)),
-        floatingActionButton: FloatingActionButton(
-            onPressed: () => viewModel.onAddNewTaskFabButtonPressed(),
-            child: Icon(Icons.add),
-          ),
-        );
+          )),
+      drawer: Drawer(
+        child: AppDrawerContainer(),
+      ),
+      body: ListView(
+          children: _buildTaskLists(context, viewModel.taskListViewModels)),
+      floatingActionButton: viewModel.isInMultiSelectTaskMode == true
+          ? Nothing()
+          : FloatingActionButton(
+              onPressed: () => viewModel.onAddNewTaskFabButtonPressed(),
+              child: Icon(Icons.add),
+            ),
+    );
   }
 
   List<Widget> _buildTaskLists(
@@ -71,18 +73,17 @@ class HomeScreen extends StatelessWidget {
 
   Widget _getStandardAppBar() {
     return AppBar(
-          title: Text(viewModel.projectName ?? ''),
-          actions: <Widget>[
-            IconButton(
-              icon: Icon(Icons.share),
-              onPressed: viewModel.onShareProjectButtonPressed,
-            ),
-            ProjectMenu(
-              onSetListSorting: viewModel.onSetListSorting,
-              listSorting: viewModel.listSorting,
-            )
-            
-          ],
-        );
+      title: Text(viewModel.projectName ?? ''),
+      actions: <Widget>[
+        IconButton(
+          icon: Icon(Icons.share),
+          onPressed: viewModel.onShareProjectButtonPressed,
+        ),
+        ProjectMenu(
+          onSetListSorting: viewModel.onSetListSorting,
+          listSorting: viewModel.listSorting,
+        )
+      ],
+    );
   }
 }
