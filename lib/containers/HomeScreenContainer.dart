@@ -53,6 +53,8 @@ class HomeScreenContainer extends StatelessWidget {
       showOnlySelfTasks: store.state.showOnlySelfTasks,
       onShowOnlySelfTasksChanged: (newValue) => store.dispatch(setShowOnlySelfTasks(newValue)),
       isProjectShared: store.state.members[projectId] != null && store.state.members[projectId].length > 1,
+      showCompletedTasks: store.state.showCompletedTasks,
+      onShowCompletedTasksChanged: (newValue) => store.dispatch(setShowCompletedTasks(newValue, projectId))
     );
   }
 

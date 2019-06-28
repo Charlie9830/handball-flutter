@@ -71,6 +71,9 @@ AppState appReducer(AppState state, dynamic action) {
         state.tasksByProject, action.tasks, action.originProjectId);
     var filteredTasks = _filterTasks(state.selectedProjectId, tasksByProject);
 
+    print('Incoming Tasks ${action.tasks.length}');
+    print('Smooshed Tasks ${tasks.length}');
+
     return state.copyWith(
         tasks: tasks,
         filteredTasks: filteredTasks,
@@ -192,6 +195,12 @@ AppState appReducer(AppState state, dynamic action) {
       projectIndicatorGroups:
           getProjectIndicatorGroups(tasks, state.user.userId),
       members: members,
+    );
+  }
+
+  if (action is SetShowCompletedTasks) {
+    return state.copyWith(
+      showCompletedTasks: action.showCompletedTasks,
     );
   }
 

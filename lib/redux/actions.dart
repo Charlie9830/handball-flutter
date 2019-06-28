@@ -148,6 +148,14 @@ class SetIsInvitingUser {
   });
 }
 
+class SetShowCompletedTasks {
+  final bool showCompletedTasks;
+
+  SetShowCompletedTasks({
+    this.showCompletedTasks,
+  });
+}
+
 class ReceiveProjectInvites {
   final List<ProjectInviteModel> invites;
 
@@ -1530,6 +1538,60 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
   };
 }
 
+ThunkAction<AppState> setShowCompletedTasks(
+    bool showCompletedTasks, String projectId) {
+  return (Store<AppState> store) async {
+    store.dispatch(SetShowCompletedTasks(showCompletedTasks: showCompletedTasks));
+
+    if (showCompletedTasks == true) {
+      _firestoreStreams.projectSubscriptions[projectId].completedTasks =
+          _subscribeToCompletedTasks(projectId, store);
+    } else {
+      _firestoreStreams.projectSubscriptions[projectId]?.completedTasks
+          ?.cancel();
+
+      if (store.state.inflatedProject != null &&
+          projectId == store.state.inflatedProject.data.uid) {
+        // Animated the completed Tasks out.
+        var outgoingTasks = store.state.tasksByProject[projectId]
+            .where((task) => task.isComplete == true)
+            .toList();
+        var preMutationIndices =
+            Map<String, int>.from(store.state.inflatedProject.taskIndices);
+        var taskAnimationUpdates = outgoingTasks
+            .map((task) => TaskAnimationUpdate(
+                  index: _getTaskAnimationIndex(preMutationIndices, task.uid),
+                  listStateKey: _getAnimatedListStateKey(task.taskList),
+                  task: task,
+                ))
+            .toList();
+
+        store.dispatch(ReceiveTasks(
+          originProjectId: projectId,
+          tasks: store.state.tasks
+              .where((task) =>
+                  task.project == projectId && task.isComplete == true)
+              .toList(),
+        ));
+
+        taskAnimationUpdates.sort(TaskAnimationUpdate.removalSorter);
+        _driveTaskRemovalAnimations(taskAnimationUpdates);
+      }
+    }
+  };
+}
+
+StreamSubscription<QuerySnapshot> _subscribeToCompletedTasks(
+    String projectId, Store<AppState> store) {
+  return Firestore.instance
+      .collection('projects')
+      .document(projectId)
+      .collection('tasks')
+      .where('isComplete', isEqualTo: true)
+      .snapshots()
+      .listen((snapshot) => _handleTasksSnapshot(snapshot, projectId, store));
+}
+
 ThunkAction<AppState> addNewTaskListWithDialog(
     String projectId, BuildContext context) {
   return (Store<AppState> store) async {
@@ -1633,8 +1695,10 @@ ThunkAction<AppState> addNewTaskWithDialog(
 
     var assignmentOptions = store.state.members[projectId] == null
         ? <Assignment>[]
-        : store.state.members[projectId].map((item) =>
-            Assignment(userId: item.userId, displayName: item.displayName)).toList();
+        : store.state.members[projectId]
+            .map((item) =>
+                Assignment(userId: item.userId, displayName: item.displayName))
+            .toList();
 
     var result = await showDialog(
       barrierDismissible: true,
@@ -1645,7 +1709,8 @@ ThunkAction<AppState> addNewTaskWithDialog(
             allowTaskListChange: taskListId == null,
             assignmentOptions: assignmentOptions,
             memberLookup: store.state.memberLookup,
-            isProjectShared: store.state.members[projectId] != null && store.state.members[projectId].length > 1,
+            isProjectShared: store.state.members[projectId] != null &&
+                store.state.members[projectId].length > 1,
           ),
     );
 
@@ -1686,8 +1751,6 @@ ThunkAction<AppState> addNewTaskWithDialog(
               createdBy: store.state.user.displayName,
               createdOn: DateTime.now(),
             ));
-
-        
 
         batch.setData(taskRef, task.toMap());
         batch.setData(taskListRef, newTaskList.toMap());

@@ -57,6 +57,7 @@ final initialAppState = AppState(
   isInMultiSelectTaskMode: false,
   memberLookup: <String, MemberModel>{},
   showOnlySelfTasks: false,
+  showCompletedTasks: false,
 );
 
 final appStore = new Store<AppState> (

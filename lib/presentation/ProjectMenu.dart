@@ -3,17 +3,22 @@ import 'package:handball_flutter/enums.dart';
 
 class ProjectMenu extends StatelessWidget {
   final TaskListSorting listSorting;
+  final bool showCompletedTasks;
   final bool isProjectShared;
   final bool showOnlySelfTasks;
   final dynamic onSetListSorting;
   final dynamic onShowOnlySelfTasksChanged;
+  final dynamic onShowCompletedTasksChanged;
+
   const ProjectMenu(
       {Key key,
       this.listSorting,
       this.onSetListSorting,
       this.onShowOnlySelfTasksChanged,
       this.showOnlySelfTasks,
-      this.isProjectShared})
+      this.isProjectShared,
+      this.showCompletedTasks,
+      this.onShowCompletedTasksChanged})
       : super(key: key);
 
   @override
@@ -23,6 +28,11 @@ class ProjectMenu extends StatelessWidget {
         onSelected: (value) => _handleSelection(value),
         itemBuilder: (context) {
           return <PopupMenuEntry<dynamic>>[
+            PopupMenuItem(
+              child: Text( showCompletedTasks ? 'Hide Completed' : 'Show Completed'),
+              value: 'show-completed-tasks'
+            ),
+            PopupMenuDivider(),
             PopupMenuItem(
               child: Text('Sort lists by',
                   style: Theme.of(context).textTheme.subtitle),
@@ -62,6 +72,10 @@ class ProjectMenu extends StatelessWidget {
 
       case 'show-self-tasks':
         onShowOnlySelfTasksChanged(!showOnlySelfTasks);
+        break;
+
+      case 'show-completed-tasks':
+        onShowCompletedTasksChanged(!showCompletedTasks);
         break;
       default:
         break;
