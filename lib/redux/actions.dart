@@ -10,6 +10,7 @@ import 'package:handball_flutter/FirestoreStreamsContainer.dart';
 import 'package:handball_flutter/configValues.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/keys.dart';
+import 'package:handball_flutter/models/Assignment.dart';
 import 'package:handball_flutter/models/ChecklistSettings.dart';
 import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/DirectoryListing.dart';
@@ -266,20 +267,6 @@ Future<TextInputDialogResult> postTextInputDialog(
   );
 }
 
-Future<AddTaskDialogResult> postAddTaskDialog(
-    BuildContext context, TaskListModel selectedTaskList,
-    {List<TaskListModel> taskLists, bool allowTaskListChange}) {
-  return showDialog(
-    barrierDismissible: true,
-    context: context,
-    builder: (context) => AddTaskDialog(
-          preselectedTaskList: selectedTaskList,
-          taskLists: taskLists,
-          allowTaskListChange: allowTaskListChange,
-        ),
-  );
-}
-
 Future<DialogResult> postConfirmationDialog(String title, String text,
     String affirmativeText, String negativeText, BuildContext context) {
   return showDialog(
@@ -422,47 +409,47 @@ void removeProccessingProjectInviteId(String projectId, Store<AppState> store) {
 
 ThunkAction<AppState> setShowOnlySelfTasks(bool showOnlySelfTasks) {
   return (Store<AppState> store) async {
+    var projectId = store.state.selectedProjectId;
 
-      var projectId = store.state.selectedProjectId;
+    var inflatedProject = buildInflatedProject(
+      tasks: store.state.tasksByProject[projectId],
+      taskLists: store.state.taskListsByProject[projectId],
+      listCustomSortOrder: extractListCustomSortOrder(
+          store.state.members, projectId, store.state.user.userId),
+      listSorting: store.state.listSorting,
+      project: extractProject(projectId, store.state.projects),
+      showOnlySelfTasks: showOnlySelfTasks,
+    );
 
-      var inflatedProject = buildInflatedProject(
-        tasks: store.state.tasksByProject[projectId],
-        taskLists: store.state.taskListsByProject[projectId],
-        listCustomSortOrder: extractListCustomSortOrder(
-            store.state.members, projectId, store.state.user.userId),
-        listSorting: store.state.listSorting,
-        project: extractProject(projectId, store.state.projects),
-        showOnlySelfTasks: showOnlySelfTasks,
-      );
+    var preMutationTaskIndices =
+        Map<String, int>.from(store.state.inflatedProject.taskIndices);
+    var postMutationTaskIndices =
+        Map<String, int>.from(inflatedProject.taskIndices);
 
-      var preMutationTaskIndices =
-          Map<String, int>.from(store.state.inflatedProject.taskIndices);
-      var postMutationTaskIndices =
-          Map<String, int>.from(inflatedProject.taskIndices);
+    var hiddenTasks = store.state.tasksByProject[projectId]
+        .where((task) => task.isAssignedToSelf == false)
+        .toList();
 
-      var hiddenTasks = store.state.tasksByProject[projectId].where((task) => task.isAssignedToSelf == false).toList();
+    for (var task in hiddenTasks) {
+      print(task.taskName);
+    }
 
-      for (var task in hiddenTasks) {
-        print(task.taskName);
-      }
-
-      store.dispatch(SetInflatedProject(inflatedProject: inflatedProject));
-      store.dispatch(SetShowOnlySelfTasks(showOnlySelfTasks: showOnlySelfTasks));
+    store.dispatch(SetInflatedProject(inflatedProject: inflatedProject));
+    store.dispatch(SetShowOnlySelfTasks(showOnlySelfTasks: showOnlySelfTasks));
 
     if (showOnlySelfTasks == true) {
-      var removalAnimationUpdates = hiddenTasks.map( (task) {
+      var removalAnimationUpdates = hiddenTasks.map((task) {
         return TaskAnimationUpdate(
-          index: _getTaskAnimationIndex(preMutationTaskIndices, task.uid),
-          listStateKey: _getAnimatedListStateKey(task.taskList),
-          task: task
-        );
+            index: _getTaskAnimationIndex(preMutationTaskIndices, task.uid),
+            listStateKey: _getAnimatedListStateKey(task.taskList),
+            task: task);
       }).toList();
-      
+
       removalAnimationUpdates.sort(TaskAnimationUpdate.removalSorter);
 
       _driveTaskRemovalAnimations(removalAnimationUpdates);
     } else {
-      var additionAnimationUpdates = hiddenTasks.map( (task) {
+      var additionAnimationUpdates = hiddenTasks.map((task) {
         return TaskAnimationUpdate(
           index: _getTaskAnimationIndex(postMutationTaskIndices, task.uid),
           listStateKey: _getAnimatedListStateKey(task.taskList),
@@ -470,12 +457,9 @@ ThunkAction<AppState> setShowOnlySelfTasks(bool showOnlySelfTasks) {
         );
       }).toList();
 
-      
       additionAnimationUpdates.sort(TaskAnimationUpdate.additionSorter);
       _driveTaskAdditionAnimations(additionAnimationUpdates);
     }
-
-      
   };
 }
 
@@ -1647,12 +1631,22 @@ ThunkAction<AppState> addNewTaskWithDialog(
     var preselectedTaskList = _getAddTaskDialogPreselectedTaskList(
         projectId, taskListId, store.state);
 
-    var result = await postAddTaskDialog(
-      context,
-      preselectedTaskList,
-      taskLists: store.state.filteredTaskLists,
-      allowTaskListChange: taskListId ==
-          null, // No taskListId provided. So allow the user to choose one.
+    var assignmentOptions = store.state.members[projectId] == null
+        ? <Assignment>[]
+        : store.state.members[projectId].map((item) =>
+            Assignment(userId: item.userId, displayName: item.displayName)).toList();
+
+    var result = await showDialog(
+      barrierDismissible: true,
+      context: context,
+      builder: (context) => AddTaskDialog(
+            preselectedTaskList: preselectedTaskList,
+            taskLists: store.state.taskListsByProject[projectId],
+            allowTaskListChange: taskListId == null,
+            assignmentOptions: assignmentOptions,
+            memberLookup: store.state.memberLookup,
+            isProjectShared: store.state.members[projectId] != null && store.state.members[projectId].length > 1,
+          ),
     );
 
     if (result == null) {
@@ -1687,10 +1681,13 @@ ThunkAction<AppState> addNewTaskWithDialog(
             dueDate: result.selectedDueDate,
             isHighPriority: result.isHighPriority,
             dateAdded: DateTime.now(),
+            assignedTo: result.assignedToIds,
             metadata: TaskMetadata(
               createdBy: store.state.user.displayName,
               createdOn: DateTime.now(),
             ));
+
+        
 
         batch.setData(taskRef, task.toMap());
         batch.setData(taskListRef, newTaskList.toMap());
@@ -1721,6 +1718,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
             dueDate: result.selectedDueDate,
             isHighPriority: result.isHighPriority,
             dateAdded: DateTime.now(),
+            assignedTo: result.assignedToIds,
             metadata: TaskMetadata(
                 createdBy: store.state.user.displayName,
                 createdOn: DateTime.now()));
@@ -1945,7 +1943,6 @@ void _handleTasksSnapshot(
         .dispatch(ReceiveTasks(tasks: tasks, originProjectId: originProjectId));
   }
 }
-
 
 List<TaskAnimationUpdate> _getTaskRemovalAnimationUpdates(
     List<CustomDocumentChange> removedCustomDocumentChanges,

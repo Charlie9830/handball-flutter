@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:handball_flutter/enums.dart';
+import 'package:handball_flutter/models/Assignment.dart';
+import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
+import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AssignmentShortcutChip.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/DueDateShorcutChip.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/PriorityShortcutChip.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/TaskListSelectChip.dart';
@@ -13,6 +16,9 @@ class AddTaskDialog extends StatefulWidget {
   List<TaskListModel> taskLists;
   TaskListModel preselectedTaskList;
   String text;
+  List<Assignment> assignmentOptions;
+  Map<String, MemberModel> memberLookup;
+  bool isProjectShared;
   bool allowTaskListChange;
 
   AddTaskDialog({
@@ -20,6 +26,9 @@ class AddTaskDialog extends StatefulWidget {
     this.preselectedTaskList,
     this.text = '',
     this.allowTaskListChange,
+    this.assignmentOptions,
+    this.isProjectShared,
+    this.memberLookup
   });
 
   @override
@@ -33,12 +42,16 @@ class _AddTaskDialog extends State<AddTaskDialog> {
   FocusNode _textInputFocusNode;
   bool _isTaskListNew = false;
   TaskListModel _selectedTaskList;
+  List<Assignment> assignments;
+  Map<String, Assignment> assignmentMap;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.text);
     _textInputFocusNode = new FocusNode();
+
+    assignments = <Assignment>[];
   }
 
   @override
@@ -103,6 +116,12 @@ class _AddTaskDialog extends State<AddTaskDialog> {
                                       isHighPriority: _isHighPriority,
                                       onChanged: (newValue) => setState(
                                           () => _isHighPriority = newValue)),
+                                  if (widget.isProjectShared == true)
+                                  AssignmentShortcutChip(
+                                    assignmentOptions: widget.assignmentOptions,
+                                    assignments: assignments,
+                                    onChanged: (newValue) => _handleAssignmentsChange(newValue, context),
+                                  )
                                 ]),
                           ),
                           Row(
@@ -139,6 +158,19 @@ class _AddTaskDialog extends State<AddTaskDialog> {
             )),
       ),
     );
+  }
+
+  void _handleAssignmentsChange(List<String> assignmentIds, BuildContext context) {
+    _reattachTextInputFocus(context);
+
+    var newAssignments = assignmentIds.map( (userId) {
+      return Assignment(
+        userId: userId,
+        displayName:  widget.memberLookup[userId]?.displayName ?? '',
+      );
+    }).toList();
+
+    setState( () => assignments = newAssignments);
   }
 
   Future<bool> _handleScopePop(BuildContext context) {
@@ -187,6 +219,7 @@ class _AddTaskDialog extends State<AddTaskDialog> {
       taskListId: _getTaskListIdResult(),
       taskListName: _selectedTaskList?.taskListName,
       taskName: taskName,
+      assignedToIds: assignments.map( (item) => item.userId).toList(),
     );
   }
 
@@ -258,6 +291,7 @@ class AddTaskDialogResult {
   String taskListId;
   String taskListName;
   DateTime selectedDueDate;
+  List<String> assignedToIds;
   bool isHighPriority;
 
   AddTaskDialogResult({
@@ -268,5 +302,6 @@ class AddTaskDialogResult {
     this.taskListName,
     this.isHighPriority,
     this.selectedDueDate,
+    this.assignedToIds,
   });
 }
