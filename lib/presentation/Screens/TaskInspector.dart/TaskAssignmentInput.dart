@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/models/Assignment.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChooseAssignmentDialog/ChooseAssignmentDialog.dart';
+import 'package:handball_flutter/presentation/ReactiveAnimatedList.dart';
 
 class TaskAssignmentInput extends StatelessWidget {
   final List<Assignment> assignments;
@@ -41,9 +42,8 @@ class TaskAssignmentInput extends StatelessWidget {
     if (assignments == null || assignments.length == 0) {
       return Text('Assign to');
     } else {
-      return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+      return ReactiveAnimatedList(
+          shrinkWrap: true,
           children: _mapAssignments(context));
     }
   }
@@ -55,8 +55,18 @@ class TaskAssignmentInput extends StatelessWidget {
 
     for (var assignment in assignments) {
       widgets.add(Padding(
+        key: Key(assignment.userId),
         padding: const EdgeInsets.only(bottom: 4),
-        child: Text(assignment.displayName),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget> [
+            Text(assignment.displayName),
+            IconButton(
+              icon: Icon(Icons.clear),
+              onPressed: () => _handleAssignmentClear(assignment.userId),
+            )
+          ]
+        ) 
       ));
 
       count++;
@@ -66,6 +76,7 @@ class TaskAssignmentInput extends StatelessWidget {
         var overflow = assignments.length - count;
         if (overflow > 0) {
           widgets.add(Padding(
+            key: Key('overflow-indicator'),
             padding: EdgeInsets.only(top: 4),
             child: Text(
               '${assignments.length - count} more',
@@ -79,5 +90,13 @@ class TaskAssignmentInput extends StatelessWidget {
     }
 
     return widgets;
+  }
+
+  void _handleAssignmentClear(String userId) {
+    var assignmentIds = assignments.map( (assignment) => assignment.userId).toList();
+
+    assignmentIds.remove(userId);
+
+    onChange(assignmentIds);
   }
 }

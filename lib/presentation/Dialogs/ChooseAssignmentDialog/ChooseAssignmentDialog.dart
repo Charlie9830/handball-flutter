@@ -25,42 +25,38 @@ class _ChooseAssignmentDialogState extends State<ChooseAssignmentDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-        child: SafeArea(
-            child: Container(
-                child: Column(
-      children: <Widget>[
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return AlertDialog(
+        title: Text('Pick Contributors'),
+        content: Container(
+            child: Column(
           children: <Widget>[
-            Text('Pick contributors',
-                style: Theme.of(context).textTheme.headline),
-            FlatButton(
-              child: Text('Clear'),
-              onPressed: () => _handleClear(context),
-            )
+            Expanded(
+                child: ListView(
+              children: _getOptions(),
+            )),
           ],
-        ),
-        Expanded(
-            child: ListView(
-          children: _getOptions(),
         )),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: <Widget>[
-            FlatButton(
-              child: Text('Cancel'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            FlatButton(
-              child: Text('Okay'),
-              onPressed: ()  => Navigator.of(context).pop(_assignedOptionIds.toList()),
-              textColor: Theme.of(context).colorScheme.secondary,
-            ),
-          ],
-        )
-      ],
-    ))));
+        actions: <Widget>[
+          ButtonBar(
+            alignment: MainAxisAlignment.start,
+            children: <Widget>[
+              FlatButton(
+                child: Text('Clear'),
+                onPressed: () => _handleClear(context),
+              )
+            ],
+          ),
+          FlatButton(
+            child: Text('Cancel'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          FlatButton(
+            child: Text('Okay'),
+            onPressed: () =>
+                Navigator.of(context).pop(_assignedOptionIds.toList()),
+            textColor: Theme.of(context).colorScheme.secondary,
+          ),
+        ]);
   }
 
   void _handleClear(BuildContext context) {
@@ -72,7 +68,8 @@ class _ChooseAssignmentDialogState extends State<ChooseAssignmentDialog> {
   }
 
   List<Widget> _getOptions() {
-    var sortedOptions = widget.options.toList()..sort( (a, b) => a.displayName.compareTo(b.displayName));
+    var sortedOptions = widget.options.toList()
+      ..sort((a, b) => a.displayName.compareTo(b.displayName));
 
     var widgets = sortedOptions.map((item) {
       return AssignmentListItem(
@@ -89,13 +86,13 @@ class _ChooseAssignmentDialogState extends State<ChooseAssignmentDialog> {
   void _handleAssignmentChange(Assignment assignment, bool newValue) {
     if (newValue == true &&
         _assignedOptionIds.contains(assignment.userId) == false) {
-
-       setState(
-           () => _assignedOptions = _assignedOptions.toList()..add(assignment));
+      setState(
+          () => _assignedOptions = _assignedOptions.toList()..add(assignment));
     }
 
     if (newValue == false && _assignedOptionIds.contains(assignment.userId)) {
-      var index = _assignedOptions.indexWhere((item) => item.userId == assignment.userId);
+      var index = _assignedOptions
+          .indexWhere((item) => item.userId == assignment.userId);
       if (index != -1) {
         setState(() => _assignedOptions = _assignedOptions..removeAt(index));
       }

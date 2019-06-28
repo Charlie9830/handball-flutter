@@ -13,20 +13,21 @@ class AssignmentIndicator extends StatelessWidget {
       spacing: 2,
       runSpacing: 2,
       direction: Axis.horizontal,
-      children: _getChildren(),
+      children: _getChildren(context),
     );
   }
 
-  List<Widget> _getChildren() {
+  List<Widget> _getChildren(BuildContext context) {
+    var backgroundColor = Theme.of(context).brightness == Brightness.light ? Colors.grey : Colors.blueGrey;
+
     return assignments.map( (item) {
-      var colorPair = UserColor.getColorPair(item.userId);
       return Container(
         decoration: BoxDecoration(
-          color: colorPair.backgroundColor,
+          color: backgroundColor,
           borderRadius: BorderRadius.all(Radius.circular(4)),
         ),
         padding: EdgeInsets.all(4),
-        child: Text(item.displayName, style: TextStyle(color: colorPair.textColor)),
+        child: Text(item.displayName, style: TextStyle(color: Colors.white /*colorPair.textColor*/)),
       );
     }).toList();
   }
