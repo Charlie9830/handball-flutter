@@ -3,8 +3,17 @@ import 'package:handball_flutter/enums.dart';
 
 class ProjectMenu extends StatelessWidget {
   final TaskListSorting listSorting;
+  final bool isProjectShared;
+  final bool showOnlySelfTasks;
   final dynamic onSetListSorting;
-  const ProjectMenu({Key key, this.listSorting, this.onSetListSorting})
+  final dynamic onShowOnlySelfTasksChanged;
+  const ProjectMenu(
+      {Key key,
+      this.listSorting,
+      this.onSetListSorting,
+      this.onShowOnlySelfTasksChanged,
+      this.showOnlySelfTasks,
+      this.isProjectShared})
       : super(key: key);
 
   @override
@@ -15,7 +24,8 @@ class ProjectMenu extends StatelessWidget {
         itemBuilder: (context) {
           return <PopupMenuEntry<dynamic>>[
             PopupMenuItem(
-              child: Text('Sort lists by', style: Theme.of(context).textTheme.subtitle),
+              child: Text('Sort lists by',
+                  style: Theme.of(context).textTheme.subtitle),
               enabled: false,
             ),
             CheckedPopupMenuItem(
@@ -28,6 +38,14 @@ class ProjectMenu extends StatelessWidget {
               value: 'list-sorting-custom',
               checked: listSorting == TaskListSorting.custom,
             ),
+            if (isProjectShared == true) PopupMenuDivider(),
+            if (isProjectShared == true)
+              PopupMenuItem(
+                child: Text(showOnlySelfTasks == true
+                    ? 'Show all Tasks'
+                    : 'Show only my Tasks'),
+                value: 'show-self-tasks',
+              )
           ];
         });
   }
@@ -42,6 +60,9 @@ class ProjectMenu extends StatelessWidget {
         onSetListSorting(TaskListSorting.custom);
         break;
 
+      case 'show-self-tasks':
+        onShowOnlySelfTasksChanged(!showOnlySelfTasks);
+        break;
       default:
         break;
     }

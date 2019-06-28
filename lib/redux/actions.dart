@@ -35,7 +35,10 @@ import 'package:handball_flutter/presentation/Screens/SignUp/SignUpBase.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:handball_flutter/utilities/TaskAnimationUpdate.dart';
+import 'package:handball_flutter/utilities/buildInflatedProject.dart';
 import 'package:handball_flutter/utilities/convertMemberRole.dart';
+import 'package:handball_flutter/utilities/extractListCustomSortOrder.dart';
+import 'package:handball_flutter/utilities/extractProject.dart';
 import 'package:handball_flutter/utilities/listSortingHelpers.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
 import 'package:redux/redux.dart';
@@ -122,6 +125,18 @@ class SetProcessingMembers {
   SetProcessingMembers({
     this.processingMembers,
   });
+}
+
+class SetShowOnlySelfTasks {
+  final bool showOnlySelfTasks;
+
+  SetShowOnlySelfTasks({this.showOnlySelfTasks});
+}
+
+class SetInflatedProject {
+  final InflatedProjectModel inflatedProject;
+
+  SetInflatedProject({this.inflatedProject});
 }
 
 class SetIsInvitingUser {
@@ -405,6 +420,65 @@ void removeProccessingProjectInviteId(String projectId, Store<AppState> store) {
       SetProcessingProjectInviteIds(processingProjectInviteIds: newList));
 }
 
+ThunkAction<AppState> setShowOnlySelfTasks(bool showOnlySelfTasks) {
+  return (Store<AppState> store) async {
+
+      var projectId = store.state.selectedProjectId;
+
+      var inflatedProject = buildInflatedProject(
+        tasks: store.state.tasksByProject[projectId],
+        taskLists: store.state.taskListsByProject[projectId],
+        listCustomSortOrder: extractListCustomSortOrder(
+            store.state.members, projectId, store.state.user.userId),
+        listSorting: store.state.listSorting,
+        project: extractProject(projectId, store.state.projects),
+        showOnlySelfTasks: showOnlySelfTasks,
+      );
+
+      var preMutationTaskIndices =
+          Map<String, int>.from(store.state.inflatedProject.taskIndices);
+      var postMutationTaskIndices =
+          Map<String, int>.from(inflatedProject.taskIndices);
+
+      var hiddenTasks = store.state.tasksByProject[projectId].where((task) => task.isAssignedToSelf == false).toList();
+
+      for (var task in hiddenTasks) {
+        print(task.taskName);
+      }
+
+      store.dispatch(SetInflatedProject(inflatedProject: inflatedProject));
+      store.dispatch(SetShowOnlySelfTasks(showOnlySelfTasks: showOnlySelfTasks));
+
+    if (showOnlySelfTasks == true) {
+      var removalAnimationUpdates = hiddenTasks.map( (task) {
+        return TaskAnimationUpdate(
+          index: _getTaskAnimationIndex(preMutationTaskIndices, task.uid),
+          listStateKey: _getAnimatedListStateKey(task.taskList),
+          task: task
+        );
+      }).toList();
+      
+      removalAnimationUpdates.sort(TaskAnimationUpdate.removalSorter);
+
+      _driveTaskRemovalAnimations(removalAnimationUpdates);
+    } else {
+      var additionAnimationUpdates = hiddenTasks.map( (task) {
+        return TaskAnimationUpdate(
+          index: _getTaskAnimationIndex(postMutationTaskIndices, task.uid),
+          listStateKey: _getAnimatedListStateKey(task.taskList),
+          task: null,
+        );
+      }).toList();
+
+      
+      additionAnimationUpdates.sort(TaskAnimationUpdate.additionSorter);
+      _driveTaskAdditionAnimations(additionAnimationUpdates);
+    }
+
+      
+  };
+}
+
 ThunkAction<AppState> moveTasksToListWithDialog(
     List<TaskModel> tasks,
     String projectId,
@@ -673,7 +747,7 @@ ThunkAction<AppState> updateTaskAssignments(
 
     try {
       await batch.commit();
-    } catch(error) {
+    } catch (error) {
       throw error;
     }
   };
@@ -1856,16 +1930,54 @@ void _handleTasksSnapshot(
     store
         .dispatch(ReceiveTasks(tasks: tasks, originProjectId: originProjectId));
 
-    _driveTaskRemovalAnimations(preMutationTaskIndices,
-        groupedDocumentChanges.removed, store.state.user.userId);
+    // Additions.
+    _driveTaskRemovalAnimations(_getTaskRemovalAnimationUpdates(
+        groupedDocumentChanges.removed,
+        preMutationTaskIndices,
+        store.state.user.userId));
 
-    _driveTaskAdditionAnimations(
-        store.state.inflatedProject.taskIndices, groupedDocumentChanges.added);
+    // Removals.
+    _driveTaskAdditionAnimations(_getTaskAdditionAnimationUpdates(
+        groupedDocumentChanges.added, store.state.inflatedProject.taskIndices));
   } else {
     // No animation required. Just dispatch the changes to the store.
     store
         .dispatch(ReceiveTasks(tasks: tasks, originProjectId: originProjectId));
   }
+}
+
+
+List<TaskAnimationUpdate> _getTaskRemovalAnimationUpdates(
+    List<CustomDocumentChange> removedCustomDocumentChanges,
+    Map<String, int> preMutationTaskIndices,
+    String userId) {
+  var list = removedCustomDocumentChanges.map((change) {
+    return TaskAnimationUpdate(
+      task: TaskModel.fromDoc(change.document, userId),
+      index: _getTaskAnimationIndex(preMutationTaskIndices, change.uid),
+      listStateKey: _getAnimatedListStateKey(change.taskList),
+    );
+  }).toList();
+
+  list.sort(TaskAnimationUpdate.removalSorter);
+  return list;
+}
+
+List<TaskAnimationUpdate> _getTaskAdditionAnimationUpdates(
+    List<CustomDocumentChange> addedCustomDocumentChanges,
+    Map<String, int> postMutationTaskIndices) {
+  var list = addedCustomDocumentChanges.map((docChange) {
+    return TaskAnimationUpdate(
+      index: _getTaskAnimationIndex(
+          postMutationTaskIndices, docChange.document.documentID),
+      listStateKey:
+          _getAnimatedListStateKey(docChange.document.data['taskList']),
+      task: null, // Additions don't require the actual Task.
+    );
+  }).toList();
+
+  list.sort(TaskAnimationUpdate.additionSorter);
+  return list;
 }
 
 StreamSubscription<QuerySnapshot> _subscribeToProjectIds(
@@ -2105,7 +2217,7 @@ bool _didMoveTaskList(
 }
 
 void _driveTaskAdditionAnimations(
-    Map<String, int> taskIndices, List<CustomDocumentChange> addedDocChanges) {
+    List<TaskAnimationUpdate> taskAnimationUpdates) {
   /*
     WHAT THE F**K?
     AnimatedLists and their component removeItem() and insertItem() methods are designed to really only deal with single
@@ -2116,18 +2228,7 @@ void _driveTaskAdditionAnimations(
     adjust any following indexes as we are mutating the AnimatedList.
   */
 
-  var animationUpdates = addedDocChanges.map((docChange) {
-    return TaskAnimationUpdate(
-      index: _getTaskAnimationIndex(taskIndices, docChange.document.documentID),
-      listStateKey:
-          _getAnimatedListStateKey(docChange.document.data['taskList']),
-      task: null, // Additions don't require the actual Task.
-    );
-  }).toList();
-
-  animationUpdates.sort(TaskAnimationUpdate.additionSorter);
-
-  for (var update in animationUpdates) {
+  for (var update in taskAnimationUpdates) {
     var index = update.index;
     var listStateKey = update.listStateKey;
 
@@ -2140,8 +2241,8 @@ void _driveTaskAdditionAnimations(
   }
 }
 
-void _driveTaskRemovalAnimations(Map<String, int> taskIndices,
-    List<CustomDocumentChange> removalDocChanges, String userId) {
+void _driveTaskRemovalAnimations(
+    List<TaskAnimationUpdate> taskRemovalAnimationUpdates) {
   /*
     WHAT THE F**K?
     AnimatedLists and their component removeItem() and insertItem() methods are designed to really only deal with single
@@ -2152,17 +2253,7 @@ void _driveTaskRemovalAnimations(Map<String, int> taskIndices,
     adjust any following indexes as we are mutating the AnimatedList.
   */
 
-  var animationUpdates = removalDocChanges.map((change) {
-    return TaskAnimationUpdate(
-      task: TaskModel.fromDoc(change.document, userId),
-      index: _getTaskAnimationIndex(taskIndices, change.uid),
-      listStateKey: _getAnimatedListStateKey(change.taskList),
-    );
-  }).toList();
-
-  animationUpdates.sort(TaskAnimationUpdate.removalSorter);
-
-  for (var update in animationUpdates) {
+  for (var update in taskRemovalAnimationUpdates) {
     var index = update.index;
     var listStateKey = update.listStateKey;
     var task = update.task;

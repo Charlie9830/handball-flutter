@@ -41,6 +41,7 @@ class AppState {
   final bool isPaginatingTaskComments;
   final Map<String, TaskModel> multiSelectedTasks;
   final bool isInMultiSelectTaskMode;
+  final bool showOnlySelfTasks;
 
 
   final TextInputDialogModel textInputDialog;
@@ -77,6 +78,7 @@ class AppState {
     this.multiSelectedTasks,
     this.isInMultiSelectTaskMode,
     this.memberLookup,
+    this.showOnlySelfTasks
     });
 
   AppState copyWith({
@@ -112,6 +114,7 @@ class AppState {
     Map<String, TaskModel> multiSelectedTasks,
     bool isInMultiSelectTaskMode,
     Map<String, MemberModel> memberLookup,
+    bool showOnlySelfTasks,
 
   }) {
     return AppState(
@@ -145,6 +148,7 @@ class AppState {
       multiSelectedTasks: multiSelectedTasks ?? this.multiSelectedTasks,
       isInMultiSelectTaskMode: isInMultiSelectTaskMode ?? this.isInMultiSelectTaskMode,
       memberLookup: memberLookup ?? this.memberLookup,
+      showOnlySelfTasks: showOnlySelfTasks ?? this.showOnlySelfTasks,
     );
   }
 }

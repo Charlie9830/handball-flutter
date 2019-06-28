@@ -27,15 +27,11 @@ class _ChooseAssignmentDialogState extends State<ChooseAssignmentDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
         title: Text('Pick Contributors'),
-        content: Container(
-            child: Column(
-          children: <Widget>[
-            Expanded(
-                child: ListView(
-              children: _getOptions(),
-            )),
-          ],
-        )),
+        content: SingleChildScrollView(
+          child: Column(
+            children: _getOptions(),
+          )
+        ),
         actions: <Widget>[
           ButtonBar(
             alignment: MainAxisAlignment.start,

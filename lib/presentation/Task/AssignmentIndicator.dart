@@ -18,8 +18,12 @@ class AssignmentIndicator extends StatelessWidget {
   }
 
   List<Widget> _getChildren(BuildContext context) {
-    var backgroundColor = Theme.of(context).brightness == Brightness.light ? Colors.grey : Colors.blueGrey;
+    if (assignments == null) {
+      return <Widget>[];
+    }
 
+    var backgroundColor = Theme.of(context).brightness == Brightness.light ? Colors.grey : Colors.blueGrey;
+    
     return assignments.map( (item) {
       return Container(
         decoration: BoxDecoration(

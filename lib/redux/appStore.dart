@@ -56,6 +56,7 @@ final initialAppState = AppState(
   multiSelectedTasks: <String, TaskModel>{},
   isInMultiSelectTaskMode: false,
   memberLookup: <String, MemberModel>{},
+  showOnlySelfTasks: false,
 );
 
 final appStore = new Store<AppState> (

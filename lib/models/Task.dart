@@ -60,6 +60,10 @@ class TaskModel {
         _coerceUnseenTaskCommentMembers(doc['unseenTaskCommentMembers']);
     this.metadata = TaskMetadata.fromMap(doc['metadata']);
     this.assignedTo = _coerceAssignedTo(doc['assignedTo']);
+
+    if (this.assignedTo == null) {
+      print("FOUND A NULL ONE **************************");
+    }
   }
 
   Map<String, dynamic> toMap() {
@@ -90,6 +94,10 @@ class TaskModel {
 
   bool get isAssigned {
     return this.assignedTo != null && this.assignedTo.length > 0;
+  }
+
+  bool get isAssignedToSelf {
+    return this.isAssigned && this.assignedTo.contains(this.userId);
   }
 
   TaskModel copyWith({
@@ -128,6 +136,10 @@ class TaskModel {
 
   List<Assignment> getAssignments(
       Map<String, MemberModel> memberDisplayNameLookup) {
+    if (assignedTo == null) {
+      return <Assignment>[];
+    }
+
     return assignedTo.map((id) {
       return Assignment(
         displayName: memberDisplayNameLookup[id]?.displayName ?? '',

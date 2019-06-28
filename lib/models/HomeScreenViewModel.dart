@@ -9,10 +9,13 @@ class HomeScreenViewModel {
   final List<TaskListViewModel> taskListViewModels;
   final TaskListSorting listSorting;
   final bool isInMultiSelectTaskMode;
+  final bool showOnlySelfTasks;
+  final dynamic onShowOnlySelfTasksChanged;
   final onAddNewTaskFabButtonPressed;
   final onAddNewTaskListFabButtonPressed;
   final onShareProjectButtonPressed;
   final onSetListSorting;
+  final bool isProjectShared;
   final dynamic onCancelMultiSelectTaskMode;
   final dynamic onMoveTasksButtonPressed;
 
@@ -28,5 +31,8 @@ class HomeScreenViewModel {
     this.listSorting,
     this.onCancelMultiSelectTaskMode,
     this.onMoveTasksButtonPressed,
+    this.showOnlySelfTasks,
+    this.onShowOnlySelfTasksChanged,
+    this.isProjectShared,
     });
 }

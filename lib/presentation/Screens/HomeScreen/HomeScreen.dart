@@ -18,12 +18,14 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    double preferredSizeHeight = viewModel.showOnlySelfTasks == true ? 56.0 + 48.0 : 56.0;
+
     return Scaffold(
       key: homeScreenScaffoldKey,
       appBar: PreferredSize(
-          preferredSize: Size.fromHeight(54),
+          preferredSize: Size.fromHeight(preferredSizeHeight),
           child: AnimatedCrossFade(
-            firstChild: _getStandardAppBar(),
+            firstChild: _getStandardAppBar(context),
             secondChild: MultiSelectTaskAppBar(
               onCancel: viewModel.onCancelMultiSelectTaskMode,
               onMoveTasks: viewModel.onMoveTasksButtonPressed,
@@ -71,7 +73,7 @@ class HomeScreen extends StatelessWidget {
     }).toList();
   }
 
-  Widget _getStandardAppBar() {
+  Widget _getStandardAppBar(BuildContext context) {
     return AppBar(
       title: Text(viewModel.projectName ?? ''),
       actions: <Widget>[
@@ -82,8 +84,31 @@ class HomeScreen extends StatelessWidget {
         ProjectMenu(
           onSetListSorting: viewModel.onSetListSorting,
           listSorting: viewModel.listSorting,
+          showOnlySelfTasks: viewModel.showOnlySelfTasks,
+          onShowOnlySelfTasksChanged: viewModel.onShowOnlySelfTasksChanged,
+          isProjectShared: viewModel.isProjectShared,
         )
       ],
+      bottom: viewModel.showOnlySelfTasks == true ? PreferredSize(
+        preferredSize: Size.fromHeight(48),
+        child: Container(
+          color: Theme.of(context).primaryColorLight,
+          height: 48,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Text("Showing only tasks assigned to you"),
+              ),
+              FlatButton(
+                child: Text("Show All"),
+                onPressed: () => viewModel.onShowOnlySelfTasksChanged(false),
+              )
+            ],
+          )
+        ),
+      ) : null
     );
   }
 }
