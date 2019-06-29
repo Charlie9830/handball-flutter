@@ -18,10 +18,8 @@ import 'package:redux_logging/redux_logging.dart';
 final initialAppState = AppState(
   tasks: <TaskModel>[],
   tasksByProject: <String, List<TaskModel>>{},
-  filteredTasks: <TaskModel>[],
   taskLists: <TaskListModel>[],
   taskListsByProject: <String, List<TaskListModel>>{},
-  filteredTaskLists: <TaskListModel>[],
   projects: [],
   projectIndicatorGroups: <String, IndicatorGroup>{},
   selectedProjectId: '-1',
@@ -58,6 +56,8 @@ final initialAppState = AppState(
   memberLookup: <String, MemberModel>{},
   showOnlySelfTasks: false,
   showCompletedTasks: false,
+  incompletedTasksByProject: <String, List<TaskModel>>{},
+  completedTasksByProject: <String, List<TaskModel>>{},
 );
 
 final appStore = new Store<AppState> (

@@ -223,10 +223,11 @@ class OpenShareProjectScreen {
 }
 
 class ReceiveTasks {
+  final TasksSnapshotType type;
   final List<TaskModel> tasks;
   final String originProjectId;
 
-  ReceiveTasks({@required this.tasks, @required this.originProjectId});
+  ReceiveTasks({@required this.tasks, @required this.originProjectId, @required this.type});
 }
 
 class ReceiveTaskLists {
@@ -1541,7 +1542,8 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
 ThunkAction<AppState> setShowCompletedTasks(
     bool showCompletedTasks, String projectId) {
   return (Store<AppState> store) async {
-    store.dispatch(SetShowCompletedTasks(showCompletedTasks: showCompletedTasks));
+    store.dispatch(
+        SetShowCompletedTasks(showCompletedTasks: showCompletedTasks));
 
     if (showCompletedTasks == true) {
       _firestoreStreams.projectSubscriptions[projectId].completedTasks =
@@ -1567,6 +1569,7 @@ ThunkAction<AppState> setShowCompletedTasks(
             .toList();
 
         store.dispatch(ReceiveTasks(
+          type: TasksSnapshotType.completed,
           originProjectId: projectId,
           tasks: store.state.tasks
               .where((task) =>
@@ -1589,7 +1592,8 @@ StreamSubscription<QuerySnapshot> _subscribeToCompletedTasks(
       .collection('tasks')
       .where('isComplete', isEqualTo: true)
       .snapshots()
-      .listen((snapshot) => _handleTasksSnapshot(snapshot, projectId, store));
+      .listen((snapshot) => _handleTasksSnapshot(
+          TasksSnapshotType.completed, snapshot, projectId, store));
 }
 
 ThunkAction<AppState> addNewTaskListWithDialog(
@@ -1813,7 +1817,7 @@ TaskListModel _getAddTaskDialogPreselectedTaskList(
 
   // First try and retrieve directly.
   if (taskListId != null && taskListId != '-1') {
-    var extractedTaskList = state.filteredTaskLists
+    var extractedTaskList = state.taskListsByProject[projectId]
         .firstWhere((item) => item.uid == taskListId, orElse: () => null);
     if (extractedTaskList != null) {
       return extractedTaskList;
@@ -1824,7 +1828,7 @@ TaskListModel _getAddTaskDialogPreselectedTaskList(
   // So now try and retrieve from lastUsedTaskLists.
   var lastUsedTaskListId = state.lastUsedTaskLists[projectId];
   if (lastUsedTaskListId != null) {
-    var extractedTaskList = state.filteredTaskLists.firstWhere(
+    var extractedTaskList = state.taskListsByProject[projectId].firstWhere(
         (item) => item.uid == lastUsedTaskListId,
         orElse: () => null);
 
@@ -1967,11 +1971,12 @@ StreamSubscription<QuerySnapshot> _subscribeToIncompletedTasks(
       .collection('tasks')
       .where('isComplete', isEqualTo: false)
       .snapshots()
-      .listen((snapshot) => _handleTasksSnapshot(snapshot, projectId, store));
+      .listen((snapshot) => _handleTasksSnapshot(
+          TasksSnapshotType.incompleted, snapshot, projectId, store));
 }
 
-void _handleTasksSnapshot(
-    QuerySnapshot snapshot, String originProjectId, Store<AppState> store) {
+void _handleTasksSnapshot(TasksSnapshotType type, QuerySnapshot snapshot,
+    String originProjectId, Store<AppState> store) {
   var tasks = <TaskModel>[];
 
   snapshot.documents.forEach((doc) {
@@ -1989,7 +1994,7 @@ void _handleTasksSnapshot(
         Map<String, int>.from(store.state.inflatedProject.taskIndices);
 
     store
-        .dispatch(ReceiveTasks(tasks: tasks, originProjectId: originProjectId));
+        .dispatch(ReceiveTasks(type: type, tasks: tasks, originProjectId: originProjectId));
 
     // Additions.
     _driveTaskRemovalAnimations(_getTaskRemovalAnimationUpdates(
@@ -2003,7 +2008,7 @@ void _handleTasksSnapshot(
   } else {
     // No animation required. Just dispatch the changes to the store.
     store
-        .dispatch(ReceiveTasks(tasks: tasks, originProjectId: originProjectId));
+        .dispatch(ReceiveTasks(type: type, tasks: tasks, originProjectId: originProjectId));
   }
 }
 

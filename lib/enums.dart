@@ -17,3 +17,5 @@ enum MemberRole { member, owner }
 enum MemberStatus { pending, added, denied }
 
 enum TaskMetadataUpdateType { created, completed, updated }
+
+enum TasksSnapshotType { completed, incompleted }

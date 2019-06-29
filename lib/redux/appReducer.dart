@@ -27,10 +27,8 @@ AppState appReducer(AppState state, dynamic action) {
         _filterTaskLists(action.uid, state.taskListsByProject);
 
     return state.copyWith(
-        selectedProjectId: action.uid,
-        filteredTasks: filteredTasks,
-        filteredTaskLists: filteredTaskLists,
-        inflatedProject: buildInflatedProject(
+      selectedProjectId: action.uid,
+      inflatedProject: buildInflatedProject(
           tasks: filteredTasks,
           taskLists: filteredTaskLists,
           project: extractProject(action.uid, state.projects),
@@ -38,11 +36,11 @@ AppState appReducer(AppState state, dynamic action) {
               state.members, action.uid, state.user.userId),
           listSorting: state.listSorting,
           showOnlySelfTasks: false // Assert this mode to Off.
-        ),
-        showOnlySelfTasks: false,
-        isInMultiSelectTaskMode: false,
-        multiSelectedTasks: initialAppState.multiSelectedTasks,
-        );
+          ),
+      showOnlySelfTasks: false,
+      isInMultiSelectTaskMode: false,
+      multiSelectedTasks: initialAppState.multiSelectedTasks,
+    );
   }
 
   if (action is ReceiveProject) {
@@ -51,7 +49,10 @@ AppState appReducer(AppState state, dynamic action) {
   }
 
   if (action is SetInflatedProject) {
-    var inflatedProject = state.selectedProjectId == action.inflatedProject.data.uid ? action.inflatedProject : state.inflatedProject;
+    var inflatedProject =
+        state.selectedProjectId == action.inflatedProject.data.uid
+            ? action.inflatedProject
+            : state.inflatedProject;
 
     return state.copyWith(
       inflatedProject: inflatedProject,
@@ -59,38 +60,80 @@ AppState appReducer(AppState state, dynamic action) {
   }
 
   if (action is SetShowOnlySelfTasks) {
-    return state.copyWith(
-      showOnlySelfTasks: action.showOnlySelfTasks
-    );
+    return state.copyWith(showOnlySelfTasks: action.showOnlySelfTasks);
   }
 
   if (action is ReceiveTasks) {
-    var tasks = _smooshAndMergeTasks(
-        state.tasksByProject, action.tasks, action.originProjectId);
-    var tasksByProject = _updateTasksByProject(
-        state.tasksByProject, action.tasks, action.originProjectId);
-    var filteredTasks = _filterTasks(state.selectedProjectId, tasksByProject);
+    print(state.projects.firstWhere( (item) => action.originProjectId == item.uid, orElse: () => null)?.projectName);
+    print(action.type);
+    var completedTasks = action.type == TasksSnapshotType.completed
+        ? _smooshAndMergeTasks(
+            state.completedTasksByProject, action.tasks, action.originProjectId)
+        : state.completedTasksByProject[action.originProjectId];
 
-    print('Incoming Tasks ${action.tasks.length}');
-    print('Smooshed Tasks ${tasks.length}');
+    var allIncompletedTasks = action.type == TasksSnapshotType.incompleted
+        ? _smooshAndMergeTasks(state.incompletedTasksByProject, action.tasks,
+            action.originProjectId)
+        : state.incompletedTasksByProject[action.originProjectId];
+
+    allIncompletedTasks.forEach((task) => print(task.taskName));
+
+    var allTasks = List<TaskModel>.from(allIncompletedTasks ?? <TaskModel>[]);
+      //..addAll(completedTasks ?? <TaskModel>[]);
+
+    var tasksByProject = _getUpdatedTasksByProject(
+        state.tasksByProject, allTasks, action.originProjectId);
+
+    // Is _GetUpdatedTasksByProject receiving the correct newTasks Collection? This is likely causing the double up.
+
+    // var completedTasksByProject = action.type == TasksSnapshotType.completed
+    //     ? _getUpdatedTasksByProject(state.completedTasksByProject,
+    //         completedTasks, action.originProjectId)
+    //     : state.completedTasksByProject;
+
+    // print('******************************************');
+    // print(action.originProjectId);
+    // action.tasks.forEach((task) => print(task.taskName));
+    // print('********************************************');
+
+    var incompletedTasksByProject = action.type == TasksSnapshotType.incompleted
+        ? _getUpdatedTasksByProject(state.incompletedTasksByProject,
+            allIncompletedTasks, action.originProjectId)
+        : state.incompletedTasksByProject;
+
+    var inflatedProject = action.originProjectId == state.selectedProjectId
+        ? buildInflatedProject(
+            tasks: tasksByProject[state.selectedProjectId],
+            taskLists: state.taskListsByProject[state.selectedProjectId],
+            project: extractProject(state.selectedProjectId, state.projects),
+            listCustomSortOrder: extractListCustomSortOrder(
+                state.members, state.selectedProjectId, state.user.userId),
+            listSorting: state.listSorting,
+            showOnlySelfTasks: state.showOnlySelfTasks)
+        : state.inflatedProject;
+
+    // Debugging.
+    // incompletedTasksByProject.forEach((key, value) {
+    //   print(state.projects.firstWhere( (item) => item.uid == key).projectName);
+    //   value.forEach((task) => print(task.taskName));
+    // });
+
+    print('');
+    print('');
+    print('');
+    print('');
 
     return state.copyWith(
-        tasks: tasks,
-        filteredTasks: filteredTasks,
-        tasksByProject: tasksByProject,
-        selectedTaskEntity:
-            _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
-        projectIndicatorGroups:
-            getProjectIndicatorGroups(tasks, state.user.userId),
-        inflatedProject: buildInflatedProject(
-          tasks: filteredTasks,
-          taskLists: state.filteredTaskLists,
-          project: extractProject(state.selectedProjectId, state.projects),
-          listCustomSortOrder: extractListCustomSortOrder(
-              state.members, state.selectedProjectId, state.user.userId),
-          listSorting: state.listSorting,
-          showOnlySelfTasks: state.showOnlySelfTasks
-        ));
+      tasks: allTasks,
+      completedTasksByProject: initialAppState.completedTasksByProject, //completedTasksByProject,
+      incompletedTasksByProject: incompletedTasksByProject,
+      tasksByProject: tasksByProject,
+      inflatedProject: inflatedProject,
+      selectedTaskEntity:
+          _updateSelectedTaskEntity(state.selectedTaskEntity, allTasks),
+      projectIndicatorGroups:
+          getProjectIndicatorGroups(allTasks, state.user.userId),
+    );
   }
 
   if (action is ReceiveTaskLists) {
@@ -98,22 +141,22 @@ AppState appReducer(AppState state, dynamic action) {
         state.taskListsByProject, action.taskLists, action.originProjectId);
     var taskListsByProject = _updateTaskListsByProject(
         state.taskListsByProject, action.taskLists, action.originProjectId);
-    var filteredTaskLists =
-        _filterTaskLists(state.selectedProjectId, taskListsByProject);
+
+    var inflatedProject = state.selectedProjectId == action.originProjectId
+        ? buildInflatedProject(
+            tasks: state.tasksByProject[state.selectedProjectId],
+            taskLists: taskListsByProject[action.originProjectId],
+            project: extractProject(state.selectedProjectId, state.projects),
+            listCustomSortOrder: extractListCustomSortOrder(
+                state.members, state.selectedProjectId, state.user.userId),
+            listSorting: state.listSorting,
+            showOnlySelfTasks: state.showOnlySelfTasks)
+        : state.inflatedProject;
 
     return state.copyWith(
         taskLists: taskLists,
         taskListsByProject: taskListsByProject,
-        filteredTaskLists: filteredTaskLists,
-        inflatedProject: buildInflatedProject(
-          tasks: state.filteredTasks,
-          taskLists: filteredTaskLists,
-          project: extractProject(state.selectedProjectId, state.projects),
-          listCustomSortOrder: extractListCustomSortOrder(
-              state.members, state.selectedProjectId, state.user.userId),
-          listSorting: state.listSorting,
-          showOnlySelfTasks: state.showOnlySelfTasks
-        ));
+        inflatedProject: inflatedProject);
   }
 
   if (action is AddMultiSelectedTask) {
@@ -145,7 +188,8 @@ AppState appReducer(AppState state, dynamic action) {
         ? state.multiSelectedTasks
         : initialAppState.multiSelectedTasks;
 
-    if (action.isInMultiSelectTaskMode == true && action.initialSelection != null) {
+    if (action.isInMultiSelectTaskMode == true &&
+        action.initialSelection != null) {
       // Add the initial Selection.
       multiSelectedTasks = Map<String, TaskModel>.from(multiSelectedTasks);
       multiSelectedTasks[action.initialSelection.uid] = action.initialSelection;
@@ -188,8 +232,6 @@ AppState appReducer(AppState state, dynamic action) {
       projects: projects,
       taskLists: taskLists,
       tasks: tasks,
-      filteredTaskLists: _filterTaskLists(projectId, state.taskListsByProject),
-      filteredTasks: _filterTasks(projectId, state.tasksByProject),
       selectedTaskEntity:
           _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
       projectIndicatorGroups:
@@ -229,9 +271,7 @@ AppState appReducer(AppState state, dynamic action) {
       ),
       accountState: AccountState.loggedOut,
       tasks: initialAppState.tasks,
-      filteredTasks: initialAppState.filteredTasks,
       taskLists: initialAppState.taskLists,
-      filteredTaskLists: initialAppState.filteredTaskLists,
       projects: initialAppState.projects,
       projectIndicatorGroups: initialAppState.projectIndicatorGroups,
       selectedProjectId: initialAppState.selectedProjectId,
@@ -269,11 +309,10 @@ AppState appReducer(AppState state, dynamic action) {
     var members =
         _updateMembers(state.members, action.projectId, action.membersList);
 
-    // Updating inflatedProject is expensive. So we will only do it here if we have to.
     var inflatedProject = action.projectId == state.selectedProjectId
         ? buildInflatedProject(
-            tasks: state.filteredTasks,
-            taskLists: state.filteredTaskLists,
+            tasks: state.tasksByProject[state.selectedProjectId],
+            taskLists: state.taskListsByProject[state.selectedProjectId],
             project: extractProject(state.selectedProjectId, state.projects),
             listCustomSortOrder: extractListCustomSortOrder(
                 members, state.selectedProjectId, state.user.userId),
@@ -282,10 +321,10 @@ AppState appReducer(AppState state, dynamic action) {
         : state.inflatedProject;
 
     return state.copyWith(
-      members: members,
-      memberLookup: _updateMemberLookup(state.memberLookup, action.membersList),
-      inflatedProject: inflatedProject
-      );
+        members: members,
+        memberLookup:
+            _updateMemberLookup(state.memberLookup, action.membersList),
+        inflatedProject: inflatedProject);
   }
 
   if (action is SetIsInvitingUser) {
@@ -300,8 +339,8 @@ AppState appReducer(AppState state, dynamic action) {
     // as it is drawing the ListSorting value from SharedPreferences.
     var inflatedProject = state.selectedProjectId != '-1'
         ? buildInflatedProject(
-            tasks: state.filteredTasks,
-            taskLists: state.filteredTaskLists,
+            tasks: state.tasksByProject[state.selectedProjectId],
+            taskLists: state.taskListsByProject[state.selectedProjectId],
             project: extractProject(state.selectedProjectId, state.projects),
             listCustomSortOrder: extractListCustomSortOrder(
                 state.members, state.selectedProjectId, state.user.userId),
@@ -368,8 +407,9 @@ TaskModel _updateSelectedTaskEntity(
       orElse: () => null);
 }
 
-
-Map<String, MemberModel> _updateMemberLookup(Map<String, MemberModel> existingMemberLookup, List<MemberModel> incomingMembers) {
+Map<String, MemberModel> _updateMemberLookup(
+    Map<String, MemberModel> existingMemberLookup,
+    List<MemberModel> incomingMembers) {
   var map = Map<String, MemberModel>.from(existingMemberLookup);
 
   for (var member in incomingMembers) {
@@ -378,10 +418,6 @@ Map<String, MemberModel> _updateMemberLookup(Map<String, MemberModel> existingMe
 
   return map;
 }
-
-
-
-
 
 List<ProjectModel> _mergeProject(
     List<ProjectModel> existingProjects, ProjectModel incomingProject) {
@@ -428,24 +464,35 @@ List<TaskModel> _smooshAndMergeTasks(
     List<TaskModel> newTasks,
     String originProjectId) {
   if (tasksByProject.isEmpty) {
-    return newTasks;
+    return newTasks.toList();
   }
 
+  print('Smooshing');
   var list = <TaskModel>[];
   tasksByProject.forEach((key, value) {
-    // If projectId matches originProjectId, replace with new Tasks. Else use current tasks.
-    list.addAll(key == originProjectId ? newTasks : tasksByProject[key]);
+    // If projectId matches originProjectId, use newTasks otherwise use the existing tasks.
+    if (key == originProjectId) {
+      print('Using new Tasks');
+      list.addAll(newTasks);
+    }
+
+    else {
+      print('Using Existing Tasks');
+      list.addAll(tasksByProject[key]);
+    }
+
+    // list.addAll(key == originProjectId ? newTasks : tasksByProject[key]);
   });
 
   return list;
 }
 
-Map<String, List<TaskModel>> _updateTasksByProject(
+Map<String, List<TaskModel>> _getUpdatedTasksByProject(
     Map<String, List<TaskModel>> existingTasksByProject,
     List<TaskModel> newTasks,
     String originProjectId) {
   Map<String, List<TaskModel>> newMap = Map.from(existingTasksByProject);
-  newMap[originProjectId] = newTasks;
+  newMap[originProjectId] = newTasks.toList();
 
   return newMap;
 }
@@ -456,8 +503,7 @@ Map<String, List<TaskListModel>> _updateTaskListsByProject(
     String originProjectId) {
   Map<String, List<TaskListModel>> newMap =
       Map.from(existingTaskListsByProject);
-  newMap[originProjectId] = newTaskLists;
+  newMap[originProjectId] = newTaskLists.toList();
 
   return newMap;
 }
-

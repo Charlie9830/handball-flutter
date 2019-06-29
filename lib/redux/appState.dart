@@ -21,10 +21,10 @@ class AppState {
   final Map<String, String> lastUsedTaskLists;
   final List<TaskModel> tasks;
   final Map<String, List<TaskModel>> tasksByProject;
-  final List<TaskModel> filteredTasks;
+  final Map<String, List<TaskModel>> completedTasksByProject;
+  final Map<String, List<TaskModel>> incompletedTasksByProject;
   final List<TaskListModel> taskLists;
   final Map<String, List<TaskListModel>> taskListsByProject;
-  final List<TaskListModel> filteredTaskLists;
   final Map<String, IndicatorGroup> projectIndicatorGroups;
   final String focusedTaskListId;
   final AccountState accountState;
@@ -58,10 +58,8 @@ class AppState {
     this.lastUsedTaskLists,
     this.tasks,
     this.tasksByProject,
-    this.filteredTasks,
     this.taskLists,
     this.taskListsByProject,
-    this.filteredTaskLists,
     this.focusedTaskListId,
     this.textInputDialog,
     this.projectIndicatorGroups,
@@ -81,6 +79,8 @@ class AppState {
     this.memberLookup,
     this.showOnlySelfTasks,
     this.showCompletedTasks,
+    this.completedTasksByProject,
+    this.incompletedTasksByProject,
     });
 
   AppState copyWith({
@@ -92,10 +92,8 @@ class AppState {
     User user,
     List<TaskModel> tasks,
     Map<String, List<TaskModel>> tasksByProject,
-    List<TaskModel> filteredTasks,
     List<TaskListModel> taskLists,
     Map<String, List<TaskListModel>> taskListsByProject,
-    List<TaskListModel> filteredTaskLists,
     String focusedTaskListId,
     TextInputDialogModel textInputDialog,
     Map<String,IndicatorGroup> projectIndicatorGroups,
@@ -118,6 +116,8 @@ class AppState {
     Map<String, MemberModel> memberLookup,
     bool showOnlySelfTasks,
     bool showCompletedTasks,
+    Map<String, List<TaskModel>> completedTasksByProject,
+    Map<String, List<TaskModel>> incompletedTasksByProject,
 
   }) {
     return AppState(
@@ -129,10 +129,8 @@ class AppState {
       tasks: tasks ?? this.tasks,
       tasksByProject: tasksByProject ?? this.tasksByProject,
       lastUsedTaskLists: lastUsedTaskLists ?? this.lastUsedTaskLists,
-      filteredTasks: tasks ?? this.tasks,
       taskLists: taskLists ?? this.taskLists,
       taskListsByProject: taskListsByProject ?? this.taskListsByProject,
-      filteredTaskLists: filteredTaskLists ?? this.filteredTaskLists,
       focusedTaskListId: focusedTaskListId ?? this.focusedTaskListId,
       textInputDialog: textInputDialog ?? this.textInputDialog,
       projectIndicatorGroups: projectIndicatorGroups ?? this.projectIndicatorGroups,
@@ -153,6 +151,8 @@ class AppState {
       memberLookup: memberLookup ?? this.memberLookup,
       showOnlySelfTasks: showOnlySelfTasks ?? this.showOnlySelfTasks,
       showCompletedTasks: showCompletedTasks ?? this.showCompletedTasks,
+      completedTasksByProject: completedTasksByProject ?? this.completedTasksByProject,
+      incompletedTasksByProject: incompletedTasksByProject ?? this.incompletedTasksByProject,
     );
   }
 }
