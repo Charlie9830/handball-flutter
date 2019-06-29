@@ -91,8 +91,7 @@ AppState appReducer(AppState state, dynamic action) {
 
     return state.copyWith(
       tasks: allTasks,
-      completedTasksByProject:
-          initialAppState.completedTasksByProject, //completedTasksByProject,
+      completedTasksByProject: completedTasksByProject,
       incompletedTasksByProject: incompletedTasksByProject,
       tasksByProject: tasksByProject,
       inflatedProject: inflatedProject,
