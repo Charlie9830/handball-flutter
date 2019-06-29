@@ -64,42 +64,19 @@ AppState appReducer(AppState state, dynamic action) {
   }
 
   if (action is ReceiveTasks) {
-    print(state.projects.firstWhere( (item) => action.originProjectId == item.uid, orElse: () => null)?.projectName);
-    print(action.type);
-    var completedTasks = action.type == TasksSnapshotType.completed
-        ? _smooshAndMergeTasks(
-            state.completedTasksByProject, action.tasks, action.originProjectId)
-        : state.completedTasksByProject[action.originProjectId];
-
-    var allIncompletedTasks = action.type == TasksSnapshotType.incompleted
-        ? _smooshAndMergeTasks(state.incompletedTasksByProject, action.tasks,
-            action.originProjectId)
-        : state.incompletedTasksByProject[action.originProjectId];
-
-    allIncompletedTasks.forEach((task) => print(task.taskName));
-
-    var allTasks = List<TaskModel>.from(allIncompletedTasks ?? <TaskModel>[]);
-      //..addAll(completedTasks ?? <TaskModel>[]);
-
-    var tasksByProject = _getUpdatedTasksByProject(
-        state.tasksByProject, allTasks, action.originProjectId);
-
-    // Is _GetUpdatedTasksByProject receiving the correct newTasks Collection? This is likely causing the double up.
-
-    // var completedTasksByProject = action.type == TasksSnapshotType.completed
-    //     ? _getUpdatedTasksByProject(state.completedTasksByProject,
-    //         completedTasks, action.originProjectId)
-    //     : state.completedTasksByProject;
-
-    // print('******************************************');
-    // print(action.originProjectId);
-    // action.tasks.forEach((task) => print(task.taskName));
-    // print('********************************************');
-
     var incompletedTasksByProject = action.type == TasksSnapshotType.incompleted
         ? _getUpdatedTasksByProject(state.incompletedTasksByProject,
-            allIncompletedTasks, action.originProjectId)
+            action.tasks, action.originProjectId)
         : state.incompletedTasksByProject;
+
+    var completedTasksByProject = action.type == TasksSnapshotType.completed
+        ? _getUpdatedTasksByProject(
+            state.completedTasksByProject, action.tasks, action.originProjectId)
+        : state.completedTasksByProject;
+
+    var tasksByProject = _concatTasksByProject(state.projects, incompletedTasksByProject, completedTasksByProject);
+
+    var allTasks = tasksByProject.values.expand((i) => i).toList();
 
     var inflatedProject = action.originProjectId == state.selectedProjectId
         ? buildInflatedProject(
@@ -112,20 +89,10 @@ AppState appReducer(AppState state, dynamic action) {
             showOnlySelfTasks: state.showOnlySelfTasks)
         : state.inflatedProject;
 
-    // Debugging.
-    // incompletedTasksByProject.forEach((key, value) {
-    //   print(state.projects.firstWhere( (item) => item.uid == key).projectName);
-    //   value.forEach((task) => print(task.taskName));
-    // });
-
-    print('');
-    print('');
-    print('');
-    print('');
-
     return state.copyWith(
       tasks: allTasks,
-      completedTasksByProject: initialAppState.completedTasksByProject, //completedTasksByProject,
+      completedTasksByProject:
+          initialAppState.completedTasksByProject, //completedTasksByProject,
       incompletedTasksByProject: incompletedTasksByProject,
       tasksByProject: tasksByProject,
       inflatedProject: inflatedProject,
@@ -474,9 +441,7 @@ List<TaskModel> _smooshAndMergeTasks(
     if (key == originProjectId) {
       print('Using new Tasks');
       list.addAll(newTasks);
-    }
-
-    else {
+    } else {
       print('Using Existing Tasks');
       list.addAll(tasksByProject[key]);
     }
@@ -486,6 +451,21 @@ List<TaskModel> _smooshAndMergeTasks(
 
   return list;
 }
+
+Map<String, List<TaskModel>> _concatTasksByProject(
+    List<ProjectModel> projects,
+    Map<String, List<TaskModel>> incompletedTasksByProject,
+    Map<String, List<TaskModel>> completedTasksByProject) {
+      var projectIds = projects.map( (item) => item.uid);
+
+      var newMap = <String, List<TaskModel>>{};
+
+      for (var id in projectIds) {
+        newMap[id] = List<TaskModel>.from(incompletedTasksByProject[id] ?? <TaskModel>[])..addAll(completedTasksByProject[id] ?? <TaskModel>[]);
+      }
+
+      return newMap;
+    }
 
 Map<String, List<TaskModel>> _getUpdatedTasksByProject(
     Map<String, List<TaskModel>> existingTasksByProject,
