@@ -1557,7 +1557,7 @@ ThunkAction<AppState> setShowCompletedTasks(
 
       if (store.state.inflatedProject != null &&
           projectId == store.state.inflatedProject.data.uid) {
-        // Animated the completed Tasks out.
+        // Animate the completed Tasks out.
         var outgoingTasks = store.state.tasksByProject[projectId]
             .where((task) => task.isComplete == true)
             .toList();
