@@ -227,7 +227,10 @@ class ReceiveTasks {
   final List<TaskModel> tasks;
   final String originProjectId;
 
-  ReceiveTasks({@required this.tasks, @required this.originProjectId, @required this.type});
+  ReceiveTasks(
+      {@required this.tasks,
+      @required this.originProjectId,
+      @required this.type});
 }
 
 class ReceiveTaskLists {
@@ -1993,22 +1996,22 @@ void _handleTasksSnapshot(TasksSnapshotType type, QuerySnapshot snapshot,
     var preMutationTaskIndices =
         Map<String, int>.from(store.state.inflatedProject.taskIndices);
 
-    store
-        .dispatch(ReceiveTasks(type: type, tasks: tasks, originProjectId: originProjectId));
+    store.dispatch(ReceiveTasks(
+        type: type, tasks: tasks, originProjectId: originProjectId));
 
-    // Additions.
+    // Removal.
     _driveTaskRemovalAnimations(_getTaskRemovalAnimationUpdates(
         groupedDocumentChanges.removed,
         preMutationTaskIndices,
         store.state.user.userId));
 
-    // Removals.
+    // Additons.
     _driveTaskAdditionAnimations(_getTaskAdditionAnimationUpdates(
         groupedDocumentChanges.added, store.state.inflatedProject.taskIndices));
   } else {
     // No animation required. Just dispatch the changes to the store.
-    store
-        .dispatch(ReceiveTasks(type: type, tasks: tasks, originProjectId: originProjectId));
+    store.dispatch(ReceiveTasks(
+        type: type, tasks: tasks, originProjectId: originProjectId));
   }
 }
 
@@ -2230,27 +2233,29 @@ GroupedTaskDocumentChanges _getGroupedTaskDocumentChanges(
       ));
 
       if (currentInflatedProject != null &&
-          currentInflatedProject.data.uid == change.document.data['project'] &&
-          _didMoveTaskList(change.document, existingTasks)) {
-        // A Task has moved. Whilst the project is selected. The Animation system won't catch it if we leave it
-        // simply as a modified Task. Therefore, we need to add the old version of the Task to the removed collection then
-        // add the new version (with the updated taskList field) to the added collection.
-        var oldTask = existingTasks.firstWhere(
-            (item) => item.uid == change.document.documentID,
-            orElse: () => null);
+          currentInflatedProject.data.uid == change.document.data['project']) {
+            // We may need to adjust what is in the added, modifed and removed collections to appease the Task AnimatedList.
+        if (_didMoveTaskList(change.document, existingTasks)) {
+          // A Task has moved. Whilst the project is selected. The Animation system won't catch it if we leave it
+          // simply as a modified Task. Therefore, we need to add the old version of the Task to the removed collection then
+          // add the new version (with the updated taskList field) to the added collection.
+          var oldTask = existingTasks.firstWhere(
+              (item) => item.uid == change.document.documentID,
+              orElse: () => null);
 
-        if (oldTask != null) {
-          groupedChanges.removed.add(CustomDocumentChange(
-            uid: change.document.documentID,
-            taskList: oldTask.taskList,
-            document: change.document,
-          ));
+          if (oldTask != null) {
+            groupedChanges.removed.add(CustomDocumentChange(
+              uid: change.document.documentID,
+              taskList: oldTask.taskList,
+              document: change.document,
+            ));
 
-          groupedChanges.added.add(CustomDocumentChange(
-            uid: change.document.documentID,
-            taskList: change.document.data['taskList'],
-            document: change.document,
-          ));
+            groupedChanges.added.add(CustomDocumentChange(
+              uid: change.document.documentID,
+              taskList: change.document.data['taskList'],
+              document: change.document,
+            ));
+          }
         }
       }
     }
