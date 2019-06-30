@@ -1545,6 +1545,10 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
 ThunkAction<AppState> setShowCompletedTasks(
     bool showCompletedTasks, String projectId) {
   return (Store<AppState> store) async {
+    if (projectId == null || projectId == '-1') {
+      return;
+    }
+    
     store.dispatch(
         SetShowCompletedTasks(showCompletedTasks: showCompletedTasks));
 

@@ -8,6 +8,7 @@ import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/models/User.dart';
+import 'package:handball_flutter/redux/middleware/completedTasksUnsubscribeMiddleware.dart';
 import 'package:redux_thunk/redux_thunk.dart';
 import 'package:redux/redux.dart';
 import './appState.dart';
@@ -63,5 +64,5 @@ final initialAppState = AppState(
 final appStore = new Store<AppState> (
   appReducer,
   initialState: initialAppState,
-  middleware: [thunkMiddleware, navigationMiddleware, /* LoggingMiddleware.printer() */]
+  middleware: [thunkMiddleware, navigationMiddleware, completedTasksUnsubscribeMiddleware /* LoggingMiddleware.printer() */]
 );

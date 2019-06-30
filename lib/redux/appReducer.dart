@@ -22,21 +22,25 @@ AppState appReducer(AppState state, dynamic action) {
       return state;
     }
 
-    var filteredTasks = _filterTasks(action.uid, state.tasksByProject);
-    var filteredTaskLists =
-        _filterTaskLists(action.uid, state.taskListsByProject);
+    var projectTasks = state.incompletedTasksByProject[action.uid];
+    var projectTaskLists = state.taskListsByProject[action.uid];
+
+    var inflatedProject = action.uid != '-1'
+        ? buildInflatedProject(
+            tasks: projectTasks,
+            taskLists: projectTaskLists,
+            project: extractProject(action.uid, state.projects),
+            listCustomSortOrder: extractListCustomSortOrder(
+                state.members, action.uid, state.user.userId),
+            listSorting: state.listSorting,
+            showOnlySelfTasks: false // Assert this mode to Off.
+            )
+        : state.inflatedProject;
 
     return state.copyWith(
       selectedProjectId: action.uid,
-      inflatedProject: buildInflatedProject(
-          tasks: filteredTasks,
-          taskLists: filteredTaskLists,
-          project: extractProject(action.uid, state.projects),
-          listCustomSortOrder: extractListCustomSortOrder(
-              state.members, action.uid, state.user.userId),
-          listSorting: state.listSorting,
-          showOnlySelfTasks: false // Assert this mode to Off.
-          ),
+      inflatedProject: inflatedProject,
+      showCompletedTasks: false, // Assert showCompletedTasks Off.
       showOnlySelfTasks: false,
       isInMultiSelectTaskMode: false,
       multiSelectedTasks: initialAppState.multiSelectedTasks,
@@ -64,6 +68,7 @@ AppState appReducer(AppState state, dynamic action) {
   }
 
   if (action is ReceiveTasks) {
+    // Fold together properties.
     var incompletedTasksByProject = action.type == TasksSnapshotType.incompleted
         ? _getUpdatedTasksByProject(state.incompletedTasksByProject,
             action.tasks, action.originProjectId)
@@ -74,7 +79,8 @@ AppState appReducer(AppState state, dynamic action) {
             state.completedTasksByProject, action.tasks, action.originProjectId)
         : state.completedTasksByProject;
 
-    var tasksByProject = _concatTasksByProject(state.projects, incompletedTasksByProject, completedTasksByProject);
+    var tasksByProject = _concatTasksByProject(
+        state.projects, incompletedTasksByProject, completedTasksByProject);
 
     var allTasks = tasksByProject.values.expand((i) => i).toList();
 
@@ -455,16 +461,18 @@ Map<String, List<TaskModel>> _concatTasksByProject(
     List<ProjectModel> projects,
     Map<String, List<TaskModel>> incompletedTasksByProject,
     Map<String, List<TaskModel>> completedTasksByProject) {
-      var projectIds = projects.map( (item) => item.uid);
+  var projectIds = projects.map((item) => item.uid);
 
-      var newMap = <String, List<TaskModel>>{};
+  var newMap = <String, List<TaskModel>>{};
 
-      for (var id in projectIds) {
-        newMap[id] = List<TaskModel>.from(incompletedTasksByProject[id] ?? <TaskModel>[])..addAll(completedTasksByProject[id] ?? <TaskModel>[]);
-      }
+  for (var id in projectIds) {
+    newMap[id] =
+        List<TaskModel>.from(incompletedTasksByProject[id] ?? <TaskModel>[])
+          ..addAll(completedTasksByProject[id] ?? <TaskModel>[]);
+  }
 
-      return newMap;
-    }
+  return newMap;
+}
 
 Map<String, List<TaskModel>> _getUpdatedTasksByProject(
     Map<String, List<TaskModel>> existingTasksByProject,
