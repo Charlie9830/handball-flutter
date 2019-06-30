@@ -222,15 +222,22 @@ class OpenShareProjectScreen {
   OpenShareProjectScreen({this.projectId});
 }
 
-class ReceiveTasks {
-  final TasksSnapshotType type;
+class ReceiveIncompletedTasks {
   final List<TaskModel> tasks;
   final String originProjectId;
 
-  ReceiveTasks(
-      {@required this.tasks,
-      @required this.originProjectId,
-      @required this.type});
+  ReceiveIncompletedTasks(
+      {@required this.tasks, @required this.originProjectId});
+}
+
+class ReceiveCompletedTasks {
+  final List<TaskModel> tasks;
+  final String originProjectId;
+
+  ReceiveCompletedTasks({
+    @required this.tasks,
+    @required this.originProjectId,
+  });
 }
 
 class ReceiveTaskLists {
@@ -1548,16 +1555,21 @@ ThunkAction<AppState> setShowCompletedTasks(
     if (projectId == null || projectId == '-1') {
       return;
     }
-    
+
     store.dispatch(
         SetShowCompletedTasks(showCompletedTasks: showCompletedTasks));
 
     if (showCompletedTasks == true) {
       _firestoreStreams.projectSubscriptions[projectId].completedTasks =
           _subscribeToCompletedTasks(projectId, store);
+
+      // _handleTasksSnapshot will be called for the query and handle everything from here.
+
     } else {
-      _firestoreStreams.projectSubscriptions[projectId]?.completedTasks
+      await _firestoreStreams.projectSubscriptions[projectId]?.completedTasks
           ?.cancel();
+
+      // _handleTasksSnapshot won't be called, so we need to Animated the Tasks out Manually.
 
       if (store.state.inflatedProject != null &&
           projectId == store.state.inflatedProject.data.uid) {
@@ -1575,13 +1587,9 @@ ThunkAction<AppState> setShowCompletedTasks(
                 ))
             .toList();
 
-        store.dispatch(ReceiveTasks(
-          type: TasksSnapshotType.completed,
+        store.dispatch(ReceiveCompletedTasks(
           originProjectId: projectId,
-          tasks: store.state.tasks
-              .where((task) =>
-                  task.project == projectId && task.isComplete == true)
-              .toList(),
+          tasks: <TaskModel>[],
         ));
 
         taskAnimationUpdates.sort(TaskAnimationUpdate.removalSorter);
@@ -2000,8 +2008,15 @@ void _handleTasksSnapshot(TasksSnapshotType type, QuerySnapshot snapshot,
     var preMutationTaskIndices =
         Map<String, int>.from(store.state.inflatedProject.taskIndices);
 
-    store.dispatch(ReceiveTasks(
-        type: type, tasks: tasks, originProjectId: originProjectId));
+    if (type == TasksSnapshotType.incompleted) {
+      store.dispatch(ReceiveIncompletedTasks(
+          tasks: tasks, originProjectId: originProjectId));
+    }
+
+    if (type == TasksSnapshotType.completed) {
+      store.dispatch(ReceiveCompletedTasks(
+          tasks: tasks, originProjectId: originProjectId));
+    }
 
     // Removal.
     _driveTaskRemovalAnimations(_getTaskRemovalAnimationUpdates(
@@ -2014,8 +2029,15 @@ void _handleTasksSnapshot(TasksSnapshotType type, QuerySnapshot snapshot,
         groupedDocumentChanges.added, store.state.inflatedProject.taskIndices));
   } else {
     // No animation required. Just dispatch the changes to the store.
-    store.dispatch(ReceiveTasks(
-        type: type, tasks: tasks, originProjectId: originProjectId));
+    if (type == TasksSnapshotType.incompleted) {
+      store.dispatch(ReceiveIncompletedTasks(
+          tasks: tasks, originProjectId: originProjectId));
+    }
+
+    if (type == TasksSnapshotType.completed) {
+      store.dispatch(ReceiveCompletedTasks(
+          tasks: tasks, originProjectId: originProjectId));
+    }
   }
 }
 
@@ -2238,7 +2260,7 @@ GroupedTaskDocumentChanges _getGroupedTaskDocumentChanges(
 
       if (currentInflatedProject != null &&
           currentInflatedProject.data.uid == change.document.data['project']) {
-            // We may need to adjust what is in the added, modifed and removed collections to appease the Task AnimatedList.
+        // We may need to adjust what is in the added, modifed and removed collections to appease the Task AnimatedList.
         if (_didMoveTaskList(change.document, existingTasks)) {
           // A Task has moved. Whilst the project is selected. The Animation system won't catch it if we leave it
           // simply as a modified Task. Therefore, we need to add the old version of the Task to the removed collection then

@@ -9,6 +9,7 @@ import 'package:handball_flutter/redux/appStore.dart';
 import 'package:handball_flutter/utilities/buildInflatedProject.dart';
 import 'package:handball_flutter/utilities/extractListCustomSortOrder.dart';
 import 'package:handball_flutter/utilities/extractProject.dart';
+import 'package:handball_flutter/utilities/foldTasksTogether.dart';
 import 'package:handball_flutter/utilities/getProjectIndicatorGroups.dart';
 import 'package:meta/meta.dart';
 
@@ -67,26 +68,13 @@ AppState appReducer(AppState state, dynamic action) {
     return state.copyWith(showOnlySelfTasks: action.showOnlySelfTasks);
   }
 
-  if (action is ReceiveTasks) {
-    // Fold together properties.
-    var incompletedTasksByProject = action.type == TasksSnapshotType.incompleted
-        ? _getUpdatedTasksByProject(state.incompletedTasksByProject,
-            action.tasks, action.originProjectId)
-        : state.incompletedTasksByProject;
-
-    var completedTasksByProject = action.type == TasksSnapshotType.completed
-        ? _getUpdatedTasksByProject(
-            state.completedTasksByProject, action.tasks, action.originProjectId)
-        : state.completedTasksByProject;
-
-    var tasksByProject = _concatTasksByProject(
-        state.projects, incompletedTasksByProject, completedTasksByProject);
-
-    var allTasks = tasksByProject.values.expand((i) => i).toList();
+  if (action is ReceiveCompletedTasks) {
+    var foldedTasks = foldTasksTogether(TasksSnapshotType.completed,
+        action.tasks, action.originProjectId, state);
 
     var inflatedProject = action.originProjectId == state.selectedProjectId
         ? buildInflatedProject(
-            tasks: tasksByProject[state.selectedProjectId],
+            tasks: foldedTasks.tasksByProject[state.selectedProjectId],
             taskLists: state.taskListsByProject[state.selectedProjectId],
             project: extractProject(state.selectedProjectId, state.projects),
             listCustomSortOrder: extractListCustomSortOrder(
@@ -96,15 +84,43 @@ AppState appReducer(AppState state, dynamic action) {
         : state.inflatedProject;
 
     return state.copyWith(
-      tasks: allTasks,
-      completedTasksByProject: completedTasksByProject,
-      incompletedTasksByProject: incompletedTasksByProject,
-      tasksByProject: tasksByProject,
+      tasks: foldedTasks.allTasks,
+      completedTasksByProject: foldedTasks.completedTasksByProject,
+      incompletedTasksByProject: foldedTasks.incompletedTasksByProject,
+      tasksByProject: foldedTasks.tasksByProject,
       inflatedProject: inflatedProject,
-      selectedTaskEntity:
-          _updateSelectedTaskEntity(state.selectedTaskEntity, allTasks),
+      selectedTaskEntity: _updateSelectedTaskEntity(
+          state.selectedTaskEntity, foldedTasks.allTasks),
       projectIndicatorGroups:
-          getProjectIndicatorGroups(allTasks, state.user.userId),
+          getProjectIndicatorGroups(foldedTasks.allTasks, state.user.userId),
+    );
+  }
+
+  if (action is ReceiveIncompletedTasks) {
+    var foldedTasks = foldTasksTogether(TasksSnapshotType.incompleted,
+        action.tasks, action.originProjectId, state);
+
+    var inflatedProject = action.originProjectId == state.selectedProjectId
+        ? buildInflatedProject(
+            tasks: foldedTasks.tasksByProject[state.selectedProjectId],
+            taskLists: state.taskListsByProject[state.selectedProjectId],
+            project: extractProject(state.selectedProjectId, state.projects),
+            listCustomSortOrder: extractListCustomSortOrder(
+                state.members, state.selectedProjectId, state.user.userId),
+            listSorting: state.listSorting,
+            showOnlySelfTasks: state.showOnlySelfTasks)
+        : state.inflatedProject;
+
+    return state.copyWith(
+      tasks: foldedTasks.allTasks,
+      completedTasksByProject: foldedTasks.completedTasksByProject,
+      incompletedTasksByProject: foldedTasks.incompletedTasksByProject,
+      tasksByProject: foldedTasks.tasksByProject,
+      inflatedProject: inflatedProject,
+      selectedTaskEntity: _updateSelectedTaskEntity(
+          state.selectedTaskEntity, foldedTasks.allTasks),
+      projectIndicatorGroups:
+          getProjectIndicatorGroups(foldedTasks.allTasks, state.user.userId),
     );
   }
 
@@ -455,33 +471,6 @@ List<TaskModel> _smooshAndMergeTasks(
   });
 
   return list;
-}
-
-Map<String, List<TaskModel>> _concatTasksByProject(
-    List<ProjectModel> projects,
-    Map<String, List<TaskModel>> incompletedTasksByProject,
-    Map<String, List<TaskModel>> completedTasksByProject) {
-  var projectIds = projects.map((item) => item.uid);
-
-  var newMap = <String, List<TaskModel>>{};
-
-  for (var id in projectIds) {
-    newMap[id] =
-        List<TaskModel>.from(incompletedTasksByProject[id] ?? <TaskModel>[])
-          ..addAll(completedTasksByProject[id] ?? <TaskModel>[]);
-  }
-
-  return newMap;
-}
-
-Map<String, List<TaskModel>> _getUpdatedTasksByProject(
-    Map<String, List<TaskModel>> existingTasksByProject,
-    List<TaskModel> newTasks,
-    String originProjectId) {
-  Map<String, List<TaskModel>> newMap = Map.from(existingTasksByProject);
-  newMap[originProjectId] = newTasks.toList();
-
-  return newMap;
 }
 
 Map<String, List<TaskListModel>> _updateTaskListsByProject(
