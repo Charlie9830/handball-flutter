@@ -1618,9 +1618,19 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
       var member =
           store.state.user.toMember(MemberRole.owner, MemberStatus.added);
 
+      // Initial TaskList
+      var taskListRef = _getTaskListsCollectionRef(projectRef.documentID, store).document();
+      var taskList = TaskListModel(
+        uid: taskListRef.documentID,
+        project: projectRef.documentID,
+        taskListName: 'Assorted',
+        dateAdded: DateTime.now(),
+      );
+
       batch.setData(projectRef, project.toMap());
       batch.setData(projectIdRef, projectId.toMap());
       batch.setData(memberRef, member.toMap());
+      batch.setData(taskListRef, taskList.toMap());
 
       try {
         await batch.commit();
