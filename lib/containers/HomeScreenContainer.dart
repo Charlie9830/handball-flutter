@@ -29,7 +29,7 @@ class HomeScreenContainer extends StatelessWidget {
       taskListViewModels: _buildTaskListViewModels(store, context),
       onAddNewTaskFabButtonPressed: () => store
           .dispatch(addNewTaskWithDialog(projectId, context, taskListId: null)),
-      onAddNewTaskListFabButtonPressed: () =>
+      onAddNewTaskListButtonPressed: () =>
           store.dispatch(addNewTaskListWithDialog(projectId, context)),
       onShareProjectButtonPressed: projectId != '-1'
           ? () => store.dispatch(OpenShareProjectScreen(projectId: projectId))
@@ -54,7 +54,9 @@ class HomeScreenContainer extends StatelessWidget {
       onShowOnlySelfTasksChanged: (newValue) => store.dispatch(setShowOnlySelfTasks(newValue)),
       isProjectShared: store.state.members[projectId] != null && store.state.members[projectId].length > 1,
       showCompletedTasks: store.state.showCompletedTasks,
-      onShowCompletedTasksChanged: (newValue) => store.dispatch(setShowCompletedTasks(newValue, projectId))
+      onShowCompletedTasksChanged: (newValue) => store.dispatch(setShowCompletedTasks(newValue, projectId)),
+      onAddNewProjectButtonPressed: () => store.dispatch(addNewProjectWithDialog(context)),
+      onLogInHintButtonPress: () => store.dispatch(handleLogInHintButtonPress()),
     );
   }
 

@@ -351,6 +351,7 @@ Future<String> postDelegateOwnerDialog(
 
 ThunkAction<AppState> initializeApp() {
   return (Store<AppState> store) async {
+    homeScreenScaffoldKey?.currentState?.openDrawer();
     Firestore.instance.settings(timestampsInSnapshotsEnabled: true);
     auth.onAuthStateChanged.listen((user) => onAuthStateChanged(store, user));
 
@@ -1561,6 +1562,8 @@ ThunkAction<AppState> updateTaskSorting(String projectId, String taskListId,
 
 ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
   return (Store<AppState> store) async {
+    homeScreenScaffoldKey?.currentState?.openDrawer();
+
     var result = await postTextInputDialog('Add new Project', '', context);
     var userId = store.state.user.userId;
 
@@ -1599,6 +1602,12 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
         throw error;
       }
     }
+  };
+}
+
+ThunkAction<AppState> handleLogInHintButtonPress() {
+return (Store<AppState> store) async {
+  store.dispatch(OpenAppSettings(tab: AppSettingsTabs.account));
   };
 }
 
@@ -1882,6 +1891,7 @@ TaskListModel _getAddTaskDialogPreselectedTaskList(
   //  used the TaskList addTask button instead of the Fab.
   // 2. Try and retreive using the Users elected Faviroute Task List: TODO: Implement This.
   // 3. Try and retreive using the lastUsedTaskLists Map. (Most recent addition).
+  // 4. Check if only one TaskList is available.
 
   // First try and retrieve directly.
   if (taskListId != null && taskListId != '-1') {
@@ -1903,6 +1913,10 @@ TaskListModel _getAddTaskDialogPreselectedTaskList(
     if (extractedTaskList != null) {
       return extractedTaskList;
     }
+  }
+
+  if (state.taskListsByProject[projectId].length == 1) {
+    return state.taskListsByProject[projectId].first;
   }
 
   // Everything has Failed. TaskList could not be retrieved.

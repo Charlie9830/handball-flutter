@@ -13,13 +13,15 @@ class HomeScreenViewModel {
   final bool showOnlySelfTasks;
   final dynamic onShowOnlySelfTasksChanged;
   final onAddNewTaskFabButtonPressed;
-  final onAddNewTaskListFabButtonPressed;
+  final onAddNewTaskListButtonPressed;
   final onShareProjectButtonPressed;
   final onSetListSorting;
   final bool isProjectShared;
   final dynamic onCancelMultiSelectTaskMode;
   final dynamic onMoveTasksButtonPressed;
   final dynamic onShowCompletedTasksChanged;
+  final dynamic onAddNewProjectButtonPressed;
+  final dynamic onLogInHintButtonPress;
 
   HomeScreenViewModel({
     this.projectId,
@@ -27,7 +29,7 @@ class HomeScreenViewModel {
     this.taskListViewModels,
     this.isInMultiSelectTaskMode,
     this.onAddNewTaskFabButtonPressed,
-    this.onAddNewTaskListFabButtonPressed,
+    this.onAddNewTaskListButtonPressed,
     this.onShareProjectButtonPressed,
     this.onSetListSorting,
     this.listSorting,
@@ -37,6 +39,8 @@ class HomeScreenViewModel {
     this.onShowOnlySelfTasksChanged,
     this.isProjectShared,
     this.onShowCompletedTasksChanged,
-    this.showCompletedTasks
+    this.showCompletedTasks,
+    this.onAddNewProjectButtonPressed,
+    this.onLogInHintButtonPress,
     });
 }

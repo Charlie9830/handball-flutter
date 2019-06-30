@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:handball_flutter/InheritatedWidgets/EnableStates.dart';
 import 'package:handball_flutter/containers/AppDrawerContainer.dart';
 import 'package:handball_flutter/containers/HomeScreenContainer.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/AppTheme.dart';
+import 'package:handball_flutter/models/TopLevelViewModel.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/presentation/EditableTextInput.dart';
 import 'package:handball_flutter/redux/actions.dart';
@@ -50,16 +52,19 @@ class _AppState extends State<App> with WidgetsBindingObserver {
     return new StoreProvider<AppState>(
         store: store,
         child: StoreConnector(
-          converter: (Store<AppState> store) =>
-              AppThemeViewModel(
+          converter: (Store<AppState> store) => TopLevelViewModel(
                 data: store.state.accountConfig?.appTheme ?? AppThemeModel(),
-                ),
-          builder: (BuildContext context, AppThemeViewModel viewModel) {
-            return MaterialApp(
-              title: 'Handball',
-              theme: buildAppThemeData(viewModel.data),
-              navigatorKey: navigatorKey,
-              home: HomeScreenContainer(),
+                enableState: store.state.enableState,
+              ),
+          builder: (BuildContext context, TopLevelViewModel viewModel) {
+            return EnableStates(
+              state: viewModel.enableState,
+              child: MaterialApp(
+                title: 'Handball',
+                theme: buildAppThemeData(viewModel.data),
+                navigatorKey: navigatorKey,
+                home: HomeScreenContainer(),
+              ),
             );
           },
         ));

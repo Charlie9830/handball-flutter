@@ -1,3 +1,4 @@
+import 'package:handball_flutter/models/EnableState.dart';
 import 'package:handball_flutter/models/InflatedProject.dart';
 import 'package:handball_flutter/models/InflatedTaskList.dart';
 import 'package:handball_flutter/models/Member.dart';
@@ -39,18 +40,31 @@ AppState appReducer(AppState state, dynamic action) {
         : state.inflatedProject;
 
     return state.copyWith(
-      selectedProjectId: action.uid,
-      inflatedProject: inflatedProject,
-      showCompletedTasks: false, // Assert showCompletedTasks Off.
-      showOnlySelfTasks: false,
-      isInMultiSelectTaskMode: false,
-      multiSelectedTasks: initialAppState.multiSelectedTasks,
-    );
+        selectedProjectId: action.uid,
+        inflatedProject: inflatedProject,
+        showCompletedTasks: false, // Assert showCompletedTasks Off.
+        showOnlySelfTasks: false,
+        isInMultiSelectTaskMode: false,
+        multiSelectedTasks: initialAppState.multiSelectedTasks,
+        enableState: state.enableState.copyWith(
+            isProjectSelected: action.uid != '-1' && action.uid != null
+                ? true
+                : state.enableState.isProjectSelected,
+            showSelectAProjectHint: action.uid == '-1' || action.uid == null && state.projects.length > 0,
+            showNoProjectsHint: state.projects.length == 0,
+            showNoTaskListsHint: projectTaskLists.length == 0,
+            showSingleListNoTasksHint:
+                projectTaskLists.length == 1 && projectTasks.length == 0));
   }
 
   if (action is ReceiveProject) {
     var projects = _mergeProject(state.projects, action.project);
-    return state.copyWith(projects: projects);
+    return state.copyWith(
+        projects: projects,
+        enableState: state.enableState.copyWith(
+          showNoProjectsHint: projects.length == 0,
+          showSelectAProjectHint: projects.length > 0 && (state.selectedProjectId == '-1' || state.selectedProjectId == null),
+        ));
   }
 
   if (action is SetInflatedProject) {
@@ -90,16 +104,21 @@ AppState appReducer(AppState state, dynamic action) {
         : state.inflatedProject;
 
     return state.copyWith(
-      tasks: foldedTasks.allTasks,
-      completedTasksByProject: foldedTasks.completedTasksByProject,
-      incompletedTasksByProject: foldedTasks.incompletedTasksByProject,
-      tasksByProject: foldedTasks.tasksByProject,
-      inflatedProject: inflatedProject,
-      selectedTaskEntity: _updateSelectedTaskEntity(
-          state.selectedTaskEntity, foldedTasks.allTasks),
-      projectIndicatorGroups:
-          getProjectIndicatorGroups(foldedTasks.allTasks, state.user.userId),
-    );
+        tasks: foldedTasks.allTasks,
+        completedTasksByProject: foldedTasks.completedTasksByProject,
+        incompletedTasksByProject: foldedTasks.incompletedTasksByProject,
+        tasksByProject: foldedTasks.tasksByProject,
+        inflatedProject: inflatedProject,
+        selectedTaskEntity: _updateSelectedTaskEntity(
+            state.selectedTaskEntity, foldedTasks.allTasks),
+        projectIndicatorGroups:
+            getProjectIndicatorGroups(foldedTasks.allTasks, state.user.userId),
+        enableState: state.enableState.copyWith(
+            showSingleListNoTasksHint:
+                state.taskListsByProject[state.selectedProjectId].length == 1 &&
+                    foldedTasks
+                            .tasksByProject[state.selectedProjectId].length ==
+                        0));
   }
 
   if (action is ReceiveIncompletedTasks) {
@@ -118,16 +137,22 @@ AppState appReducer(AppState state, dynamic action) {
         : state.inflatedProject;
 
     return state.copyWith(
-      tasks: foldedTasks.allTasks,
-      completedTasksByProject: foldedTasks.completedTasksByProject,
-      incompletedTasksByProject: foldedTasks.incompletedTasksByProject,
-      tasksByProject: foldedTasks.tasksByProject,
-      inflatedProject: inflatedProject,
-      selectedTaskEntity: _updateSelectedTaskEntity(
-          state.selectedTaskEntity, foldedTasks.allTasks),
-      projectIndicatorGroups:
-          getProjectIndicatorGroups(foldedTasks.allTasks, state.user.userId),
-    );
+        tasks: foldedTasks.allTasks,
+        completedTasksByProject: foldedTasks.completedTasksByProject,
+        incompletedTasksByProject: foldedTasks.incompletedTasksByProject,
+        tasksByProject: foldedTasks.tasksByProject,
+        inflatedProject: inflatedProject,
+        selectedTaskEntity: _updateSelectedTaskEntity(
+            state.selectedTaskEntity, foldedTasks.allTasks),
+        projectIndicatorGroups:
+            getProjectIndicatorGroups(foldedTasks.allTasks, state.user.userId),
+        enableState: state.enableState.copyWith(
+            showSingleListNoTasksHint:
+                state.taskListsByProject[state.selectedProjectId] != null &&
+                state.taskListsByProject[state.selectedProjectId].length == 1 &&
+                    foldedTasks
+                            .tasksByProject[state.selectedProjectId].length ==
+                        0));
   }
 
   if (action is ReceiveTaskLists) {
@@ -150,7 +175,16 @@ AppState appReducer(AppState state, dynamic action) {
     return state.copyWith(
         taskLists: taskLists,
         taskListsByProject: taskListsByProject,
-        inflatedProject: inflatedProject);
+        inflatedProject: inflatedProject,
+        enableState: state.enableState.copyWith(
+            showNoTaskListsHint:
+                taskListsByProject[state.selectedProjectId] != null &&
+                    taskListsByProject[state.selectedProjectId].length == 0,
+            showSingleListNoTasksHint:
+                taskListsByProject[state.selectedProjectId] != null &&
+                    taskListsByProject[state.selectedProjectId].length == 1 &&
+                    state.tasksByProject[state.selectedProjectId] != null &&
+                    state.tasksByProject[state.selectedProjectId].length == 0));
   }
 
   if (action is AddMultiSelectedTask) {
@@ -250,41 +284,45 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is SignIn) {
     return state.copyWith(
-      user: action.user,
-      accountState: AccountState.loggedIn,
-    );
+        user: action.user,
+        accountState: AccountState.loggedIn,
+        enableState: state.enableState.copyWith(
+          isLoggedIn: true,
+        ));
   }
 
   if (action is SignOut) {
     return state.copyWith(
-      user: User(
-        displayName: '',
-        email: '',
-        userId: '',
-        isLoggedIn: false,
-      ),
-      accountState: AccountState.loggedOut,
-      tasks: initialAppState.tasks,
-      tasksByProject: initialAppState.tasksByProject,
-      completedTasksByProject: initialAppState.completedTasksByProject,
-      incompletedTasksByProject: initialAppState.incompletedTasksByProject,
-      taskLists: initialAppState.taskLists,
-      taskListsByProject: initialAppState.taskListsByProject,
-      projects: initialAppState.projects,
-      projectIndicatorGroups: initialAppState.projectIndicatorGroups,
-      selectedProjectId: initialAppState.selectedProjectId,
-      inflatedProject: initialAppState.inflatedProject,
-      selectedTaskEntity: initialAppState.selectedTaskEntity,
-      focusedTaskListId: initialAppState.focusedTaskListId,
-      lastUsedTaskLists: initialAppState.lastUsedTaskLists,
-      projectInvites: initialAppState.projectInvites,
-      processingProjectInviteIds: initialAppState.processingProjectInviteIds,
-      members: initialAppState.members,
-      memberLookup: initialAppState.memberLookup,
-      showCompletedTasks: initialAppState.showCompletedTasks,
-      showOnlySelfTasks: initialAppState.showOnlySelfTasks,
-      accountConfig: initialAppState.accountConfig,
-    );
+        user: User(
+          displayName: '',
+          email: '',
+          userId: '',
+          isLoggedIn: false,
+        ),
+        accountState: AccountState.loggedOut,
+        tasks: initialAppState.tasks,
+        tasksByProject: initialAppState.tasksByProject,
+        completedTasksByProject: initialAppState.completedTasksByProject,
+        incompletedTasksByProject: initialAppState.incompletedTasksByProject,
+        taskLists: initialAppState.taskLists,
+        taskListsByProject: initialAppState.taskListsByProject,
+        projects: initialAppState.projects,
+        projectIndicatorGroups: initialAppState.projectIndicatorGroups,
+        selectedProjectId: initialAppState.selectedProjectId,
+        inflatedProject: initialAppState.inflatedProject,
+        selectedTaskEntity: initialAppState.selectedTaskEntity,
+        focusedTaskListId: initialAppState.focusedTaskListId,
+        lastUsedTaskLists: initialAppState.lastUsedTaskLists,
+        projectInvites: initialAppState.projectInvites,
+        processingProjectInviteIds: initialAppState.processingProjectInviteIds,
+        members: initialAppState.members,
+        memberLookup: initialAppState.memberLookup,
+        showCompletedTasks: initialAppState.showCompletedTasks,
+        showOnlySelfTasks: initialAppState.showOnlySelfTasks,
+        accountConfig: initialAppState.accountConfig,
+        enableState: state.enableState.copyWith(
+          isLoggedIn: false,
+        ));
   }
 
   if (action is OpenShareProjectScreen) {

@@ -1,6 +1,7 @@
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/AccountConfig.dart';
 import 'package:handball_flutter/models/Comment.dart';
+import 'package:handball_flutter/models/EnableState.dart';
 import 'package:handball_flutter/models/IndicatorGroup.dart';
 import 'package:handball_flutter/models/InflatedProject.dart';
 import 'package:handball_flutter/models/Member.dart';
@@ -45,6 +46,7 @@ class AppState {
   final bool showOnlySelfTasks;
   final bool showCompletedTasks;
   final AccountConfigModel accountConfig;
+  final EnableStateModel enableState;
 
 
   final TextInputDialogModel textInputDialog;
@@ -84,6 +86,7 @@ class AppState {
     this.completedTasksByProject,
     this.incompletedTasksByProject,
     this.accountConfig,
+    this.enableState,
     });
 
   AppState copyWith({
@@ -122,6 +125,7 @@ class AppState {
     Map<String, List<TaskModel>> completedTasksByProject,
     Map<String, List<TaskModel>> incompletedTasksByProject,
     AccountConfigModel accountConfig,
+    EnableStateModel enableState,
 
   }) {
     return AppState(
@@ -158,6 +162,7 @@ class AppState {
       completedTasksByProject: completedTasksByProject ?? this.completedTasksByProject,
       incompletedTasksByProject: incompletedTasksByProject ?? this.incompletedTasksByProject,
       accountConfig: accountConfig ?? this.accountConfig,
+      enableState: enableState ?? this.enableState,
     );
   }
 }

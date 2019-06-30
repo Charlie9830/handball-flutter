@@ -74,10 +74,4 @@ class AppThemeModel {
   }
 }
 
-class AppThemeViewModel {
-  final AppThemeModel data;
 
-  AppThemeViewModel({
-    this.data,
-  });
-}

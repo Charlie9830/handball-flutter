@@ -1,5 +1,6 @@
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/Comment.dart';
+import 'package:handball_flutter/models/EnableState.dart';
 import 'package:handball_flutter/models/IndicatorGroup.dart';
 import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/ProjectInvite.dart';
@@ -60,6 +61,7 @@ final initialAppState = AppState(
   incompletedTasksByProject: <String, List<TaskModel>>{},
   completedTasksByProject: <String, List<TaskModel>>{},
   accountConfig: null,
+  enableState: EnableStateModel(),
 );
 
 final appStore = new Store<AppState> (
