@@ -2357,13 +2357,13 @@ void _driveTaskRemovalAnimations(
     if (index != null && listStateKey?.currentState != null) {
       listStateKey.currentState.removeItem(index, (context, animation) {
         return SizeTransition(
-            sizeFactor: animation.drive(Tween(begin: 1, end: 0)),
+            sizeFactor: animation,
             axis: Axis.vertical,
             child: Task(
               key: Key(task.uid),
               model: TaskViewModel(data: task),
             ));
-      });
+      }, duration: Duration(milliseconds: 150));
     }
   }
 }

@@ -51,7 +51,8 @@ class _ReactiveAnimatedListState extends State<ReactiveAnimatedList> {
                   axis: Axis.vertical,
                   sizeFactor: animation.drive(Tween(begin: 1, end: 0)),
                   child: oldWidget.children[index],
-                ));
+                ),
+            duration: Duration(milliseconds: 150));
       }
     }
   }
@@ -86,23 +87,6 @@ class WidgetCollectionDiff {
     this.addedIndexes,
     this.removedIndexes,
   });
-
-  void printContents() {
-    print('********** WidgetCollectionDiff Contents *********** ');
-    print('');
-    print('');
-    print('Added Indexes');
-    for (var index in addedIndexes) {
-      print(index);
-    }
-    print('');
-    print('');
-    print('Removed Indexes');
-    for (var index in removedIndexes) {
-      print(index);
-    }
-    print('');
-  }
 }
 
 WidgetCollectionDiff diffChildren(

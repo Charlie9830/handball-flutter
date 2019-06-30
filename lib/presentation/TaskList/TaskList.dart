@@ -34,7 +34,7 @@ class TaskList extends StatelessWidget {
         initialItemCount: children.length,
         itemBuilder: (context, index, animation) {
           return SizeTransition(
-            sizeFactor: animation.drive(Tween(begin: 0, end: 1)),
+            sizeFactor: animation,
             child: children[index],
             axis: Axis.vertical,
           );
@@ -42,24 +42,4 @@ class TaskList extends StatelessWidget {
       )
     );
   }
-
-  // var backgroundColor = isFocused
-  //       ? Theme.of(context).colorScheme.surface
-  //       : Theme.of(context).colorScheme.background;
-
-    // return Padding(
-    //   padding: const EdgeInsets.all(8.0),
-    //   child: GestureDetector(
-    //       onTap: onTap,
-    //       child: Container(
-    //           child: Column(
-    //             children: <Widget>[
-    //               header,
-    //               Column(
-    //                 children: children,
-    //               )
-    //             ],
-    //           ),
-    //           color: backgroundColor)),
-    // );
 }
