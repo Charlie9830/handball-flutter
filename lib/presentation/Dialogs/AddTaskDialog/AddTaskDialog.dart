@@ -194,7 +194,9 @@ class _AddTaskDialog extends State<AddTaskDialog> {
           _selectedTaskList = TaskListModel(
             uid: 'new',
             project: null,
-            taskListName: dialogResult.value,
+            taskListName: dialogResult.value.trim().isEmpty ? 'Untitled List' : dialogResult.value.trim(),
+            dateAdded: DateTime.now(),
+
           );
         });
       }

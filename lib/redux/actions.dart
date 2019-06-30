@@ -1601,7 +1601,7 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
       var projectRef = _getProjectsCollectionRef(store).document();
       var project = ProjectModel(
         uid: projectRef.documentID,
-        projectName: result.value,
+        projectName: result.value.trim().isEmpty ? 'Untitled Project' : result.value.trim(),
         created: DateTime.now().toIso8601String(),
       );
 
@@ -1710,7 +1710,7 @@ ThunkAction<AppState> addNewTaskListWithDialog(
       var taskList = TaskListModel(
         uid: ref.documentID,
         project: projectId,
-        taskListName: result.value,
+        taskListName: result.value.trim().isEmpty ? 'Untitled List' : result.value.trim(),
         dateAdded: DateTime.now(),
       );
 
@@ -1838,7 +1838,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
         var newTaskList = TaskListModel(
           uid: taskListRef.documentID,
           project: projectId,
-          taskListName: result.taskListName,
+          taskListName: result.taskListName.trim().isEmpty ? 'Untitled List' : result.taskListName.trim(),
           dateAdded: DateTime.now(),
         );
 
@@ -1849,7 +1849,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
             taskList: newTaskList.uid,
             project: projectId,
             userId: store.state.user.userId,
-            taskName: result.taskName,
+            taskName: result.taskName.trim().isEmpty ? 'Untitled Task' : result.taskName.trim(),
             dueDate: result.selectedDueDate,
             isHighPriority: result.isHighPriority,
             dateAdded: DateTime.now(),
@@ -1884,7 +1884,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
             taskList: targetTaskListId,
             userId: store.state.user.userId,
             project: projectId,
-            taskName: result.taskName,
+            taskName: result.taskName.trim().isEmpty ? 'Untitled Task' : result.taskName.trim(),
             dueDate: result.selectedDueDate,
             isHighPriority: result.isHighPriority,
             dateAdded: DateTime.now(),
