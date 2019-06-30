@@ -7,7 +7,7 @@ class FirestoreStreamsContainer {
   // User Level.
   StreamSubscription<QuerySnapshot> projectIds;
   StreamSubscription<QuerySnapshot> invites;
-  StreamSubscription<QuerySnapshot> accountConfig;
+  StreamSubscription<DocumentSnapshot> accountConfig;
 
   Map<String, ProjectSubscriptionContainer> projectSubscriptions;
 

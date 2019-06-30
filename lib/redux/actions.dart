@@ -10,6 +10,8 @@ import 'package:handball_flutter/FirestoreStreamsContainer.dart';
 import 'package:handball_flutter/configValues.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/keys.dart';
+import 'package:handball_flutter/models/AccountConfig.dart';
+import 'package:handball_flutter/models/AppTheme.dart';
 import 'package:handball_flutter/models/Assignment.dart';
 import 'package:handball_flutter/models/ChecklistSettings.dart';
 import 'package:handball_flutter/models/Comment.dart';
@@ -56,6 +58,14 @@ class OpenAppSettings {
 
   OpenAppSettings({
     this.tab,
+  });
+}
+
+class ReceiveAccountConfig {
+  final AccountConfigModel accountConfig;
+
+  ReceiveAccountConfig({
+    this.accountConfig,
   });
 }
 
@@ -369,8 +379,21 @@ void onAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
 }
 
 void subscribeToDatabase(Store<AppState> store, String userId) {
+  _firestoreStreams.accountConfig = _subscribeToAccountConfig(userId, store);
   _firestoreStreams.invites = _subscribeToProjectInvites(userId, store);
   _firestoreStreams.projectIds = _subscribeToProjectIds(userId, store);
+}
+
+StreamSubscription<DocumentSnapshot> _subscribeToAccountConfig(
+    String userId, Store<AppState> store) {
+  return _getAccountConfigDocumentReference(userId)
+      .snapshots()
+      .listen((docSnapshot) {
+    if (docSnapshot.exists) {
+      var accountConfig = AccountConfigModel.fromDoc(docSnapshot);
+      store.dispatch(ReceiveAccountConfig(accountConfig: accountConfig));
+    }
+  });
 }
 
 StreamSubscription<QuerySnapshot> _subscribeToProjectInvites(
@@ -415,6 +438,36 @@ void addProcessingProjectInviteId(String projectId, Store<AppState> store) {
 
   store.dispatch(
       SetProcessingProjectInviteIds(processingProjectInviteIds: newList));
+}
+
+ThunkAction<AppState> updateAppTheme(AppThemeModel newAppTheme) {
+  return (Store<AppState> store) async {
+    if (newAppTheme == null || store.state.user.isLoggedIn == false) {
+      return;
+    }
+
+    newAppTheme.debugPrint();
+
+    if (store.state.accountConfig == null) {
+      // Account Config doesn't exist yet.
+      var accountConfigRef =
+          _getAccountConfigDocumentReference(store.state.user.userId);
+      var newAccountConfig = AccountConfigModel(appTheme: newAppTheme);
+      await accountConfigRef.setData(newAccountConfig.toMap());
+    } else {
+      // Account Config already Exists.
+      var ref = _getAccountConfigDocumentReference(store.state.user.userId);
+      await ref.updateData({'appTheme': newAppTheme.toMap()});
+    }
+  };
+}
+
+DocumentReference _getAccountConfigDocumentReference(String userId) {
+  return Firestore.instance
+      .collection('users')
+      .document(userId)
+      .collection('accountConfig')
+      .document('0');
 }
 
 void removeProccessingProjectInviteId(String projectId, Store<AppState> store) {

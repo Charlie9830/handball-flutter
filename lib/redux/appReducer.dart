@@ -68,6 +68,12 @@ AppState appReducer(AppState state, dynamic action) {
     return state.copyWith(showOnlySelfTasks: action.showOnlySelfTasks);
   }
 
+  if (action is ReceiveAccountConfig) {
+    return state.copyWith(
+      accountConfig: action.accountConfig,
+    );
+  }
+
   if (action is ReceiveCompletedTasks) {
     var foldedTasks = foldTasksTogether(TasksSnapshotType.completed,
         action.tasks, action.originProjectId, state);
@@ -259,7 +265,11 @@ AppState appReducer(AppState state, dynamic action) {
       ),
       accountState: AccountState.loggedOut,
       tasks: initialAppState.tasks,
+      tasksByProject: initialAppState.tasksByProject,
+      completedTasksByProject: initialAppState.completedTasksByProject,
+      incompletedTasksByProject: initialAppState.incompletedTasksByProject,
       taskLists: initialAppState.taskLists,
+      taskListsByProject: initialAppState.taskListsByProject,
       projects: initialAppState.projects,
       projectIndicatorGroups: initialAppState.projectIndicatorGroups,
       selectedProjectId: initialAppState.selectedProjectId,
@@ -271,6 +281,9 @@ AppState appReducer(AppState state, dynamic action) {
       processingProjectInviteIds: initialAppState.processingProjectInviteIds,
       members: initialAppState.members,
       memberLookup: initialAppState.memberLookup,
+      showCompletedTasks: initialAppState.showCompletedTasks,
+      showOnlySelfTasks: initialAppState.showOnlySelfTasks,
+      accountConfig: initialAppState.accountConfig,
     );
   }
 

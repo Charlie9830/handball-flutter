@@ -2,8 +2,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/AppSettingsViewModel.dart';
-import 'package:handball_flutter/presentation/Screens/AppSettings/AccountTab/AboutTab.dart';
+import 'package:handball_flutter/presentation/Screens/AppSettings/AboutTab.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/AccountTab/AccountTab.dart';
+import 'package:handball_flutter/presentation/Screens/AppSettings/GeneralTab/GeneralTab.dart';
 
 class AppSettings extends StatelessWidget {
   final AppSettingsViewModel viewModel;
@@ -34,7 +35,7 @@ class AppSettings extends StatelessWidget {
         body: TabBarView(
           physics: NeverScrollableScrollPhysics(),
           children: <Widget>[
-            Text('General'),
+            GeneralTab(),
             AccountTab(
               accountState: viewModel.accountState,
               user: viewModel.user,

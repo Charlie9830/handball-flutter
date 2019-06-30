@@ -59,6 +59,7 @@ final initialAppState = AppState(
   showCompletedTasks: false,
   incompletedTasksByProject: <String, List<TaskModel>>{},
   completedTasksByProject: <String, List<TaskModel>>{},
+  accountConfig: null,
 );
 
 final appStore = new Store<AppState> (

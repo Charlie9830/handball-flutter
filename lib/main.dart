@@ -4,9 +4,11 @@ import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/containers/AppDrawerContainer.dart';
 import 'package:handball_flutter/containers/HomeScreenContainer.dart';
 import 'package:handball_flutter/keys.dart';
+import 'package:handball_flutter/models/AppTheme.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/presentation/EditableTextInput.dart';
 import 'package:handball_flutter/redux/actions.dart';
+import 'package:handball_flutter/utilities/buildAppThemeData.dart';
 import 'package:redux/redux.dart';
 import './redux/appStore.dart';
 import './redux/appState.dart';
@@ -47,21 +49,25 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return new StoreProvider<AppState>(
         store: store,
-        child: new MaterialApp(
-          title: 'Handball',
-          theme: ThemeData(
-            primarySwatch: Colors.blueGrey,
-            accentColor: Colors.orangeAccent,
-            brightness: Brightness.light,
-          ),
-          navigatorKey: navigatorKey,
-          home: HomeScreenContainer(),
+        child: StoreConnector(
+          converter: (Store<AppState> store) =>
+              AppThemeViewModel(
+                data: store.state.accountConfig?.appTheme ?? AppThemeModel(),
+                ),
+          builder: (BuildContext context, AppThemeViewModel viewModel) {
+            return MaterialApp(
+              title: 'Handball',
+              theme: buildAppThemeData(viewModel.data),
+              navigatorKey: navigatorKey,
+              home: HomeScreenContainer(),
+            );
+          },
         ));
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    switch(state) {
+    switch (state) {
       case AppLifecycleState.resumed:
         store.dispatch(processChecklists(store.state.taskLists));
         break;

@@ -1,4 +1,5 @@
 import 'package:handball_flutter/enums.dart';
+import 'package:handball_flutter/models/AccountConfig.dart';
 import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/IndicatorGroup.dart';
 import 'package:handball_flutter/models/InflatedProject.dart';
@@ -43,6 +44,7 @@ class AppState {
   final bool isInMultiSelectTaskMode;
   final bool showOnlySelfTasks;
   final bool showCompletedTasks;
+  final AccountConfigModel accountConfig;
 
 
   final TextInputDialogModel textInputDialog;
@@ -81,6 +83,7 @@ class AppState {
     this.showCompletedTasks,
     this.completedTasksByProject,
     this.incompletedTasksByProject,
+    this.accountConfig,
     });
 
   AppState copyWith({
@@ -118,6 +121,7 @@ class AppState {
     bool showCompletedTasks,
     Map<String, List<TaskModel>> completedTasksByProject,
     Map<String, List<TaskModel>> incompletedTasksByProject,
+    AccountConfigModel accountConfig,
 
   }) {
     return AppState(
@@ -153,6 +157,7 @@ class AppState {
       showCompletedTasks: showCompletedTasks ?? this.showCompletedTasks,
       completedTasksByProject: completedTasksByProject ?? this.completedTasksByProject,
       incompletedTasksByProject: incompletedTasksByProject ?? this.incompletedTasksByProject,
+      accountConfig: accountConfig ?? this.accountConfig,
     );
   }
 }

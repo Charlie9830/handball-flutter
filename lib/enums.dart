@@ -19,3 +19,5 @@ enum MemberStatus { pending, added, denied }
 enum TaskMetadataUpdateType { created, completed, updated }
 
 enum TasksSnapshotType { completed, incompleted }
+
+enum MaterialColorPickerType { primary, accent }
