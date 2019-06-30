@@ -349,6 +349,32 @@ Future<String> postDelegateOwnerDialog(
       });
 }
 
+ThunkAction<AppState> updateProjectName(String existingName, String projectId, BuildContext context) {
+return (Store<AppState> store) async {
+  if (projectId == null || projectId == '-1') {
+    return;
+  }
+
+  var result = await postTextInputDialog('Rename Project', existingName, context);
+
+  if (result is TextInputDialogResult && result.result != DialogResult.negative) {
+    var newName = result.value;
+    if (newName.trim() == existingName) {
+      return;
+    }
+
+    var ref = _getProjectsCollectionRef(store).document(projectId);
+    
+    try {
+      await ref.updateData({'projectName': newName.trim()});
+    } catch(error) {
+      throw error;
+    }
+  } 
+
+  };
+}
+
 ThunkAction<AppState> initializeApp() {
   return (Store<AppState> store) async {
     homeScreenScaffoldKey?.currentState?.openDrawer();

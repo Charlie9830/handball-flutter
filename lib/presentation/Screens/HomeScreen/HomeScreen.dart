@@ -80,6 +80,7 @@ class HomeScreen extends StatelessWidget {
               showCompletedTasks: viewModel.showCompletedTasks,
               onShowCompletedTasksChanged:
                   viewModel.onShowCompletedTasksChanged,
+              onRenameProject: viewModel.onRenameProject,
             )
         ],
         bottom: viewModel.showOnlySelfTasks == true

@@ -9,6 +9,7 @@ class ProjectMenu extends StatelessWidget {
   final dynamic onSetListSorting;
   final dynamic onShowOnlySelfTasksChanged;
   final dynamic onShowCompletedTasksChanged;
+  final dynamic onRenameProject;
 
   const ProjectMenu(
       {Key key,
@@ -18,7 +19,8 @@ class ProjectMenu extends StatelessWidget {
       this.showOnlySelfTasks,
       this.isProjectShared,
       this.showCompletedTasks,
-      this.onShowCompletedTasksChanged})
+      this.onShowCompletedTasksChanged,
+      this.onRenameProject})
       : super(key: key);
 
   @override
@@ -29,9 +31,9 @@ class ProjectMenu extends StatelessWidget {
         itemBuilder: (context) {
           return <PopupMenuEntry<dynamic>>[
             PopupMenuItem(
-              child: Text( showCompletedTasks ? 'Hide Completed' : 'Show Completed'),
-              value: 'show-completed-tasks'
-            ),
+                child: Text(
+                    showCompletedTasks ? 'Hide Completed' : 'Show Completed'),
+                value: 'show-completed-tasks'),
             PopupMenuDivider(),
             PopupMenuItem(
               child: Text('Sort lists by',
@@ -53,9 +55,11 @@ class ProjectMenu extends StatelessWidget {
               PopupMenuItem(
                 child: Text(showOnlySelfTasks == true
                     ? 'Show all Tasks'
-                    : 'Show only my Tasks'),
+                    : 'Show only my tasks'),
                 value: 'show-self-tasks',
-              )
+              ),
+            PopupMenuItem(
+                child: Text('Rename project'), value: 'rename-project')
           ];
         });
   }
@@ -76,6 +80,10 @@ class ProjectMenu extends StatelessWidget {
 
       case 'show-completed-tasks':
         onShowCompletedTasksChanged(!showCompletedTasks);
+        break;
+
+      case 'rename-project':
+        onRenameProject();
         break;
       default:
         break;

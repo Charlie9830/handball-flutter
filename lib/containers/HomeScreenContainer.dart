@@ -22,10 +22,11 @@ class HomeScreenContainer extends StatelessWidget {
 
   HomeScreenViewModel _converter(Store<AppState> store, BuildContext context) {
     var projectId = store.state.selectedProjectId;
+    var projectName = _getProjectName(projectId, store.state.projects);
 
     return HomeScreenViewModel(
       projectId: projectId,
-      projectName: _getProjectName(projectId, store.state.projects),
+      projectName: projectName,
       taskListViewModels: _buildTaskListViewModels(store, context),
       onAddNewTaskFabButtonPressed: () => store
           .dispatch(addNewTaskWithDialog(projectId, context, taskListId: null)),
@@ -57,6 +58,7 @@ class HomeScreenContainer extends StatelessWidget {
       onShowCompletedTasksChanged: (newValue) => store.dispatch(setShowCompletedTasks(newValue, projectId)),
       onAddNewProjectButtonPressed: () => store.dispatch(addNewProjectWithDialog(context)),
       onLogInHintButtonPress: () => store.dispatch(handleLogInHintButtonPress()),
+      onRenameProject: () => store.dispatch(updateProjectName(projectName, projectId, context)),
     );
   }
 
