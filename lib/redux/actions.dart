@@ -22,6 +22,7 @@ import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/ProjectIdModel.dart';
 import 'package:handball_flutter/models/ProjectInvite.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
+import 'package:handball_flutter/models/ServerCleanupJobs/CleanupTaskListMove.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/TaskListSettings.dart';
@@ -31,6 +32,7 @@ import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/DelegateOwnerDialog/DelegateOwnerDialog.dart';
+import 'package:handball_flutter/presentation/Dialogs/MoveListBottomSheet.dart';
 import 'package:handball_flutter/presentation/Dialogs/MoveTasksDialog/MoveTaskBottomSheet.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/presentation/Screens/ListSortingScreen/ListSortingScreen.dart';
@@ -600,7 +602,7 @@ ThunkAction<AppState> moveTasksToListWithDialog(
 
       if (moveTasksResult.isNewTaskList == true) {
         // Create a new TaskList before proceeding.
-        var ref = _getTaskListsCollectionRef(projectId, store).document();
+        var ref = _getTaskListsCollectionRef(projectId).document();
         var taskList = TaskListModel(
           dateAdded: DateTime.now(),
           project: projectId,
@@ -1428,7 +1430,7 @@ Future<void> _deleteProject(String projectId, Store<AppState> store) async {
 
   // Build TaskLists into Batch.
   for (var id in taskListIds) {
-    batch.delete(_getTaskListsCollectionRef(projectId, store).document(id));
+    batch.delete(_getTaskListsCollectionRef(projectId).document(id));
   }
 
   batch.delete(_getProjectsCollectionRef(store).document(projectId));
@@ -1487,7 +1489,7 @@ ThunkAction<AppState> renameTaskListWithDialog(
     }
 
     try {
-      await _getTaskListsCollectionRef(store.state.selectedProjectId, store)
+      await _getTaskListsCollectionRef(store.state.selectedProjectId)
           .document(taskListId)
           .updateData({'taskListName': dialogResult.value});
     } catch (error) {
@@ -1519,9 +1521,8 @@ Future _deleteTaskList(
     String taskListId, Store<AppState> store, String userId) async {
   var taskIds = _getListRelatedTaskIds(taskListId, store.state.tasks);
   var baseTaskRef = _getTasksCollectionRef(store.state.selectedProjectId);
-  var taskListRef =
-      _getTaskListsCollectionRef(store.state.selectedProjectId, store)
-          .document(taskListId);
+  var taskListRef = _getTaskListsCollectionRef(store.state.selectedProjectId)
+      .document(taskListId);
   var batch = Firestore.instance.batch();
 
   // Delete related Tasks
@@ -1578,7 +1579,7 @@ ThunkAction<AppState> updateTaskSorting(String projectId, String taskListId,
       return;
     }
 
-    var ref = _getTaskListsCollectionRef(projectId, store).document(taskListId);
+    var ref = _getTaskListsCollectionRef(projectId).document(taskListId);
     var newSettings = existingSettings?.copyWith(sortBy: sorting);
 
     try {
@@ -1625,7 +1626,7 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
 
       // Initial TaskList
       var taskListRef =
-          _getTaskListsCollectionRef(projectRef.documentID, store).document();
+          _getTaskListsCollectionRef(projectRef.documentID).document();
       var taskList = TaskListModel(
         uid: taskListRef.documentID,
         project: projectRef.documentID,
@@ -1722,7 +1723,7 @@ ThunkAction<AppState> addNewTaskListWithDialog(
 
     if (result is TextInputDialogResult &&
         result.result == DialogResult.affirmative) {
-      var ref = _getTaskListsCollectionRef(projectId, store).document();
+      var ref = _getTaskListsCollectionRef(projectId).document();
       var taskList = TaskListModel(
         uid: ref.documentID,
         project: projectId,
@@ -1787,6 +1788,116 @@ ThunkAction<AppState> updateListSorting(
       throw error;
     }
   };
+}
+
+ThunkAction<AppState> moveTaskListToProjectWithDialog(String taskListId,
+    String projectId, String listName, BuildContext context) {
+  return (Store<AppState> store) async {
+    var otherProjects =
+        store.state.projects.where((item) => item.uid != projectId).toList();
+
+    String targetProjectId;
+    if (otherProjects.length == 1) {
+      // Only one other option available. Show a simplified Dialog.
+      var projectName = otherProjects.first.projectName;
+      var result = await postConfirmationDialog(
+          'Move list',
+          'Are you sure you want to move $listName into $projectName?',
+          'Move',
+          'Cancel',
+          context);
+
+      if (result is DialogResult && result == DialogResult.affirmative) {
+        targetProjectId = otherProjects.first.uid;
+      }
+    } else {
+      targetProjectId = await showModalBottomSheet(
+          context: context,
+          builder: (context) =>
+              MoveListBottomSheet(projectOptions: otherProjects));
+    }
+
+    if (targetProjectId == null) {
+      return;
+    }
+
+    moveTaskList(taskListId, projectId, targetProjectId, store.state);
+
+    var targetProjectName = store.state.projects.firstWhere((item) => item.uid == targetProjectId, orElse: () => null)?.projectName ?? 'Another project';
+    showSnackBar(
+      targetGlobalKey: homeScreenScaffoldKey,
+      message: '$listName moved to $targetProjectName',
+      autoHideSeconds: 4,
+    );
+  };
+}
+
+void moveTaskList(String taskListId, String sourceProjectId,
+    String targetProjectId, AppState state) async {
+  // Prep Tasks.
+  List<TaskModel> sourceChildTasks = state.tasksByProject[sourceProjectId]
+          ?.where((item) => item.taskList == taskListId)
+          ?.toList() ??
+      <TaskModel>[];
+
+  List<TaskModel> targetChildTasks = sourceChildTasks
+      .map((task) => task.copyWith(project: targetProjectId))
+      .toList();
+
+  // Prep TaskList.
+  TaskListModel sourceTaskList = state.taskListsByProject[sourceProjectId]
+      ?.firstWhere((item) => item.uid == taskListId, orElse: () => null);
+  var sourceTaskListRef =
+      _getTaskListsCollectionRef(sourceProjectId).document(taskListId);
+
+  if (sourceTaskList == null) {
+    return;
+  }
+
+  TaskListModel targetTaskList =
+      sourceTaskList.copyWith(project: targetProjectId);
+  var targetTaskListRef =
+      _getTaskListsCollectionRef(targetProjectId).document(taskListId);
+
+  // Everything Prepped. Let's move.
+  var batch = Firestore.instance.batch();
+
+  // Write operations to new Location.
+  batch.setData(targetTaskListRef, targetTaskList.toMap());
+  for (var task in targetChildTasks) {
+    batch.setData(_getTasksCollectionRef(targetProjectId).document(task.uid),
+        task.toMap());
+  }
+
+  // You would think that we would delete the SourceTaskList and SourceTasks here. But doing so would trigger the RemoveOrphanedTaskComments and RemoveOrphanedTasks
+  // Cloud Functions, these could possibly delete the Task Comments before the CleanupTaskListMoveJob can get to them (To move completed Tasks and Task Comments).
+  // Therefore we just Flag the SourceTaskList as deleted for now. CleanupTaskListMoveJob will delete it when is ready.
+  // We only touch the Task List here, Flagging the Tasks will likely cause AnimatedList Issues for now.
+  batch.updateData(sourceTaskListRef, {'isDeleted': true});
+
+  var cleanupJob = CleanupTaskListMoveJobModel(
+      payload: CleanupTaskListMoveJobPayload(
+    sourceProjectId: sourceProjectId,
+    targetProjectId: targetProjectId,
+    taskListId: taskListId,
+    taskIds: targetChildTasks.map((item) => item.uid).toList(),
+    sourceTaskListRefPath: sourceTaskListRef.path,
+    sourceTasksRefPath: _getTasksCollectionRef(sourceProjectId).path,
+    targetTaskListRefPath: targetTaskListRef.path,
+    targetTasksRefPath: _getTasksCollectionRef(targetProjectId).path,
+  ));
+
+  batch.setData(_getJobsQueueCollectionRef().document(), cleanupJob.toMap());
+
+  try {
+    await batch.commit();
+  } catch (error) {
+    throw error;
+  }
+}
+
+CollectionReference _getJobsQueueCollectionRef() {
+  return Firestore.instance.collection('jobsQueue');
 }
 
 ThunkAction<AppState> updateTaskName(String newValue, String oldValue,
@@ -1878,8 +1989,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
         var batch = Firestore.instance.batch();
 
         // New TaskList
-        var taskListRef =
-            _getTaskListsCollectionRef(projectId, store).document();
+        var taskListRef = _getTaskListsCollectionRef(projectId).document();
 
         var newTaskList = TaskListModel(
           uid: taskListRef.documentID,
@@ -2040,10 +2150,14 @@ void _handleTaskListsSnapshot(
 
   snapshot.documents.forEach((doc) {
     var taskList = TaskListModel.fromDoc(doc);
-    taskLists.add(taskList);
 
-    if (taskList.settings?.checklistSettings?.isChecklist == true) {
-      checklists.add(taskList);
+    // Don't add lists Flagged as Deleted.
+    if (taskList.isDeleted != true) {
+      taskLists.add(taskList);
+
+      if (taskList.settings?.checklistSettings?.isChecklist == true) {
+        checklists.add(taskList);
+      }
     }
   });
 
@@ -2096,8 +2210,8 @@ void renewChecklist(TaskListModel checklist, Store<AppState> store,
                     currentChecklistSettings.initialStartDate,
                 currentChecklistSettings.renewInterval)));
 
-    var ref = _getTaskListsCollectionRef(checklist.project, store)
-        .document(checklist.uid);
+    var ref =
+        _getTaskListsCollectionRef(checklist.project).document(checklist.uid);
 
     try {
       ref.updateData({'settings': newSettings.toMap()});
@@ -2298,8 +2412,8 @@ ThunkAction<AppState> openChecklistSettings(
 
         return;
       } else {
-        var ref = _getTaskListsCollectionRef(taskList.project, store)
-            .document(taskList.uid);
+        var ref =
+            _getTaskListsCollectionRef(taskList.project).document(taskList.uid);
         var newTaskListSettings = taskList.settings.copyWith(
             checklistSettings: ChecklistSettingsModel(
           isChecklist: result.isChecklist,
@@ -2357,8 +2471,7 @@ CollectionReference _getTasksCollectionRef(String projectId) {
       .collection('tasks');
 }
 
-CollectionReference _getTaskListsCollectionRef(
-    String projectId, Store<AppState> store) {
+CollectionReference _getTaskListsCollectionRef(String projectId) {
   return Firestore.instance
       .collection('projects')
       .document(projectId)

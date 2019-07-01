@@ -64,6 +64,7 @@ AppState appReducer(AppState state, dynamic action) {
         enableState: state.enableState.copyWith(
           showNoProjectsHint: projects.length == 0,
           showSelectAProjectHint: projects.length > 0 && (state.selectedProjectId == '-1' || state.selectedProjectId == null),
+          canMoveTaskList: projects.length > 1,
         ));
   }
 

@@ -13,6 +13,7 @@ class TaskListHeader extends StatelessWidget {
   final onAddTaskButtonPressed;
   final onSortingChange;
   final onOpenChecklistSettings;
+  final dynamic onMoveToProject;
 
   TaskListHeader({
     Key key,
@@ -25,6 +26,7 @@ class TaskListHeader extends StatelessWidget {
     this.onAddTaskButtonPressed,
     this.onSortingChange,
     this.onOpenChecklistSettings,
+    this.onMoveToProject,
   });
 
   @override
@@ -41,6 +43,7 @@ class TaskListHeader extends StatelessWidget {
             onSortingChange: onSortingChange,
             onOpenChecklistSettings: onOpenChecklistSettings,
             sorting: sorting,
+            onMoveToProject: onMoveToProject,
           ),
           if (isChecklist == true)
             IconButton(

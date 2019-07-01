@@ -3,6 +3,7 @@ class EnableStateModel {
   final bool showNoProjectsHint;
   final bool showNoTaskListsHint;
   final bool showSingleListNoTasksHint;
+  final bool canMoveTaskList;
 
   final bool isLoggedIn;
   final bool isProjectSelected;
@@ -18,6 +19,8 @@ class EnableStateModel {
     this.showNoTaskListsHint = false,
     this.showSelectAProjectHint = false,
     this.showSingleListNoTasksHint = false,
+    this.canMoveTaskList = false,
+    
   });
 
   EnableStateModel copyWith({
@@ -27,6 +30,7 @@ class EnableStateModel {
     bool isLoggedIn,
     bool isProjectSelected,
     bool showSingleListNoTasksHint,
+    bool canMoveTaskList,
   }) {
     return EnableStateModel(
       isLoggedIn: isLoggedIn ?? this.isLoggedIn,
@@ -37,6 +41,7 @@ class EnableStateModel {
           showSelectAProjectHint ?? this.showSelectAProjectHint,
       showSingleListNoTasksHint:
           showSingleListNoTasksHint ?? this.showSingleListNoTasksHint,
+      canMoveTaskList: canMoveTaskList ?? this.canMoveTaskList,
     );
   }
 

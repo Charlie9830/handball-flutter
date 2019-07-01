@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/InheritatedWidgets/EnableStates.dart';
 import 'package:handball_flutter/enums.dart';
 
 class TaskListSettingsMenu extends StatelessWidget {
@@ -79,16 +80,17 @@ class TaskListSettingsMenu extends StatelessWidget {
               child: Text('Checklist Settings'),
               value: 'checklist settings',
             ),
-            PopupMenuItem(
-              child: Row(children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: Icon(Icons.arrow_forward),
-                ),
-                Text('Move to project')
-              ]),
-              value: 'move to project',
-            ),
+            if (EnableStates.of(context).state.canMoveTaskList == true)
+              PopupMenuItem(
+                child: Row(children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Icon(Icons.arrow_forward),
+                  ),
+                  Text('Move to project')
+                ]),
+                value: 'move to project',
+              ),
             PopupMenuDivider(),
             PopupMenuItem(
               child: Row(children: <Widget>[

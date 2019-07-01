@@ -133,6 +133,7 @@ class HomeScreenContainer extends StatelessWidget {
             sorting)),
         onOpenChecklistSettings: () =>
             store.dispatch(openChecklistSettings(taskList.data, context)),
+        onMoveToProject: () => store.dispatch(moveTaskListToProjectWithDialog(taskList.data.uid, taskList.data.project, taskList.data.taskListName, context))
       );
     }).toList();
   }

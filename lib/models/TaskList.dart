@@ -12,12 +12,18 @@ class TaskListModel {
   String taskListName;
   DateTime dateAdded;
   TaskListSettingsModel settings;
+  bool isDeleted;
+
+  /*
+    Update CopyWith Method Below.
+  */
 
   TaskListModel({
     @required this.uid,
     @required this.project,
     this.taskListName = '',
     this.settings,
+    this.isDeleted = false,
     @required this.dateAdded,
   });
 
@@ -27,6 +33,7 @@ class TaskListModel {
     this.taskListName = doc['taskListName'];
     this.dateAdded = coerceDate(doc['created']);
     this.settings = TaskListSettingsModel.fromDocMap(doc['settings']);
+    this.isDeleted = doc['isDeleted'] ?? false;
   }
 
   Map<String, dynamic> toMap() {
@@ -36,7 +43,26 @@ class TaskListModel {
       'taskListName': this.taskListName,
       'dateAdded': this.dateAdded ?? '',
       'settings': this.settings?.toMap() ?? TaskListSettingsModel().toMap(),
+      'isDeleted': this.isDeleted ?? false,
     };
+  }
+
+  TaskListModel copyWith({
+    String uid,
+    String project,
+    String taskListName,
+    DateTime dateAdded,
+    TaskListSettingsModel settings,
+    bool isDeleted,
+  }) {
+    return TaskListModel(
+      uid: uid ?? this.uid,
+      project: project ?? this.project,
+      taskListName: taskListName ?? this.taskListName,
+      dateAdded: dateAdded ?? this.dateAdded,
+      settings: settings ?? this.settings,
+      isDeleted: isDeleted ?? this.isDeleted,
+    );
   }
 }
 
@@ -50,6 +76,7 @@ class TaskListViewModel {
   final onAddNewTaskButtonPressed;
   final onSortingChange;
   final onOpenChecklistSettings;
+  final onMoveToProject;
 
   final onTaskListFocus;
 
@@ -64,5 +91,6 @@ class TaskListViewModel {
     this.onAddNewTaskButtonPressed,
     this.onSortingChange,
     this.onOpenChecklistSettings,
+    this.onMoveToProject,
   });
 }

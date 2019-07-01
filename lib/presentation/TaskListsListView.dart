@@ -60,6 +60,7 @@ class TaskListsListView extends StatelessWidget {
               onSortingChange: vm.onSortingChange,
               sorting: vm.data.settings.sortBy,
               onOpenChecklistSettings: vm.onOpenChecklistSettings,
+              onMoveToProject: vm.onMoveToProject,
             ),
             children: vm.childTaskViewModels
                 .map((taskVm) => Task(key: Key(taskVm.data.uid), model: taskVm))
