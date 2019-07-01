@@ -28,6 +28,8 @@ class _CommentInputState extends State<CommentInput> {
           child: TextField(
             controller: _textEditingController,
             autofocus: true,
+            minLines: 1,
+            maxLines: 4,
             keyboardType: TextInputType.multiline,
             onSubmitted: (_) => _postComment(_textEditingController.text),
             decoration: InputDecoration(
