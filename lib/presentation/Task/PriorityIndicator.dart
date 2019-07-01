@@ -1,31 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 
 class PriorityIndicator extends StatelessWidget {
   final bool isHighPriority;
 
-  PriorityIndicator({
-    this.isHighPriority = false,
-  });
+  const PriorityIndicator({
+    Key key,
+    this.isHighPriority,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return PredicateBuilder(
-        predicate: () => isHighPriority,
-        childIfTrue:
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Container(
-                height: 8,
-                width: 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.orange,
-                )
-              ),
-            )
-          ),
-        childIfFalse: SizedBox(height: 0, width: 0));
+    return Padding(
+      padding: EdgeInsets.only(bottom: 2, top: 2),
+      child: AnimatedContainer(
+          duration: Duration(milliseconds: 150),
+          child: SizedBox(
+              width: isHighPriority == true ? 12 : 0,
+              child: Container(color: Colors.orange))),
+    );
   }
 }

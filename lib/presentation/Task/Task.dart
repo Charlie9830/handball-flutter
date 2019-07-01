@@ -19,6 +19,8 @@ class Task extends StatelessWidget {
     final ParsedDueDate parsedDueDate =
         ParseDueDate(model.data.isComplete, model.data.dueDate);
 
+    var showPriorityIndicator = model.isInMultiSelectMode == false && model.data.isHighPriority;
+
     return new Slidable(
       delegate: new SlidableDrawerDelegate(),
       actionExtentRatio: 0.25,
@@ -26,55 +28,68 @@ class Task extends StatelessWidget {
       child: InkWell(
           onTap: model.onTap,
           onLongPress: model.onLongPress,
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        TaskCheckbox(
-                          isComplete: model.data.isComplete,
-                          onCheckboxChanged: model.onCheckboxChanged,
-                          isSelected: model.isMultiSelected,
-                          onRadioChanged: model.onRadioChanged,
-                          isInMultiSelectTaskMode: model.isInMultiSelectMode,
-                        ),
-                        Expanded(
-                          child: Text(model.data.taskName),
-                        ),
-                        PredicateBuilder(
-                            predicate: () =>
-                                parsedDueDate.type != DueDateType.unset,
-                            childIfTrue: DueDateChit(
-                              color: parsedDueDate.type,
-                              text: parsedDueDate.text,
-                              size: DueDateChitSize.standard,
-                            ),
-                            childIfFalse: Nothing())
-                      ],
-                    ),
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(left: 8, right: 8, bottom: 8),
-                      child: Row(
+          child: IntrinsicHeight(
+            child: Row(
+              children: <Widget>[
+                PriorityIndicator(
+                  isHighPriority: showPriorityIndicator,
+                ),
+                Expanded(
+                  child: Column(
+                    children: <Widget>[
+                      Row(
                         children: <Widget>[
-                          if (model.hasNote)
-                            Icon(Icons.note,
-                                color: Theme.of(context).disabledColor),
-                          if (model.data.hasUnseenComments) Icon(Icons.comment),
-                          if (model.data.isAssigned)
-                            Expanded(
-                                child: AssignmentIndicator(
-                              assignments: model.assignments,
-                            ))
+                          TaskCheckbox(
+                            isComplete: model.data.isComplete,
+                            onCheckboxChanged: model.onCheckboxChanged,
+                            isSelected: model.isMultiSelected,
+                            onRadioChanged: model.onRadioChanged,
+                            isInMultiSelectTaskMode: model.isInMultiSelectMode,
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Text(model.data.taskName),
+                            ),
+                          ),
+                          PredicateBuilder(
+                              predicate: () =>
+                                  parsedDueDate.type != DueDateType.unset,
+                              childIfTrue: DueDateChit(
+                                color: parsedDueDate.type,
+                                text: parsedDueDate.text,
+                                size: DueDateChitSize.standard,
+                              ),
+                              childIfFalse: Nothing())
                         ],
                       ),
-                    )
-                  ],
+                      Padding(
+                        padding:
+                            const EdgeInsets.only(left: 12, right: 8, bottom: 0),
+                        child: Row(
+                          children: <Widget>[
+                            if (model.hasNote)
+                              Icon(Icons.note,
+                                  color: Theme.of(context).disabledColor),
+                            if (model.data.hasUnseenComments)
+                              Icon(Icons.comment),
+                            if (model.data.isAssigned)
+                              Expanded(
+                                  child: AssignmentIndicator(
+                                assignments: model.assignments,
+                              ))
+                          ],
+                        ),
+                      ),
+                      Divider(
+                        indent: showPriorityIndicator == true ? 8 : 16,
+                        height: 1,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           )),
       actions: <Widget>[
         IconSlideAction(
