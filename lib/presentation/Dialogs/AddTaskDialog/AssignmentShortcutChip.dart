@@ -6,14 +6,16 @@ class AssignmentShortcutChip extends StatelessWidget {
   final List<Assignment> assignments;
   final List<Assignment> assignmentOptions;
   final dynamic onChanged;
+  final EdgeInsetsGeometry padding;
 
   AssignmentShortcutChip(
-      {Key key, this.assignmentOptions, this.assignments, this.onChanged})
+      {Key key, this.assignmentOptions, this.assignments, this.onChanged, this.padding})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return ActionChip(
+      padding: padding,
       avatar: Icon(
         Icons.people,
         size: 18,

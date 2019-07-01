@@ -7,10 +7,12 @@ import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AssignmentShortcutChip.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/DueDateShorcutChip.dart';
+import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/NoteShortcutChip.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/PriorityShortcutChip.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/TaskListSelectChip.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/redux/actions.dart';
+import 'package:handball_flutter/utilities/TaskArgumentParser/TaskArgumentParser.dart';
 
 class AddTaskDialog extends StatefulWidget {
   List<TaskListModel> taskLists;
@@ -21,15 +23,14 @@ class AddTaskDialog extends StatefulWidget {
   bool isProjectShared;
   bool allowTaskListChange;
 
-  AddTaskDialog({
-    this.taskLists,
-    this.preselectedTaskList,
-    this.text = '',
-    this.allowTaskListChange,
-    this.assignmentOptions,
-    this.isProjectShared,
-    this.memberLookup
-  });
+  AddTaskDialog(
+      {this.taskLists,
+      this.preselectedTaskList,
+      this.text = '',
+      this.allowTaskListChange,
+      this.assignmentOptions,
+      this.isProjectShared,
+      this.memberLookup});
 
   @override
   _AddTaskDialog createState() => _AddTaskDialog();
@@ -44,12 +45,19 @@ class _AddTaskDialog extends State<AddTaskDialog> {
   TaskListModel _selectedTaskList;
   List<Assignment> assignments;
   Map<String, Assignment> assignmentMap;
+  TaskArgumentParser _argumentParser;
+  String _note;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.text);
     _textInputFocusNode = new FocusNode();
+    _argumentParser = TaskArgumentParser(
+        projectMembers: widget.assignmentOptions
+            .map((item) =>
+                MemberModel(displayName: item.displayName, userId: item.userId))
+            .toList());
 
     assignments = <Assignment>[];
   }
@@ -90,7 +98,8 @@ class _AddTaskDialog extends State<AddTaskDialog> {
                                         widget.allowTaskListChange == true ||
                                         widget.preselectedTaskList == null,
                                     childIfTrue: TaskListSelectChip(
-                                      padding: const EdgeInsets.only(left: 4, right: 4),
+                                      padding: const EdgeInsets.only(
+                                          left: 4, right: 4),
                                       backgroundColor: taskListSelectChipColor,
                                       selectedTaskList: _selectedTaskList ??
                                           widget.preselectedTaskList,
@@ -106,22 +115,33 @@ class _AddTaskDialog extends State<AddTaskDialog> {
                                         SizedBox.fromSize(size: Size.zero),
                                   ),
                                   DueDateShortcutChip(
-                                    padding: const EdgeInsets.only(left: 4, right: 4),
+                                    padding: const EdgeInsets.only(
+                                        left: 4, right: 4),
                                     dueDate: _dueDate,
                                     onChanged: (newDate) =>
                                         _handleDueDateChanged(newDate, context),
                                   ),
                                   PriorityShortcutChip(
-                                      padding: const EdgeInsets.only(left: 4, right: 4),
+                                      padding: const EdgeInsets.only(
+                                          left: 4, right: 4),
                                       isHighPriority: _isHighPriority,
                                       onChanged: (newValue) => setState(
                                           () => _isHighPriority = newValue)),
                                   if (widget.isProjectShared == true)
-                                  AssignmentShortcutChip(
-                                    assignmentOptions: widget.assignmentOptions,
-                                    assignments: assignments,
-                                    onChanged: (newValue) => _handleAssignmentsChange(newValue, context),
-                                  )
+                                    AssignmentShortcutChip(
+                                      padding: EdgeInsets.only(left: 4, right: 4),
+                                      assignmentOptions:
+                                          widget.assignmentOptions,
+                                      assignments: assignments,
+                                      onChanged: (newValue) =>
+                                          _handleAssignmentsChange(
+                                              newValue, context),
+                                    ),
+                                    NoteShortcutChip(
+                                      padding: EdgeInsets.only(left: 4, right: 4),
+                                      note: _note,
+                                      onChanged:  (newValue) => setState(() => _note = newValue),
+                                    )
                                 ]),
                           ),
                           Row(
@@ -133,6 +153,7 @@ class _AddTaskDialog extends State<AddTaskDialog> {
                                   focusNode: _textInputFocusNode,
                                   keyboardType: TextInputType.text,
                                   maxLines: null,
+                                  onChanged: _handleTaskNameChange,
                                   keyboardAppearance:
                                       Theme.of(context).brightness,
                                   onEditingComplete: () =>
@@ -160,17 +181,43 @@ class _AddTaskDialog extends State<AddTaskDialog> {
     );
   }
 
-  void _handleAssignmentsChange(List<String> assignmentIds, BuildContext context) {
-    _reattachTextInputFocus(context);
+  void _handleTaskNameChange(String currentValue) async {
+    var argMap = await _argumentParser.parseTextForArguments(currentValue);
 
-    var newAssignments = assignmentIds.map( (userId) {
+    if (argMap == null) {
+      return;
+    }
+
+    if (argMap.dueDate != null) {
+      setState(() => _dueDate = argMap.dueDate);
+    }
+
+    if (argMap.isHighPriority != null) {
+      setState(() => _isHighPriority = argMap.isHighPriority);
+    }
+
+    if (argMap.assignmentIds != null) {
+      setState(() => assignments = _mapNewAssignments(argMap.assignmentIds));
+    }
+
+    if (argMap.note != null) {
+      setState(() => _note = argMap.note);
+    }
+  }
+
+  void _handleAssignmentsChange(
+      List<String> assignmentIds, BuildContext context) {
+    _reattachTextInputFocus(context);
+    setState(() => assignments = _mapNewAssignments(assignmentIds));
+  }
+
+  List<Assignment> _mapNewAssignments(List<String> assignmentIds) {
+       return assignmentIds.map((userId) {
       return Assignment(
         userId: userId,
-        displayName:  widget.memberLookup[userId]?.displayName ?? '',
+        displayName: widget.memberLookup[userId]?.displayName ?? '',
       );
     }).toList();
-
-    setState( () => assignments = newAssignments);
   }
 
   Future<bool> _handleScopePop(BuildContext context) {
@@ -194,9 +241,10 @@ class _AddTaskDialog extends State<AddTaskDialog> {
           _selectedTaskList = TaskListModel(
             uid: 'new',
             project: null,
-            taskListName: dialogResult.value.trim().isEmpty ? 'Untitled List' : dialogResult.value.trim(),
+            taskListName: dialogResult.value.trim().isEmpty
+                ? 'Untitled List'
+                : dialogResult.value.trim(),
             dateAdded: DateTime.now(),
-
           );
         });
       }
@@ -220,8 +268,9 @@ class _AddTaskDialog extends State<AddTaskDialog> {
       selectedDueDate: _dueDate,
       taskListId: _getTaskListIdResult(),
       taskListName: _selectedTaskList?.taskListName,
-      taskName: taskName,
-      assignedToIds: assignments.map( (item) => item.userId).toList(),
+      taskName: TaskArgumentParser.trimArguments(taskName),
+      assignedToIds: assignments.map((item) => item.userId).toList(),
+      note: _note,
     );
   }
 
@@ -233,9 +282,7 @@ class _AddTaskDialog extends State<AddTaskDialog> {
 
     if (_selectedTaskList == null) {
       return widget.preselectedTaskList.uid;
-    }
-
-    else {
+    } else {
       return _selectedTaskList.uid;
     }
   }
@@ -270,7 +317,8 @@ class _AddTaskDialog extends State<AddTaskDialog> {
       return defaultColor;
     }
 
-    if (widget.preselectedTaskList != null && widget.allowTaskListChange == true) {
+    if (widget.preselectedTaskList != null &&
+        widget.allowTaskListChange == true) {
       // Tasklist has been pre selected, but user can still make changes.
       return defaultColor;
     }
@@ -295,6 +343,7 @@ class AddTaskDialogResult {
   DateTime selectedDueDate;
   List<String> assignedToIds;
   bool isHighPriority;
+  String note;
 
   AddTaskDialogResult({
     this.result,
@@ -305,5 +354,6 @@ class AddTaskDialogResult {
     this.isHighPriority,
     this.selectedDueDate,
     this.assignedToIds,
+    this.note,
   });
 }

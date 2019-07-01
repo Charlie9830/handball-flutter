@@ -38,6 +38,7 @@ import 'package:handball_flutter/presentation/Screens/SignUp/SignUpBase.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:handball_flutter/utilities/TaskAnimationUpdate.dart';
+import 'package:handball_flutter/utilities/TaskArgumentParser/TaskArgumentParser.dart';
 import 'package:handball_flutter/utilities/buildInflatedProject.dart';
 import 'package:handball_flutter/utilities/convertMemberRole.dart';
 import 'package:handball_flutter/utilities/extractListCustomSortOrder.dart';
@@ -349,29 +350,31 @@ Future<String> postDelegateOwnerDialog(
       });
 }
 
-ThunkAction<AppState> updateProjectName(String existingName, String projectId, BuildContext context) {
-return (Store<AppState> store) async {
-  if (projectId == null || projectId == '-1') {
-    return;
-  }
-
-  var result = await postTextInputDialog('Rename Project', existingName, context);
-
-  if (result is TextInputDialogResult && result.result != DialogResult.negative) {
-    var newName = result.value;
-    if (newName.trim() == existingName) {
+ThunkAction<AppState> updateProjectName(
+    String existingName, String projectId, BuildContext context) {
+  return (Store<AppState> store) async {
+    if (projectId == null || projectId == '-1') {
       return;
     }
 
-    var ref = _getProjectsCollectionRef(store).document(projectId);
-    
-    try {
-      await ref.updateData({'projectName': newName.trim()});
-    } catch(error) {
-      throw error;
-    }
-  } 
+    var result =
+        await postTextInputDialog('Rename Project', existingName, context);
 
+    if (result is TextInputDialogResult &&
+        result.result != DialogResult.negative) {
+      var newName = result.value;
+      if (newName.trim() == existingName) {
+        return;
+      }
+
+      var ref = _getProjectsCollectionRef(store).document(projectId);
+
+      try {
+        await ref.updateData({'projectName': newName.trim()});
+      } catch (error) {
+        throw error;
+      }
+    }
   };
 }
 
@@ -1601,7 +1604,9 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
       var projectRef = _getProjectsCollectionRef(store).document();
       var project = ProjectModel(
         uid: projectRef.documentID,
-        projectName: result.value.trim().isEmpty ? 'Untitled Project' : result.value.trim(),
+        projectName: result.value.trim().isEmpty
+            ? 'Untitled Project'
+            : result.value.trim(),
         created: DateTime.now().toIso8601String(),
       );
 
@@ -1619,7 +1624,8 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
           store.state.user.toMember(MemberRole.owner, MemberStatus.added);
 
       // Initial TaskList
-      var taskListRef = _getTaskListsCollectionRef(projectRef.documentID, store).document();
+      var taskListRef =
+          _getTaskListsCollectionRef(projectRef.documentID, store).document();
       var taskList = TaskListModel(
         uid: taskListRef.documentID,
         project: projectRef.documentID,
@@ -1642,8 +1648,8 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
 }
 
 ThunkAction<AppState> handleLogInHintButtonPress() {
-return (Store<AppState> store) async {
-  store.dispatch(OpenAppSettings(tab: AppSettingsTabs.account));
+  return (Store<AppState> store) async {
+    store.dispatch(OpenAppSettings(tab: AppSettingsTabs.account));
   };
 }
 
@@ -1720,7 +1726,8 @@ ThunkAction<AppState> addNewTaskListWithDialog(
       var taskList = TaskListModel(
         uid: ref.documentID,
         project: projectId,
-        taskListName: result.value.trim().isEmpty ? 'Untitled List' : result.value.trim(),
+        taskListName:
+            result.value.trim().isEmpty ? 'Untitled List' : result.value.trim(),
         dateAdded: DateTime.now(),
       );
 
@@ -1789,14 +1796,43 @@ ThunkAction<AppState> updateTaskName(String newValue, String oldValue,
       return;
     }
 
+    newValue = newValue.trim();
+    var batch = Firestore.instance.batch();
     var ref = _getTasksCollectionRef(projectId).document(taskId);
+
+    if (TaskArgumentParser.hasArguments(newValue) == true) {
+      var parser =
+          TaskArgumentParser(projectMembers: store.state.members[projectId]);
+
+      var argMap = await parser.parseTextForArguments(newValue);
+      if (argMap.assignmentIds != null) {
+        batch.updateData(ref, {'assignedTo': argMap.assignmentIds});
+      }
+
+      if (argMap.dueDate != null) {
+        batch.updateData(
+            ref, {'dueDate': normalizeDate(argMap.dueDate).toIso8601String()});
+      }
+
+      if (argMap.isHighPriority != null) {
+        batch.updateData(ref, {'isHighPriority': argMap.isHighPriority});
+      }
+
+      if (argMap.note != null) {
+        batch.updateData(ref, {'note': argMap.note});
+      }
+    }
+
+    batch.updateData(
+        ref, {'taskName': TaskArgumentParser.trimArguments(newValue)});
+    batch.updateData(ref, {
+      'metadata': _getUpdatedTaskMetadata(existingMetadata,
+              TaskMetadataUpdateType.updated, store.state.user.displayName)
+          .toMap()
+    });
+
     try {
-      await ref.updateData({'taskName': newValue});
-      await ref.updateData({
-        'metadata': _getUpdatedTaskMetadata(existingMetadata,
-                TaskMetadataUpdateType.updated, store.state.user.displayName)
-            .toMap()
-      });
+      await batch.commit();
     } catch (error) {
       throw error;
     }
@@ -1848,7 +1884,9 @@ ThunkAction<AppState> addNewTaskWithDialog(
         var newTaskList = TaskListModel(
           uid: taskListRef.documentID,
           project: projectId,
-          taskListName: result.taskListName.trim().isEmpty ? 'Untitled List' : result.taskListName.trim(),
+          taskListName: result.taskListName.trim().isEmpty
+              ? 'Untitled List'
+              : result.taskListName.trim(),
           dateAdded: DateTime.now(),
         );
 
@@ -1859,11 +1897,14 @@ ThunkAction<AppState> addNewTaskWithDialog(
             taskList: newTaskList.uid,
             project: projectId,
             userId: store.state.user.userId,
-            taskName: result.taskName.trim().isEmpty ? 'Untitled Task' : result.taskName.trim(),
+            taskName: result.taskName.trim().isEmpty
+                ? 'Untitled Task'
+                : result.taskName.trim(),
             dueDate: result.selectedDueDate,
             isHighPriority: result.isHighPriority,
             dateAdded: DateTime.now(),
             assignedTo: result.assignedToIds,
+            note: result.note,
             metadata: TaskMetadata(
               createdBy: store.state.user.displayName,
               createdOn: DateTime.now(),
@@ -1894,11 +1935,14 @@ ThunkAction<AppState> addNewTaskWithDialog(
             taskList: targetTaskListId,
             userId: store.state.user.userId,
             project: projectId,
-            taskName: result.taskName.trim().isEmpty ? 'Untitled Task' : result.taskName.trim(),
+            taskName: result.taskName.trim().isEmpty
+                ? 'Untitled Task'
+                : result.taskName.trim(),
             dueDate: result.selectedDueDate,
             isHighPriority: result.isHighPriority,
             dateAdded: DateTime.now(),
             assignedTo: result.assignedToIds,
+            note: result.note,
             metadata: TaskMetadata(
                 createdBy: store.state.user.displayName,
                 createdOn: DateTime.now()));
