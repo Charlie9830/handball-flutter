@@ -2394,7 +2394,6 @@ void _handleTasksSnapshot(TasksSnapshotType type, QuerySnapshot snapshot,
     var groupedDocumentChanges = _getGroupedTaskDocumentChanges(
         snapshot.documentChanges,
         store.state.inflatedProject,
-        store.state.tasksByProject[originProjectId],
         flaggedAsDeletedTasks,
         store.state.tasksById);
 
@@ -2634,7 +2633,6 @@ CollectionReference _getProjectsCollectionRef(Store<AppState> store) {
 GroupedTaskDocumentChanges _getGroupedTaskDocumentChanges(
     List<DocumentChange> firestoreDocChanges,
     InflatedProjectModel currentInflatedProject,
-    List<TaskModel> existingTasks,
     Map<String, TaskModel> flaggedAsDeletedTasks,
     Map<String, TaskModel> existingTasksById) {
   var groupedChanges = GroupedTaskDocumentChanges();
@@ -2658,13 +2656,11 @@ GroupedTaskDocumentChanges _getGroupedTaskDocumentChanges(
       if (currentInflatedProject != null &&
           currentInflatedProject.data.uid == change.document.data['project']) {
         // We may need to adjust what is in the added, modifed and removed collections to appease the Task AnimatedList.
-        if (_didMoveTaskList(change.document, existingTasks)) {
+        if (_didMoveTaskList(change.document, existingTasksById)) {
           // A Task has moved. Whilst the project is selected. The Animation system won't catch it if we leave it
           // simply as a modified Task. Therefore, we need to add the old version of the Task to the removed collection then
           // add the new version (with the updated taskList field) to the added collection.
-          var oldTask = existingTasks.firstWhere(
-              (item) => item.uid == change.document.documentID,
-              orElse: () => null);
+          var oldTask = existingTasksById[change.document.documentID];
 
           if (oldTask != null) {
             groupedChanges.removed.add(CustomDocumentChange(
@@ -2723,10 +2719,9 @@ GroupedTaskDocumentChanges _getGroupedTaskDocumentChanges(
 }
 
 bool _didMoveTaskList(
-    DocumentSnapshot incomingDoc, List<TaskModel> existingTasks) {
+    DocumentSnapshot incomingDoc, Map<String, TaskModel> existingTasksById) {
   var taskId = incomingDoc.documentID;
-  var existingTask = existingTasks.firstWhere((item) => item.uid == taskId,
-      orElse: () => null);
+  var existingTask = existingTasksById[taskId];
 
   if (existingTask == null) {
     return false;
