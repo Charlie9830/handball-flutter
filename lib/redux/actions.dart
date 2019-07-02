@@ -724,6 +724,9 @@ showSnackBar(
         'targetGlobalKey or targetGlobalKey.currentState must not be null');
   }
 
+  // Close any currently open Snackbars on targetGlobalKey.
+  targetGlobalKey.currentState.hideCurrentSnackBar(reason: SnackBarClosedReason.hide);
+
   var duration =
       autoHideSeconds == 0 ? null : Duration(seconds: autoHideSeconds);
   var snackBarAction = actionLabel == null
