@@ -45,7 +45,9 @@ class AppDrawerContainer extends StatelessWidget {
 
   List<ProjectViewModel> _buildProjectViewModels(
       Store<AppState> store, BuildContext context) {
-    return store.state.projects.map((item) {
+    var sortedProjects = store.state.projects.toList()..sort( (a, b) => a.projectName.compareTo(b.projectName));
+
+    return sortedProjects.map((item) {
       var indicatorGroup = store.state.projectIndicatorGroups[item.uid];
 
       return new ProjectViewModel(
