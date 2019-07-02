@@ -60,14 +60,17 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is ReceiveProject) {
     var projects = _mergeProject(state.projects, action.project);
+    var filteredProjects = projects.where((item) => item.isDeleted == false).toList();
+    
     return state.copyWith(
-        projects: projects,
+        projects: filteredProjects,
         enableState: state.enableState.copyWith(
-          showNoProjectsHint: projects.length == 0,
-          showSelectAProjectHint: projects.length > 0 && (state.selectedProjectId == '-1' || state.selectedProjectId == null),
-          canMoveTaskList: projects.length > 1,
+          showNoProjectsHint: filteredProjects.length == 0,
+          showSelectAProjectHint: filteredProjects.length > 0 && (state.selectedProjectId == '-1' || state.selectedProjectId == null),
+          canMoveTaskList: filteredProjects.length > 1,
         ));
   }
+
 
   if (action is SetInflatedProject) {
     var inflatedProject =
@@ -115,7 +118,7 @@ AppState appReducer(AppState state, dynamic action) {
         selectedTaskEntity: _updateSelectedTaskEntity(
             state.selectedTaskEntity, foldedTasks.allTasks),
         projectIndicatorGroups:
-            getProjectIndicatorGroups(foldedTasks.allTasks, state.user.userId),
+            getProjectIndicatorGroups(foldedTasks.allTasks, state.deletedTaskLists, state.user.userId),
         enableState: state.enableState.copyWith(
             showSingleListNoTasksHint:
                 state.taskListsByProject[state.selectedProjectId].length == 1 &&
@@ -149,7 +152,7 @@ AppState appReducer(AppState state, dynamic action) {
         selectedTaskEntity: _updateSelectedTaskEntity(
             state.selectedTaskEntity, foldedTasks.allTasks),
         projectIndicatorGroups:
-            getProjectIndicatorGroups(foldedTasks.allTasks, state.user.userId),
+            getProjectIndicatorGroups(foldedTasks.allTasks, state.deletedTaskLists, state.user.userId),
         enableState: state.enableState.copyWith(
             showSingleListNoTasksHint:
                 state.taskListsByProject[state.selectedProjectId] != null &&
@@ -179,6 +182,9 @@ AppState appReducer(AppState state, dynamic action) {
     return state.copyWith(
         taskLists: taskLists,
         taskListsByProject: taskListsByProject,
+        projectIndicatorGroups: getProjectIndicatorGroups(state.tasks, state.deletedTaskLists, state.user.userId), // TODO: Is this really required?
+        // due to how ReceiveDeletedTaskLists works, in theory this is useless because if a list is undeleted, it will fire the ReceiveDeletedTaskLists and that
+        // will show the relevent indicators again.
         inflatedProject: inflatedProject,
         enableState: state.enableState.copyWith(
             showNoTaskListsHint:
@@ -189,6 +195,15 @@ AppState appReducer(AppState state, dynamic action) {
                     taskListsByProject[state.selectedProjectId].length == 1 &&
                     state.tasksByProject[state.selectedProjectId] != null &&
                     state.tasksByProject[state.selectedProjectId].length == 0));
+  }
+
+  if (action is ReceiveDeletedTaskLists) {
+    var newDeletedTaskListMap = _updateDeletedTaskLists(state.deletedTaskLists, action.taskLists, action.originProjectId);
+
+    return state.copyWith(
+      deletedTaskLists: newDeletedTaskListMap,
+      projectIndicatorGroups: getProjectIndicatorGroups(state.tasks, newDeletedTaskListMap, state.user.userId)
+    );
   }
 
   if (action is AddMultiSelectedTask) {
@@ -267,7 +282,7 @@ AppState appReducer(AppState state, dynamic action) {
       selectedTaskEntity:
           _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
       projectIndicatorGroups:
-          getProjectIndicatorGroups(tasks, state.user.userId),
+          getProjectIndicatorGroups(tasks, state.deletedTaskLists, state.user.userId),
       members: members,
     );
   }
@@ -511,6 +526,14 @@ List<TaskListModel> _smooshAndMergeTaskLists(
   });
 
   return list;
+}
+
+Map<String, TaskListModel> _updateDeletedTaskLists(Map<String, TaskListModel> existingMap, List<TaskListModel> incomingDeletedTasks, String originProjectId) {
+  var newPrunedMap = Map<String, TaskListModel>.from(existingMap)..removeWhere((key, value) => value.project == originProjectId);
+
+  newPrunedMap.addEntries(incomingDeletedTasks.map( (item) => MapEntry(item.uid, item)));
+
+  return newPrunedMap;
 }
 
 List<TaskModel> _smooshAndMergeTasks(

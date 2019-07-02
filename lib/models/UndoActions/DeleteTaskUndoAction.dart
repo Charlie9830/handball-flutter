@@ -19,9 +19,7 @@ class DeleteTaskUndoActionModel extends UndoActionModel {
   @override
   String toJSON() {
     var encoder = JsonEncoder();
-    return encoder.convert({
-      'type': this.type?.index ?? -1,
-      'taskRefPath': this.taskRefPath 
-    });
+    return encoder.convert(
+        {'type': this.type?.index ?? -1, 'taskRefPath': this.taskRefPath});
   }
 }

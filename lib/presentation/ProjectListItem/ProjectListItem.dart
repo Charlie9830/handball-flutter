@@ -24,7 +24,7 @@ class ProjectListItem extends StatelessWidget {
       actionExtentRatio: 0.25,
       child: ListTile(
           selected: viewModel.isSelected,
-          title: Text('${viewModel.projectName}',
+          title: Text('${viewModel.data.projectName}',
               style: Theme.of(context).textTheme.body1),
           onTap: viewModel.onSelect,
           trailing: new ProjectIndicators(

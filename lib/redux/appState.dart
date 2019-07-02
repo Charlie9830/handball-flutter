@@ -28,6 +28,7 @@ class AppState {
   final Map<String, List<TaskModel>> completedTasksByProject;
   final Map<String, List<TaskModel>> incompletedTasksByProject;
   final List<TaskListModel> taskLists;
+  final Map<String, TaskListModel> deletedTaskLists;
   final Map<String, List<TaskListModel>> taskListsByProject;
   final Map<String, IndicatorGroup> projectIndicatorGroups;
   final String focusedTaskListId;
@@ -91,6 +92,7 @@ class AppState {
     this.enableState,
     this.lastUndoAction,
     this.tasksById,
+    this.deletedTaskLists,
   });
 
   AppState copyWith({
@@ -134,6 +136,7 @@ class AppState {
     Map<String, TaskModel> tasksById,
     Map<String, TaskModel> completedTasksById,
     Map<String, TaskModel> incompletedTasksById,
+    Map<String, TaskListModel> deletedTaskLists,
   }) {
     return AppState(
       projects: projects ?? this.projects,
@@ -181,6 +184,7 @@ class AppState {
       enableState: enableState ?? this.enableState,
       lastUndoAction: lastUndoAction ?? this.lastUndoAction,
       tasksById: tasksById ?? this.tasksById,
+      deletedTaskLists: deletedTaskLists ?? this.deletedTaskLists,
     );
   }
 }

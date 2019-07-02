@@ -1,13 +1,14 @@
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/IndicatorGroup.dart';
 import 'package:handball_flutter/models/Task.dart';
+import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/utilities/ParseDueDate.dart';
 
 Map<String, IndicatorGroup> getProjectIndicatorGroups(
-    List<TaskModel> tasks, String userId) {
+    List<TaskModel> tasks, Map<String, TaskListModel> deletedTaskLists, String userId) {
   var map = <String, IndicatorGroup>{};
 
-  for (var task in tasks.where((item) => item.isComplete == false)) {
+  for (var task in tasks.where((item) => item.isComplete == false && deletedTaskLists.containsKey(item.taskList) == false)) {
     var hasUnreadComments = task.unseenTaskCommentMembers[userId] != null;
 
     if (task.dueDate != null || hasUnreadComments) {

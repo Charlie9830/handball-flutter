@@ -3,6 +3,7 @@ import 'package:meta/meta.dart';
 class ProjectIdModel {
   final String uid;
 
+  
   ProjectIdModel({
     @required this.uid,
   });

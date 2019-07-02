@@ -49,7 +49,7 @@ class _ReactiveAnimatedListState extends State<ReactiveAnimatedList> {
             (context, animation) => SizeTransition(
                   key: oldWidget.children[index].key,
                   axis: Axis.vertical,
-                  sizeFactor: animation.drive(Tween(begin: 1, end: 0)),
+                  sizeFactor: animation,
                   child: oldWidget.children[index],
                 ),
             duration: Duration(milliseconds: 150));

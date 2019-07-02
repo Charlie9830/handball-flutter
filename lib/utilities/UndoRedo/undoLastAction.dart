@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:handball_flutter/enums.dart';
+import 'package:handball_flutter/models/UndoActions/DeleteProjectUndoAction.dart';
+import 'package:handball_flutter/models/UndoActions/DeleteTaskListUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/DeleteTaskUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/CompleteTaskUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/NoAction.dart';
@@ -18,10 +20,10 @@ undoLastAction(Store<AppState> store) async {
 
   switch(lastUndoAction.type) {
     case UndoActionType.deleteProject:
-      // TODO: Handle this case.
+      _undoProjectDelete(lastUndoAction);
       break;
     case UndoActionType.deleteTaskList:
-      // TODO: Handle this case.
+      _undoTaskListDelete(lastUndoAction);
       break;
     case UndoActionType.deleteTask:
       _undoTaskDelete(lastUndoAction);
@@ -44,6 +46,26 @@ undoLastAction(Store<AppState> store) async {
 
   var sharedPrefs = await SharedPreferences.getInstance();
   sharedPrefs.remove(undoActionSharedPreferencesKey);
+}
+
+void _undoTaskListDelete(DeleteTaskListUndoActionModel undoAction) async {
+  var ref = Firestore.instance.document(undoAction.taskListRefPath);
+
+  try {
+    await ref.updateData({'isDeleted': false});
+  } catch(error) {
+    throw error;
+  }
+}
+
+void _undoProjectDelete(DeleteProjectUndoActionModel undoAction) async {
+  var ref = Firestore.instance.document(undoAction.projectPath);
+
+  try {
+    await ref.updateData({'isDeleted': false});
+  } catch(error) {
+    throw error;
+  }
 }
 
 void _undoTaskComplete(CompleteTaskUndoActionModel undoAction) async {

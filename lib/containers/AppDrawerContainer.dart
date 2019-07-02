@@ -49,8 +49,8 @@ class AppDrawerContainer extends StatelessWidget {
       var indicatorGroup = store.state.projectIndicatorGroups[item.uid];
 
       return new ProjectViewModel(
+          data: item,
           isSelected: item.uid == store.state.selectedProjectId,
-          projectName: item.projectName,
           onSelect: () {
             store.dispatch(SelectProject(item.uid));
           },

@@ -30,6 +30,8 @@ import 'package:handball_flutter/models/TaskListSettings.dart';
 import 'package:handball_flutter/models/TaskMetadata.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/models/UndoActions/CompleteTaskUndoAction.dart';
+import 'package:handball_flutter/models/UndoActions/DeleteProjectUndoAction.dart';
+import 'package:handball_flutter/models/UndoActions/DeleteTaskListUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/DeleteTaskUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/NoAction.dart';
 import 'package:handball_flutter/models/UndoActions/UndoAction.dart';
@@ -168,6 +170,16 @@ class SetIsInvitingUser {
 
   SetIsInvitingUser({
     this.isInvitingUser,
+  });
+}
+
+class ReceiveDeletedTaskLists {
+  final List<TaskListModel> taskLists;
+  final String originProjectId;
+
+  ReceiveDeletedTaskLists({
+    this.taskLists,
+    this.originProjectId,
   });
 }
 
@@ -937,7 +949,7 @@ ThunkAction<AppState> leaveSharedProject(String projectId, String projectName,
       // This project has never been, or is no longer shared with other users.
       // Delete Project.
       try {
-        _deleteProject(projectId, store);
+        _deleteProject(projectId, projectName, store);
         store.dispatch((SelectProject('-1')));
         Navigator.of(context).popUntil((route) => route.isFirst == true);
 
@@ -971,12 +983,12 @@ ThunkAction<AppState> leaveSharedProject(String projectId, String projectName,
   };
 }
 
-void _deleteSharedProject(
-    String projectId, Store<AppState> store, BuildContext context) async {
+void _deleteSharedProject(String projectId, String projectName,
+    Store<AppState> store, BuildContext context) async {
   var members = store.state.members[projectId];
   if (members == null) {
     // Not a shared project.
-    await _deleteProject(projectId, store);
+    await _deleteProject(projectId, projectName, store);
     return;
   }
 
@@ -1427,7 +1439,7 @@ ThunkAction<AppState> deleteProjectWithDialog(
         return;
       }
 
-      _deleteSharedProject(projectId, store, context);
+      _deleteSharedProject(projectId, projectName, store, context);
     }
 
     var dialogResult = await postConfirmationDialog(
@@ -1441,11 +1453,12 @@ ThunkAction<AppState> deleteProjectWithDialog(
       return;
     }
 
-    await _deleteProject(projectId, store);
+    await _deleteProject(projectId, projectName, store);
   };
 }
 
-Future<void> _deleteProject(String projectId, Store<AppState> store) async {
+Future<void> _deleteProject(
+    String projectId, String projectName, Store<AppState> store) async {
   var userId = store.state.user.userId;
   var allMemberIds =
       _getProjectRelatedMemberIds(projectId, store.state.members);
@@ -1453,38 +1466,39 @@ Future<void> _deleteProject(String projectId, Store<AppState> store) async {
   var taskIds = _getProjectRelatedTaskIds(projectId, store.state.tasks);
   var taskListIds =
       _getProjectRelatedTaskListIds(projectId, store.state.taskLists);
-  var batch = Firestore.instance.batch();
-  bool isOnlySharedWithSelf =
-      allMemberIds.length == 1 && allMemberIds[0] == userId;
 
-  if (isOnlySharedWithSelf) {
-    // Project not shared with anyone else. It is safe to remove the user from the Members collection.
-    batch.delete(_getMembersCollectionRef(projectId).document(userId));
-  }
+  pushUndoAction(
+      DeleteProjectUndoActionModel(
+        projectId: projectId,
+        userId: userId,
+        allMemberIds: allMemberIds.toList(),
+        otherMemberIds: otherMemberIds.toList(),
+        taskIds: taskIds.toList(),
+        taskListIds: taskListIds.toList(),
+        membersPath: _getMembersCollectionRef(projectId).path,
+        taskListsPath: _getTaskListsCollectionRef(projectId).path,
+        tasksPath: _getTasksCollectionRef(projectId).path,
+        projectIdPath:
+            _getProjectIdsCollectionRef(userId).document(projectId).path,
+        projectPath: _getProjectsCollectionRef(store).document(projectId).path,
+      ),
+      store);
 
-  // Build Tasks into Batch
-  for (var id in taskIds) {
-    batch.delete(_getTasksCollectionRef(projectId).document(id));
-  }
+  showSnackBar(
+      targetGlobalKey: appDrawerScaffoldKey,
+      message: 'Deleted $projectName',
+      actionLabel: 'Undo',
+      autoHideSeconds: 6,
+      onClosed: (reason) {
+        if (reason == SnackBarClosedReason.action) {
+          undoLastAction(store);
+        }
+      });
 
-  // Build TaskLists into Batch.
-  for (var id in taskListIds) {
-    batch.delete(_getTaskListsCollectionRef(projectId).document(id));
-  }
-
-  batch.delete(_getProjectsCollectionRef(store).document(projectId));
-  batch.delete(_getProjectIdsCollectionRef(userId).document(projectId));
+  var ref = _getProjectsCollectionRef(store).document(projectId);
 
   try {
-    if (!isOnlySharedWithSelf) {
-      // Remove for other Users.
-      var cloudFunctionRequests = otherMemberIds.map((id) =>
-          _cloudFunctionsLayer.kickUserFromProject(
-              userId: id, projectId: projectId));
-      await Future.wait(cloudFunctionRequests);
-    }
-    await batch.commit();
-    return;
+    await ref.updateData({'isDeleted': true});
   } catch (error) {
     throw error;
   }
@@ -1554,6 +1568,17 @@ ThunkAction<AppState> deleteTaskListWithDialog(
       return;
     }
 
+    showSnackBar(
+        targetGlobalKey: homeScreenScaffoldKey,
+        message: 'Deleted ${truncateString(taskListName)}',
+        actionLabel: 'Undo',
+        autoHideSeconds: 6,
+        onClosed: (reason) {
+          if (reason == SnackBarClosedReason.action) {
+            undoLastAction(store);
+          }
+        });
+
     try {
       await _deleteTaskList(taskListId, store, userId);
     } catch (error) {
@@ -1565,20 +1590,20 @@ ThunkAction<AppState> deleteTaskListWithDialog(
 Future _deleteTaskList(
     String taskListId, Store<AppState> store, String userId) async {
   var taskIds = _getListRelatedTaskIds(taskListId, store.state.tasks);
-  var baseTaskRef = _getTasksCollectionRef(store.state.selectedProjectId);
   var taskListRef = _getTaskListsCollectionRef(store.state.selectedProjectId)
       .document(taskListId);
-  var batch = Firestore.instance.batch();
 
-  // Delete related Tasks
-  for (var id in taskIds) {
-    batch.delete(baseTaskRef.document(id));
-  }
+  pushUndoAction(
+      DeleteTaskListUndoActionModel(
+          taskListRefPath: taskListRef.path,
+          childTaskPaths: taskIds
+              .map((id) => _getTasksCollectionRef(store.state.selectedProjectId)
+                  .document(id)
+                  .path)
+              .toList()),
+      store);
 
-  // Delete TaskList.
-  batch.delete(taskListRef);
-
-  return batch.commit();
+  return taskListRef.updateData({'isDeleted': true});
 }
 
 Iterable<String> _getListRelatedTaskIds(
@@ -1615,7 +1640,7 @@ ThunkAction<AppState> deleteTask(
 
     showSnackBar(
         targetGlobalKey: homeScreenScaffoldKey,
-        message: 'Deleted task ${truncateString(taskName)}',
+        message: 'Deleted ${truncateString(taskName)}',
         actionLabel: 'Undo',
         autoHideSeconds: 6,
         onClosed: (reason) {
@@ -2219,24 +2244,33 @@ StreamSubscription<QuerySnapshot> _subscribeToTaskLists(
 void _handleTaskListsSnapshot(
     QuerySnapshot snapshot, String originProjectId, Store<AppState> store) {
   var taskLists = <TaskListModel>[];
+  var deletedTaskLists = <TaskListModel>[];
   var checklists = <TaskListModel>[];
 
   snapshot.documents.forEach((doc) {
     var taskList = TaskListModel.fromDoc(doc);
 
-    // Don't add lists Flagged as Deleted.
+    // Don't add lists Flagged to the main collections. Add them to the deletedMap.
     if (taskList.isDeleted != true) {
       taskLists.add(taskList);
 
       if (taskList.settings?.checklistSettings?.isChecklist == true) {
         checklists.add(taskList);
       }
+    } else {
+      deletedTaskLists.add(taskList);
     }
   });
 
   store.dispatch(
       ReceiveTaskLists(taskLists: taskLists, originProjectId: originProjectId));
+
   store.dispatch(processChecklists(checklists));
+
+  store.dispatch(ReceiveDeletedTaskLists(
+    taskLists: deletedTaskLists,
+    originProjectId: originProjectId,
+  ));
 }
 
 ThunkAction<AppState> subscribeToLocalTaskLists(String userId) {
@@ -2467,11 +2501,14 @@ StreamSubscription<DocumentSnapshot> _subscribeToProject(
       .collection('projects')
       .document(projectId)
       .snapshots()
-      .listen((doc) async {
-    if (doc.exists) {
-      store.dispatch(ReceiveProject(project: ProjectModel.fromDoc(doc)));
-    }
-  });
+      .listen((doc) => _handleProjectSnapshot(doc, store));
+}
+
+void _handleProjectSnapshot(DocumentSnapshot doc, Store<AppState> store) {
+  if (doc.exists) {
+    // Filtering of projects with isDeleted flag is handled by the Reducer.
+    store.dispatch(ReceiveProject(project: ProjectModel.fromDoc(doc)));
+  }
 }
 
 ThunkAction<AppState> openChecklistSettings(
