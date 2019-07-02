@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/UndoActions/DeleteTaskUndoAction.dart';
+import 'package:handball_flutter/models/UndoActions/CompleteTaskUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/NoAction.dart';
 import 'package:handball_flutter/redux/actions.dart';
 import 'package:handball_flutter/redux/appState.dart';
@@ -23,10 +24,10 @@ undoLastAction(Store<AppState> store) async {
       // TODO: Handle this case.
       break;
     case UndoActionType.deleteTask:
-      undoTaskDelete(lastUndoAction);
+      _undoTaskDelete(lastUndoAction);
       break;
     case UndoActionType.completeTask:
-      // TODO: Handle this case.
+      _undoTaskComplete(lastUndoAction);
       break;
     case UndoActionType.multiCompletedTasks:
       // TODO: Handle this case.
@@ -45,7 +46,17 @@ undoLastAction(Store<AppState> store) async {
   sharedPrefs.remove(undoActionSharedPreferencesKey);
 }
 
-void undoTaskDelete(DeleteTaskUndoActionModel undoAction) async {
+void _undoTaskComplete(CompleteTaskUndoActionModel undoAction) async {
+  var ref = Firestore.instance.document(undoAction.taskRefPath);
+
+  try {
+    ref.updateData({'isComplete': false});
+  } catch(error) {
+    throw error;
+  }
+}
+
+void _undoTaskDelete(DeleteTaskUndoActionModel undoAction) async {
   var ref = Firestore.instance.document(undoAction.taskRefPath);
   
 

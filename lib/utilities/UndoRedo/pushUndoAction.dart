@@ -28,7 +28,6 @@ pushUndoAction(UndoActionModel undoAction, Store<AppState> store) async {
 _executeLastUndoAction(UndoActionModel lastUndoAction) async {
   if (lastUndoAction == null || lastUndoAction is NoAction) {
     // No action required.
-    print('Bailing due to no action required');
     return;
   }
 
@@ -43,7 +42,7 @@ _executeLastUndoAction(UndoActionModel lastUndoAction) async {
       _executeDeleteTask(lastUndoAction);
       break;
     case UndoActionType.completeTask:
-      // TODO: Handle this case.
+      // No execute action required.
       break;
     case UndoActionType.multiCompletedTasks:
       // TODO: Handle this case.

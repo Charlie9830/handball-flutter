@@ -29,6 +29,7 @@ import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/TaskListSettings.dart';
 import 'package:handball_flutter/models/TaskMetadata.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
+import 'package:handball_flutter/models/UndoActions/CompleteTaskUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/DeleteTaskUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/NoAction.dart';
 import 'package:handball_flutter/models/UndoActions/UndoAction.dart';
@@ -418,8 +419,9 @@ ThunkAction<AppState> initializeApp() {
 
     var lastUndoAction =
         parseUndoAction(prefs.getString(undoActionSharedPreferencesKey));
-    
-    store.dispatch(SetLastUndoAction(lastUndoAction: lastUndoAction ?? NoAction(), isInitializing: true));
+
+    store.dispatch(SetLastUndoAction(
+        lastUndoAction: lastUndoAction ?? NoAction(), isInitializing: true));
   };
 }
 
@@ -2178,9 +2180,18 @@ TaskListModel _getAddTaskDialogPreselectedTaskList(
 ThunkAction<AppState> updateTaskComplete(
     String taskId, bool newValue, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
-    var userId = store.state.user.userId;
     var ref =
         _getTasksCollectionRef(store.state.selectedProjectId).document(taskId);
+
+    if (newValue == true) {
+      // Only allow an Undo if the Task is being completed.
+      pushUndoAction(
+          CompleteTaskUndoActionModel(
+            taskRefPath: ref.path,
+          ),
+          store);
+    }
+
     try {
       await ref.updateData({'isComplete': newValue});
       await ref.updateData({
@@ -2321,7 +2332,7 @@ void _handleTasksSnapshot(TasksSnapshotType type, QuerySnapshot snapshot,
   snapshot.documents.forEach((doc) {
     // **** TO FUTURE SELF *******
     // If you add another condition that causes a task to be filtered out here, you will cause problems with _getGroupedTaskDocumentChanges,
-    // Specifically when it is sorting through the modifcations looking for tasks that have been un-deleted. There is a note already there on how to 
+    // Specifically when it is sorting through the modifcations looking for tasks that have been un-deleted. There is a note already there on how to
     // work aroound this.
     if (doc.data['isDeleted'] == true) {
       flaggedAsDeletedTasks[doc.documentID] =
@@ -2638,7 +2649,8 @@ GroupedTaskDocumentChanges _getGroupedTaskDocumentChanges(
         // *********
         // Don't panic. Just Save the deleted tasks into the State, but put them in a seperate map. That way, here can compare against that map to determine if the task has
         // been un-deleted.
-        if (existingTasksById.containsKey(change.document.documentID) == false) {
+        if (existingTasksById.containsKey(change.document.documentID) ==
+            false) {
           groupedChanges.added.add(CustomDocumentChange(
             uid: change.document.documentID,
             taskList: change.document.data['taskList'],
