@@ -1498,7 +1498,12 @@ Future<void> _deleteProject(
   var ref = _getProjectsCollectionRef(store).document(projectId);
 
   try {
-    await ref.updateData({'isDeleted': true});
+    var batch = Firestore.instance.batch();
+
+    batch.updateData(ref, {'deleted': Timestamp.fromDate(DateTime.now())});
+    batch.updateData(ref, {'isDeleted': true});
+
+    await batch.commit();
   } catch (error) {
     throw error;
   }
@@ -1603,7 +1608,11 @@ Future _deleteTaskList(
               .toList()),
       store);
 
-  return taskListRef.updateData({'isDeleted': true});
+  var batch = Firestore.instance.batch();
+  batch.updateData(taskListRef, ({'isDeleted': Timestamp.fromDate(DateTime.now())}));
+  batch.updateData(taskListRef, ({'isDeleted': true}));
+  
+  return batch.commit();
 }
 
 Iterable<String> _getListRelatedTaskIds(
@@ -1650,7 +1659,11 @@ ThunkAction<AppState> deleteTask(
         });
 
     try {
-      await ref.updateData({'isDeleted': true});
+      var batch = Firestore.instance.batch();
+      batch.updateData(ref, {'deleted': Timestamp.fromDate(DateTime.now())});
+      batch.updateData(ref, {'isDeleted': true});
+
+      await batch.commit();
     } catch (error) {
       throw error;
     }

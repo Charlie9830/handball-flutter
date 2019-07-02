@@ -18,7 +18,7 @@ undoLastAction(Store<AppState> store) async {
     return;
   }
 
-  switch(lastUndoAction.type) {
+  switch (lastUndoAction.type) {
     case UndoActionType.deleteProject:
       _undoProjectDelete(lastUndoAction);
       break;
@@ -53,7 +53,7 @@ void _undoTaskListDelete(DeleteTaskListUndoActionModel undoAction) async {
 
   try {
     await ref.updateData({'isDeleted': false});
-  } catch(error) {
+  } catch (error) {
     throw error;
   }
 }
@@ -62,8 +62,12 @@ void _undoProjectDelete(DeleteProjectUndoActionModel undoAction) async {
   var ref = Firestore.instance.document(undoAction.projectPath);
 
   try {
-    await ref.updateData({'isDeleted': false});
-  } catch(error) {
+    var batch = Firestore.instance.batch();
+    batch.updateData(ref, {'deleted': Timestamp.fromDate(DateTime.now())});
+    batch.updateData(ref, {'isDeleted': false});
+
+    await batch.commit();
+  } catch (error) {
     throw error;
   }
 }
@@ -73,18 +77,22 @@ void _undoTaskComplete(CompleteTaskUndoActionModel undoAction) async {
 
   try {
     ref.updateData({'isComplete': false});
-  } catch(error) {
+  } catch (error) {
     throw error;
   }
 }
 
 void _undoTaskDelete(DeleteTaskUndoActionModel undoAction) async {
   var ref = Firestore.instance.document(undoAction.taskRefPath);
-  
 
   try {
-   ref.updateData({'isDeleted': false}); 
-  } catch(error) {
+    var batch = Firestore.instance.batch();
+
+    batch.updateData(ref, {'deleted': Timestamp.fromDate(DateTime.now())});
+    batch.updateData(ref, {'isDeleted': false});
+
+    batch.commit();
+  } catch (error) {
     throw error;
   }
 }
