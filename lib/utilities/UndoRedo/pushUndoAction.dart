@@ -28,6 +28,7 @@ pushUndoAction(UndoActionModel undoAction, Store<AppState> store) async {
 _executeLastUndoAction(UndoActionModel lastUndoAction) async {
   if (lastUndoAction == null || lastUndoAction is NoAction) {
     // No action required.
+    print('Bailing due to no action required');
     return;
   }
 
@@ -39,7 +40,7 @@ _executeLastUndoAction(UndoActionModel lastUndoAction) async {
       // TODO: Handle this case.
       break;
     case UndoActionType.deleteTask:
-      executeDeleteTask(lastUndoAction);
+      _executeDeleteTask(lastUndoAction);
       break;
     case UndoActionType.completeTask:
       // TODO: Handle this case.
@@ -58,12 +59,13 @@ _executeLastUndoAction(UndoActionModel lastUndoAction) async {
   return;
 }
 
-executeDeleteTask(DeleteTaskUndoActionModel undoAction) async {
+_executeDeleteTask(DeleteTaskUndoActionModel undoAction) async {
   var ref = Firestore.instance.document(undoAction.taskRefPath);
 
   try {
     await ref.delete();
   } catch(error) {
+    
     throw error;
   }
 }

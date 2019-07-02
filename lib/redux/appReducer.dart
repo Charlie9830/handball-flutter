@@ -417,7 +417,9 @@ AppState appReducer(AppState state, dynamic action) {
     return state.copyWith(
       lastUndoAction: action.lastUndoAction,
       enableState: state.enableState.copyWith(
-        canUndo: action.lastUndoAction is NoAction == false,
+        canUndo: action.isInitializing != true && action.lastUndoAction is NoAction == false,
+        // On appInitialization, we don't let the user Trigger an Undo, even if there is a lastUndoAction available.
+        // Otherwise, they could undo something they did from a previous session.
       )
     );
   }

@@ -8,11 +8,11 @@ class DeleteTaskUndoActionModel extends UndoActionModel {
   String taskRefPath;
 
   DeleteTaskUndoActionModel({
-    @required String friendlyName,
     @required this.taskRefPath,
   }) : super(type: UndoActionType.deleteTask);
 
   DeleteTaskUndoActionModel.fromMap(Map<dynamic, dynamic> map) {
+    this.type = UndoActionType.deleteTask;
     this.taskRefPath = map['taskRefPath'];
   }
 

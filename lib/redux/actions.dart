@@ -301,9 +301,11 @@ class SetTextInputDialog {
 
 class SetLastUndoAction {
   final UndoActionModel lastUndoAction;
+  final bool isInitializing;
 
   SetLastUndoAction({
     this.lastUndoAction,
+    this.isInitializing,
   });
 }
 
@@ -401,8 +403,6 @@ ThunkAction<AppState> initializeApp() {
   return (Store<AppState> store) async {
     homeScreenScaffoldKey?.currentState?.openDrawer();
 
-    store.onChange.listen((state) => print(state.lastUndoAction));
-
     // Firestore settings.
     // TODO: Is this even doing anything?
     Firestore.instance.settings(timestampsInSnapshotsEnabled: true);
@@ -418,7 +418,8 @@ ThunkAction<AppState> initializeApp() {
 
     var lastUndoAction =
         parseUndoAction(prefs.getString(undoActionSharedPreferencesKey));
-    store.dispatch(SetLastUndoAction(lastUndoAction: lastUndoAction ?? NoAction()));
+    
+    store.dispatch(SetLastUndoAction(lastUndoAction: lastUndoAction ?? NoAction(), isInitializing: true));
   };
 }
 
@@ -1606,7 +1607,6 @@ ThunkAction<AppState> deleteTask(
 
     pushUndoAction(
         DeleteTaskUndoActionModel(
-          friendlyName: 'Undo',
           taskRefPath: ref.path,
         ),
         store);
