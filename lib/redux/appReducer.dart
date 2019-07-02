@@ -5,6 +5,7 @@ import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
+import 'package:handball_flutter/models/UndoActions/NoAction.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/redux/appStore.dart';
 import 'package:handball_flutter/utilities/buildInflatedProject.dart';
@@ -106,6 +107,7 @@ AppState appReducer(AppState state, dynamic action) {
 
     return state.copyWith(
         tasks: foldedTasks.allTasks,
+        tasksById: _buildTasksById(foldedTasks.allTasks),
         completedTasksByProject: foldedTasks.completedTasksByProject,
         incompletedTasksByProject: foldedTasks.incompletedTasksByProject,
         tasksByProject: foldedTasks.tasksByProject,
@@ -139,6 +141,7 @@ AppState appReducer(AppState state, dynamic action) {
 
     return state.copyWith(
         tasks: foldedTasks.allTasks,
+        tasksById: _buildTasksById(foldedTasks.allTasks),
         completedTasksByProject: foldedTasks.completedTasksByProject,
         incompletedTasksByProject: foldedTasks.incompletedTasksByProject,
         tasksByProject: foldedTasks.tasksByProject,
@@ -410,6 +413,15 @@ AppState appReducer(AppState state, dynamic action) {
     );
   }
 
+  if (action is SetLastUndoAction) {
+    return state.copyWith(
+      lastUndoAction: action.lastUndoAction,
+      enableState: state.enableState.copyWith(
+        canUndo: action.lastUndoAction is NoAction == false,
+      )
+    );
+  }
+
   return state;
 }
 
@@ -507,7 +519,6 @@ List<TaskModel> _smooshAndMergeTasks(
     return newTasks.toList();
   }
 
-  print('Smooshing');
   var list = <TaskModel>[];
   tasksByProject.forEach((key, value) {
     // If projectId matches originProjectId, use newTasks otherwise use the existing tasks.
@@ -534,4 +545,13 @@ Map<String, List<TaskListModel>> _updateTaskListsByProject(
   newMap[originProjectId] = newTaskLists.toList();
 
   return newMap;
+}
+
+Map<String, TaskModel> _buildTasksById(List<TaskModel> allTasks) {
+  return Map<String, TaskModel>.fromIterable(allTasks,
+  key: (item) {
+    var taskModel = item as TaskModel;
+    return taskModel.uid;
+  },
+  value: (item) => item);
 }

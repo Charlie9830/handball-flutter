@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -28,6 +29,9 @@ import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/TaskListSettings.dart';
 import 'package:handball_flutter/models/TaskMetadata.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
+import 'package:handball_flutter/models/UndoActions/DeleteTaskUndoAction.dart';
+import 'package:handball_flutter/models/UndoActions/NoAction.dart';
+import 'package:handball_flutter/models/UndoActions/UndoAction.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
@@ -41,12 +45,17 @@ import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:handball_flutter/utilities/TaskAnimationUpdate.dart';
 import 'package:handball_flutter/utilities/TaskArgumentParser/TaskArgumentParser.dart';
+import 'package:handball_flutter/utilities/UndoRedo/parseUndoAction.dart';
+import 'package:handball_flutter/utilities/UndoRedo/pushUndoAction.dart';
+import 'package:handball_flutter/utilities/UndoRedo/undoActionSharedPreferencesKey.dart';
+import 'package:handball_flutter/utilities/UndoRedo/undoLastAction.dart';
 import 'package:handball_flutter/utilities/buildInflatedProject.dart';
 import 'package:handball_flutter/utilities/convertMemberRole.dart';
 import 'package:handball_flutter/utilities/extractListCustomSortOrder.dart';
 import 'package:handball_flutter/utilities/extractProject.dart';
 import 'package:handball_flutter/utilities/listSortingHelpers.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
+import 'package:handball_flutter/utilities/truncateString.dart';
 import 'package:redux/redux.dart';
 import 'package:redux_thunk/redux_thunk.dart';
 import 'package:handball_flutter/utilities/CloudFunctionLayer.dart';
@@ -290,6 +299,14 @@ class SetTextInputDialog {
   SetTextInputDialog({this.dialog});
 }
 
+class SetLastUndoAction {
+  final UndoActionModel lastUndoAction;
+
+  SetLastUndoAction({
+    this.lastUndoAction,
+  });
+}
+
 Future<TextInputDialogResult> postTextInputDialog(
     String title, String text, BuildContext context) {
   return showDialog(
@@ -383,13 +400,25 @@ ThunkAction<AppState> updateProjectName(
 ThunkAction<AppState> initializeApp() {
   return (Store<AppState> store) async {
     homeScreenScaffoldKey?.currentState?.openDrawer();
+
+    store.onChange.listen((state) => print(state.lastUndoAction));
+
+    // Firestore settings.
+    // TODO: Is this even doing anything?
     Firestore.instance.settings(timestampsInSnapshotsEnabled: true);
+
+    // Auth Listener
     auth.onAuthStateChanged.listen((user) => onAuthStateChanged(store, user));
 
+    // Pull listSorting and lastUndoAction from SharedPreferences.
     SharedPreferences prefs = await SharedPreferences.getInstance();
     TaskListSorting listSorting =
         parseTaskListSorting(prefs.getString('listSorting'));
     store.dispatch(SetListSorting(listSorting: listSorting));
+
+    var lastUndoAction =
+        parseUndoAction(prefs.getString(undoActionSharedPreferencesKey));
+    store.dispatch(SetLastUndoAction(lastUndoAction: lastUndoAction ?? NoAction()));
   };
 }
 
@@ -673,7 +702,8 @@ showSnackBar(
     {@required GlobalKey<ScaffoldState> targetGlobalKey,
     @required String message,
     int autoHideSeconds = 6,
-    String actionLabel}) {
+    String actionLabel,
+    dynamic onClosed}) async {
   if (targetGlobalKey?.currentState == null) {
     throw ArgumentError(
         'targetGlobalKey or targetGlobalKey.currentState must not be null');
@@ -685,14 +715,20 @@ showSnackBar(
       ? null
       : SnackBarAction(
           label: actionLabel,
-          onPressed: () => targetGlobalKey.currentState.hideCurrentSnackBar(),
+          onPressed: () => targetGlobalKey.currentState
+              .hideCurrentSnackBar(reason: SnackBarClosedReason.action),
         );
 
-  targetGlobalKey.currentState.showSnackBar(SnackBar(
+  var featureController = targetGlobalKey.currentState.showSnackBar(SnackBar(
     content: Text(message ?? ''),
     action: snackBarAction,
     duration: duration,
   ));
+
+  if (onClosed != null) {
+    var reason = await featureController.closed;
+    onClosed(reason);
+  }
 }
 
 ThunkAction<AppState> inviteUserToProject(
@@ -1476,6 +1512,12 @@ ThunkAction<AppState> showSignUpDialog(BuildContext context) {
   };
 }
 
+ThunkAction<AppState> undo() {
+  return (Store<AppState> store) async {
+    undoLastAction(store);
+  };
+}
+
 ThunkAction<AppState> renameTaskListWithDialog(
     String taskListId, String taskListName, BuildContext context) {
   return (Store<AppState> store) async {
@@ -1557,15 +1599,31 @@ Iterable<String> _getProjectRelatedTaskListIds(
       .map((list) => list.uid);
 }
 
-ThunkAction<AppState> deleteTaskWithDialog(
-    String taskId, BuildContext context) {
+ThunkAction<AppState> deleteTask(
+    String taskId, String projectId, String taskName, BuildContext context) {
   return (Store<AppState> store) async {
-    var userId = store.state.user.userId;
+    var ref = _getTasksCollectionRef(projectId).document(taskId);
+
+    pushUndoAction(
+        DeleteTaskUndoActionModel(
+          friendlyName: 'Undo',
+          taskRefPath: ref.path,
+        ),
+        store);
+
+    showSnackBar(
+        targetGlobalKey: homeScreenScaffoldKey,
+        message: 'Deleted task ${truncateString(taskName)}',
+        actionLabel: 'Undo',
+        autoHideSeconds: 6,
+        onClosed: (reason) {
+          if (reason == SnackBarClosedReason.action) {
+            undoLastAction(store);
+          }
+        });
 
     try {
-      await _getTasksCollectionRef(store.state.selectedProjectId)
-          .document(taskId)
-          .delete();
+      await ref.updateData({'isDeleted': true});
     } catch (error) {
       throw error;
     }
@@ -1823,7 +1881,11 @@ ThunkAction<AppState> moveTaskListToProjectWithDialog(String taskListId,
 
     moveTaskList(taskListId, projectId, targetProjectId, store.state);
 
-    var targetProjectName = store.state.projects.firstWhere((item) => item.uid == targetProjectId, orElse: () => null)?.projectName ?? 'Another project';
+    var targetProjectName = store.state.projects
+            .firstWhere((item) => item.uid == targetProjectId,
+                orElse: () => null)
+            ?.projectName ??
+        'Another project';
     showSnackBar(
       targetGlobalKey: homeScreenScaffoldKey,
       message: '$listName moved to $targetProjectName',
@@ -2254,9 +2316,19 @@ StreamSubscription<QuerySnapshot> _subscribeToIncompletedTasks(
 void _handleTasksSnapshot(TasksSnapshotType type, QuerySnapshot snapshot,
     String originProjectId, Store<AppState> store) {
   var tasks = <TaskModel>[];
+  var flaggedAsDeletedTasks = <String, TaskModel>{};
 
   snapshot.documents.forEach((doc) {
-    tasks.add(TaskModel.fromDoc(doc, store.state.user.userId));
+    // **** TO FUTURE SELF *******
+    // If you add another condition that causes a task to be filtered out here, you will cause problems with _getGroupedTaskDocumentChanges,
+    // Specifically when it is sorting through the modifcations looking for tasks that have been un-deleted. There is a note already there on how to 
+    // work aroound this.
+    if (doc.data['isDeleted'] == true) {
+      flaggedAsDeletedTasks[doc.documentID] =
+          TaskModel.fromDoc(doc, store.state.user.userId);
+    } else {
+      tasks.add(TaskModel.fromDoc(doc, store.state.user.userId));
+    }
   });
 
   if (store.state.selectedProjectId == originProjectId) {
@@ -2264,7 +2336,9 @@ void _handleTasksSnapshot(TasksSnapshotType type, QuerySnapshot snapshot,
     var groupedDocumentChanges = _getGroupedTaskDocumentChanges(
         snapshot.documentChanges,
         store.state.inflatedProject,
-        store.state.tasksByProject[originProjectId]);
+        store.state.tasksByProject[originProjectId],
+        flaggedAsDeletedTasks,
+        store.state.tasksById);
 
     var preMutationTaskIndices =
         Map<String, int>.from(store.state.inflatedProject.taskIndices);
@@ -2499,7 +2573,9 @@ CollectionReference _getProjectsCollectionRef(Store<AppState> store) {
 GroupedTaskDocumentChanges _getGroupedTaskDocumentChanges(
     List<DocumentChange> firestoreDocChanges,
     InflatedProjectModel currentInflatedProject,
-    List<TaskModel> existingTasks) {
+    List<TaskModel> existingTasks,
+    Map<String, TaskModel> flaggedAsDeletedTasks,
+    Map<String, TaskModel> existingTasksById) {
   var groupedChanges = GroupedTaskDocumentChanges();
 
   for (var change in firestoreDocChanges) {
@@ -2543,6 +2619,32 @@ GroupedTaskDocumentChanges _getGroupedTaskDocumentChanges(
             ));
           }
         }
+
+        // Task has been flagged as Deleted.
+        if (flaggedAsDeletedTasks.containsKey(change.document.documentID)) {
+          groupedChanges.removed.add(CustomDocumentChange(
+            uid: change.document.documentID,
+            taskList: change.document.data['taskList'],
+            document: change.document,
+          ));
+        }
+
+        // Task has been un-flagged as Deleted.
+        // We infer this by checking if the task exists in the State. Because we don't add tasks that have been flagged as deleted to State. We can safely assume
+        // that the task has been un-deleted on account of the fact that we are in the Firestore Modified doc changes.. ie Firestore thinks we already have this task
+        // in State.
+        // *********
+        // IF THIS FAILS IN FUTURE
+        // *********
+        // Don't panic. Just Save the deleted tasks into the State, but put them in a seperate map. That way, here can compare against that map to determine if the task has
+        // been un-deleted.
+        if (existingTasksById.containsKey(change.document.documentID) == false) {
+          groupedChanges.added.add(CustomDocumentChange(
+            uid: change.document.documentID,
+            taskList: change.document.data['taskList'],
+            document: change.document,
+          ));
+        }
       }
     }
 
@@ -2565,7 +2667,6 @@ bool _didMoveTaskList(
       orElse: () => null);
 
   if (existingTask == null) {
-    print('Bailing due to existingTask being null');
     return false;
   }
 

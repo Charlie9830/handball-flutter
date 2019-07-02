@@ -23,6 +23,7 @@ class TaskModel {
   Map<String, String> unseenTaskCommentMembers;
   TaskMetadata metadata;
   List<String> assignedTo;
+  bool isDeleted;
   /* 
     UPDATE THE copyWith METHOD BELOW
   */
@@ -42,6 +43,7 @@ class TaskModel {
     this.commentPreview,
     this.unseenTaskCommentMembers,
     this.assignedTo,
+    this.isDeleted = false,
   });
 
   TaskModel.fromDoc(DocumentSnapshot doc, String userId) {
@@ -61,10 +63,7 @@ class TaskModel {
         _coerceUnseenTaskCommentMembers(doc['unseenTaskCommentMembers']);
     this.metadata = TaskMetadata.fromMap(doc['metadata']);
     this.assignedTo = _coerceAssignedTo(doc['assignedTo']);
-
-    if (this.assignedTo == null) {
-      print("FOUND A NULL ONE **************************");
-    }
+    this.isDeleted = doc['isDeleted'] ?? false;
   }
 
   Map<String, dynamic> toMap() {
@@ -86,6 +85,7 @@ class TaskModel {
           this.unseenTaskCommentMembers ?? <String, dynamic>{},
       'metadata': this.metadata?.toMap() ?? <dynamic, dynamic>{},
       'assignedTo': this.assignedTo ?? <String>[],
+      'isDeleted': this.isDeleted,
     };
   }
 
@@ -116,6 +116,7 @@ class TaskModel {
     List<CommentModel> commentPreview,
     Map<String, String> unseenTaskCommentMembers,
     TaskMetadata metadata,
+    bool isDeleted,
   }) {
     return TaskModel(
         uid: uid ?? this.uid,
@@ -132,7 +133,8 @@ class TaskModel {
         commentPreview: commentPreview ?? this.commentPreview,
         unseenTaskCommentMembers:
             unseenTaskCommentMembers ?? this.unseenTaskCommentMembers,
-        metadata: metadata ?? this.metadata);
+        metadata: metadata ?? this.metadata,
+        isDeleted: isDeleted ?? this.isDeleted,);
   }
 
   List<Assignment> getAssignments(

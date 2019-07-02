@@ -59,6 +59,7 @@ class HomeScreenContainer extends StatelessWidget {
       onAddNewProjectButtonPressed: () => store.dispatch(addNewProjectWithDialog(context)),
       onLogInHintButtonPress: () => store.dispatch(handleLogInHintButtonPress()),
       onRenameProject: () => store.dispatch(updateProjectName(projectName, projectId, context)),
+      onUndoAction: store.state.lastUndoAction == null ? null : () => store.dispatch(undo()),
     );
   }
 
@@ -82,7 +83,7 @@ class HomeScreenContainer extends StatelessWidget {
         assignments: task.getAssignments(store.state.memberLookup),
         onCheckboxChanged: (newValue) => store
             .dispatch(updateTaskComplete(task.uid, newValue, task.metadata)),
-        onDelete: () => store.dispatch(deleteTaskWithDialog(task.uid, context)),
+        onDelete: () => store.dispatch(deleteTask(task.uid, task.project, task.taskName, context)),
         onMove: () => store.dispatch(moveTasksToListWithDialog(
             <TaskModel>[task],
             task.project,

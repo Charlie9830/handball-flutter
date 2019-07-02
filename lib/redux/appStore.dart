@@ -62,6 +62,8 @@ final initialAppState = AppState(
   completedTasksByProject: <String, List<TaskModel>>{},
   accountConfig: null,
   enableState: EnableStateModel(),
+  lastUndoAction: null,
+  tasksById: <String, TaskModel>{},
 );
 
 final appStore = new Store<AppState> (

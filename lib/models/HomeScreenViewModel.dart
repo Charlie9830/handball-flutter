@@ -17,6 +17,7 @@ class HomeScreenViewModel {
   final onShareProjectButtonPressed;
   final onSetListSorting;
   final bool isProjectShared;
+  final dynamic onUndoAction;
   final dynamic onCancelMultiSelectTaskMode;
   final dynamic onMoveTasksButtonPressed;
   final dynamic onShowCompletedTasksChanged;
@@ -44,5 +45,6 @@ class HomeScreenViewModel {
     this.onAddNewProjectButtonPressed,
     this.onLogInHintButtonPress,
     this.onRenameProject,
+    this.onUndoAction,
     });
 }

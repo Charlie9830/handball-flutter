@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/InheritatedWidgets/EnableStates.dart';
 import 'package:handball_flutter/enums.dart';
 
 class ProjectMenu extends StatelessWidget {
@@ -10,6 +11,7 @@ class ProjectMenu extends StatelessWidget {
   final dynamic onShowOnlySelfTasksChanged;
   final dynamic onShowCompletedTasksChanged;
   final dynamic onRenameProject;
+  final dynamic onUndoAction;
 
   const ProjectMenu(
       {Key key,
@@ -20,7 +22,8 @@ class ProjectMenu extends StatelessWidget {
       this.isProjectShared,
       this.showCompletedTasks,
       this.onShowCompletedTasksChanged,
-      this.onRenameProject})
+      this.onRenameProject,
+      this.onUndoAction,})
       : super(key: key);
 
   @override
@@ -30,6 +33,17 @@ class ProjectMenu extends StatelessWidget {
         onSelected: (value) => _handleSelection(value),
         itemBuilder: (context) {
           return <PopupMenuEntry<dynamic>>[
+            PopupMenuItem(
+              enabled: EnableStates.of(context).state.canUndo,
+              child: Row(children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Icon(Icons.undo),
+                ),
+                Text('Undo')
+              ]),
+              value: 'undo-action',
+            ),
             PopupMenuItem(
                 child: Text(
                     showCompletedTasks ? 'Hide Completed' : 'Show Completed'),
@@ -84,6 +98,10 @@ class ProjectMenu extends StatelessWidget {
 
       case 'rename-project':
         onRenameProject();
+        break;
+
+      case 'undo-action':
+        onUndoAction();
         break;
       default:
         break;

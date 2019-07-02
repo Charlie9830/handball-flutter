@@ -10,6 +10,7 @@ import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
+import 'package:handball_flutter/models/UndoActions/UndoAction.dart';
 import 'package:handball_flutter/models/User.dart';
 
 class AppState {
@@ -22,6 +23,7 @@ class AppState {
   final User user;
   final Map<String, String> lastUsedTaskLists;
   final List<TaskModel> tasks;
+  final Map<String, TaskModel> tasksById;
   final Map<String, List<TaskModel>> tasksByProject;
   final Map<String, List<TaskModel>> completedTasksByProject;
   final Map<String, List<TaskModel>> incompletedTasksByProject;
@@ -47,7 +49,7 @@ class AppState {
   final bool showCompletedTasks;
   final AccountConfigModel accountConfig;
   final EnableStateModel enableState;
-
+  final UndoActionModel lastUndoAction;
 
   final TextInputDialogModel textInputDialog;
 
@@ -87,7 +89,9 @@ class AppState {
     this.incompletedTasksByProject,
     this.accountConfig,
     this.enableState,
-    });
+    this.lastUndoAction,
+    this.tasksById,
+  });
 
   AppState copyWith({
     List<ProjectModel> projects,
@@ -102,7 +106,7 @@ class AppState {
     Map<String, List<TaskListModel>> taskListsByProject,
     String focusedTaskListId,
     TextInputDialogModel textInputDialog,
-    Map<String,IndicatorGroup> projectIndicatorGroups,
+    Map<String, IndicatorGroup> projectIndicatorGroups,
     InflatedProjectModel inflatedProject,
     Map<String, String> lastUsedTaskLists,
     AccountState accountState,
@@ -126,12 +130,16 @@ class AppState {
     Map<String, List<TaskModel>> incompletedTasksByProject,
     AccountConfigModel accountConfig,
     EnableStateModel enableState,
-
+    UndoActionModel lastUndoAction,
+    Map<String, TaskModel> tasksById,
+    Map<String, TaskModel> completedTasksById,
+    Map<String, TaskModel> incompletedTasksById,
   }) {
     return AppState(
       projects: projects ?? this.projects,
       selectedProjectId: selectedProjectId ?? this.selectedProjectId,
-      projectShareMenuEntity: projectShareMenuEntity ?? this.projectShareMenuEntity,
+      projectShareMenuEntity:
+          projectShareMenuEntity ?? this.projectShareMenuEntity,
       selectedTaskEntity: selectedTaskEntity ?? this.selectedTaskEntity,
       user: user ?? this.user,
       tasks: tasks ?? this.tasks,
@@ -141,28 +149,38 @@ class AppState {
       taskListsByProject: taskListsByProject ?? this.taskListsByProject,
       focusedTaskListId: focusedTaskListId ?? this.focusedTaskListId,
       textInputDialog: textInputDialog ?? this.textInputDialog,
-      projectIndicatorGroups: projectIndicatorGroups ?? this.projectIndicatorGroups,
+      projectIndicatorGroups:
+          projectIndicatorGroups ?? this.projectIndicatorGroups,
       inflatedProject: inflatedProject ?? this.inflatedProject,
       accountState: accountState ?? this.accountState,
       projectInvites: projectInvites ?? this.projectInvites,
-      processingProjectInviteIds: processingProjectInviteIds ?? this.processingProjectInviteIds,
+      processingProjectInviteIds:
+          processingProjectInviteIds ?? this.processingProjectInviteIds,
       members: members ?? this.members,
       isInvitingUser: isInvitingUser ?? this.isInvitingUser,
       processingMembers: processingMembers ?? this.processingMembers,
       listSorting: listSorting ?? this.listSorting,
       taskComments: taskComments ?? this.taskComments,
-      isTaskCommentPaginationComplete: isTaskCommentPaginationComplete ?? this.isTaskCommentPaginationComplete,
-      isGettingTaskComments: isGettingTaskComments ?? this.isGettingTaskComments,
-      isPaginatingTaskComments: isPaginatingTaskComments ?? this.isPaginatingTaskComments,
+      isTaskCommentPaginationComplete: isTaskCommentPaginationComplete ??
+          this.isTaskCommentPaginationComplete,
+      isGettingTaskComments:
+          isGettingTaskComments ?? this.isGettingTaskComments,
+      isPaginatingTaskComments:
+          isPaginatingTaskComments ?? this.isPaginatingTaskComments,
       multiSelectedTasks: multiSelectedTasks ?? this.multiSelectedTasks,
-      isInMultiSelectTaskMode: isInMultiSelectTaskMode ?? this.isInMultiSelectTaskMode,
+      isInMultiSelectTaskMode:
+          isInMultiSelectTaskMode ?? this.isInMultiSelectTaskMode,
       memberLookup: memberLookup ?? this.memberLookup,
       showOnlySelfTasks: showOnlySelfTasks ?? this.showOnlySelfTasks,
       showCompletedTasks: showCompletedTasks ?? this.showCompletedTasks,
-      completedTasksByProject: completedTasksByProject ?? this.completedTasksByProject,
-      incompletedTasksByProject: incompletedTasksByProject ?? this.incompletedTasksByProject,
+      completedTasksByProject:
+          completedTasksByProject ?? this.completedTasksByProject,
+      incompletedTasksByProject:
+          incompletedTasksByProject ?? this.incompletedTasksByProject,
       accountConfig: accountConfig ?? this.accountConfig,
       enableState: enableState ?? this.enableState,
+      lastUndoAction: lastUndoAction ?? this.lastUndoAction,
+      tasksById: tasksById ?? this.tasksById,
     );
   }
 }
