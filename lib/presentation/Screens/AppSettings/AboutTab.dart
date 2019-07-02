@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/presentation/Screens/AppSettings/ReleaseNotesDialog.dart';
 
 class AboutTab extends StatelessWidget {
   @override
@@ -30,7 +31,14 @@ class AboutTab extends StatelessWidget {
                 child: Text('Report a bug'),
               ),
               FlatButton(
-                child: Text('Provide feedback'))
+                child: Text('Provide feedback')),
+              FlatButton(
+                child: Text('Release Notes'),
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (context) => ReleaseNotesDialog(),
+                )
+              )
             ],
           ),
         )
