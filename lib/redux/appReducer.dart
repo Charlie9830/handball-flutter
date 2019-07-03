@@ -14,6 +14,7 @@ import 'package:handball_flutter/utilities/extractProject.dart';
 import 'package:handball_flutter/utilities/foldTasksTogether.dart';
 import 'package:handball_flutter/utilities/getProjectIndicatorGroups.dart';
 import 'package:meta/meta.dart';
+import 'package:quiver/core.dart';
 
 import '../enums.dart';
 import './appState.dart';
@@ -42,7 +43,7 @@ AppState appReducer(AppState state, dynamic action) {
 
     return state.copyWith(
         selectedProjectId: action.uid,
-        inflatedProject: inflatedProject,
+        inflatedProject: Optional.fromNullable(inflatedProject),
         showCompletedTasks: false, // Assert showCompletedTasks Off.
         showOnlySelfTasks: false,
         isInMultiSelectTaskMode: false,
@@ -51,7 +52,8 @@ AppState appReducer(AppState state, dynamic action) {
             isProjectSelected: action.uid != '-1' && action.uid != null
                 ? true
                 : state.enableState.isProjectSelected,
-            showSelectAProjectHint: action.uid == '-1' || action.uid == null && state.projects.length > 0,
+            showSelectAProjectHint: action.uid == '-1' ||
+                action.uid == null && state.projects.length > 0,
             showNoProjectsHint: state.projects.length == 0,
             showNoTaskListsHint: projectTaskLists.length == 0,
             showSingleListNoTasksHint:
@@ -60,17 +62,19 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is ReceiveProject) {
     var projects = _mergeProject(state.projects, action.project);
-    var filteredProjects = projects.where((item) => item.isDeleted == false).toList();
-    
+    var filteredProjects =
+        projects.where((item) => item.isDeleted == false).toList();
+
     return state.copyWith(
         projects: filteredProjects,
         enableState: state.enableState.copyWith(
           showNoProjectsHint: filteredProjects.length == 0,
-          showSelectAProjectHint: filteredProjects.length > 0 && (state.selectedProjectId == '-1' || state.selectedProjectId == null),
+          showSelectAProjectHint: filteredProjects.length > 0 &&
+              (state.selectedProjectId == '-1' ||
+                  state.selectedProjectId == null),
           canMoveTaskList: filteredProjects.length > 1,
         ));
   }
-
 
   if (action is SetInflatedProject) {
     var inflatedProject =
@@ -79,7 +83,7 @@ AppState appReducer(AppState state, dynamic action) {
             : state.inflatedProject;
 
     return state.copyWith(
-      inflatedProject: inflatedProject,
+      inflatedProject: Optional.fromNullable(inflatedProject),
     );
   }
 
@@ -89,7 +93,7 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is ReceiveAccountConfig) {
     return state.copyWith(
-      accountConfig: action.accountConfig,
+      accountConfig: Optional.fromNullable(action.accountConfig),
     );
   }
 
@@ -114,11 +118,11 @@ AppState appReducer(AppState state, dynamic action) {
         completedTasksByProject: foldedTasks.completedTasksByProject,
         incompletedTasksByProject: foldedTasks.incompletedTasksByProject,
         tasksByProject: foldedTasks.tasksByProject,
-        inflatedProject: inflatedProject,
+        inflatedProject: Optional.fromNullable(inflatedProject),
         selectedTaskEntity: _updateSelectedTaskEntity(
             state.selectedTaskEntity, foldedTasks.allTasks),
-        projectIndicatorGroups:
-            getProjectIndicatorGroups(foldedTasks.allTasks, state.deletedTaskLists, state.user.userId),
+        projectIndicatorGroups: getProjectIndicatorGroups(
+            foldedTasks.allTasks, state.deletedTaskLists, state.user.userId),
         enableState: state.enableState.copyWith(
             showSingleListNoTasksHint:
                 state.taskListsByProject[state.selectedProjectId].length == 1 &&
@@ -148,18 +152,18 @@ AppState appReducer(AppState state, dynamic action) {
         completedTasksByProject: foldedTasks.completedTasksByProject,
         incompletedTasksByProject: foldedTasks.incompletedTasksByProject,
         tasksByProject: foldedTasks.tasksByProject,
-        inflatedProject: inflatedProject,
+        inflatedProject: Optional.fromNullable(inflatedProject),
         selectedTaskEntity: _updateSelectedTaskEntity(
             state.selectedTaskEntity, foldedTasks.allTasks),
-        projectIndicatorGroups:
-            getProjectIndicatorGroups(foldedTasks.allTasks, state.deletedTaskLists, state.user.userId),
+        projectIndicatorGroups: getProjectIndicatorGroups(
+            foldedTasks.allTasks, state.deletedTaskLists, state.user.userId),
         enableState: state.enableState.copyWith(
-            showSingleListNoTasksHint:
-                state.taskListsByProject[state.selectedProjectId] != null &&
+            showSingleListNoTasksHint: state
+                        .taskListsByProject[state.selectedProjectId] !=
+                    null &&
                 state.taskListsByProject[state.selectedProjectId].length == 1 &&
-                    foldedTasks
-                            .tasksByProject[state.selectedProjectId].length ==
-                        0));
+                foldedTasks.tasksByProject[state.selectedProjectId].length ==
+                    0));
   }
 
   if (action is ReceiveTaskLists) {
@@ -182,10 +186,13 @@ AppState appReducer(AppState state, dynamic action) {
     return state.copyWith(
         taskLists: taskLists,
         taskListsByProject: taskListsByProject,
-        projectIndicatorGroups: getProjectIndicatorGroups(state.tasks, state.deletedTaskLists, state.user.userId), // TODO: Is this really required?
+        projectIndicatorGroups: getProjectIndicatorGroups(
+            state.tasks,
+            state.deletedTaskLists,
+            state.user.userId), // TODO: Is this really required?
         // due to how ReceiveDeletedTaskLists works, in theory this is useless because if a list is undeleted, it will fire the ReceiveDeletedTaskLists and that
         // will show the relevent indicators again.
-        inflatedProject: inflatedProject,
+        inflatedProject: Optional.fromNullable(inflatedProject),
         enableState: state.enableState.copyWith(
             showNoTaskListsHint:
                 taskListsByProject[state.selectedProjectId] != null &&
@@ -198,12 +205,13 @@ AppState appReducer(AppState state, dynamic action) {
   }
 
   if (action is ReceiveDeletedTaskLists) {
-    var newDeletedTaskListMap = _updateDeletedTaskLists(state.deletedTaskLists, action.taskLists, action.originProjectId);
+    var newDeletedTaskListMap = _updateDeletedTaskLists(
+        state.deletedTaskLists, action.taskLists, action.originProjectId);
 
     return state.copyWith(
-      deletedTaskLists: newDeletedTaskListMap,
-      projectIndicatorGroups: getProjectIndicatorGroups(state.tasks, newDeletedTaskListMap, state.user.userId)
-    );
+        deletedTaskLists: newDeletedTaskListMap,
+        projectIndicatorGroups: getProjectIndicatorGroups(
+            state.tasks, newDeletedTaskListMap, state.user.userId));
   }
 
   if (action is AddMultiSelectedTask) {
@@ -275,14 +283,14 @@ AppState appReducer(AppState state, dynamic action) {
 
     return state.copyWith(
       selectedProjectId: '-1',
-      inflatedProject: initialAppState.inflatedProject,
+      inflatedProject: Optional.fromNullable(initialAppState.inflatedProject),
       projects: projects,
       taskLists: taskLists,
       tasks: tasks,
       selectedTaskEntity:
           _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
-      projectIndicatorGroups:
-          getProjectIndicatorGroups(tasks, state.deletedTaskLists, state.user.userId),
+      projectIndicatorGroups: getProjectIndicatorGroups(
+          tasks, state.deletedTaskLists, state.user.userId),
       members: members,
     );
   }
@@ -328,8 +336,8 @@ AppState appReducer(AppState state, dynamic action) {
         projects: initialAppState.projects,
         projectIndicatorGroups: initialAppState.projectIndicatorGroups,
         selectedProjectId: initialAppState.selectedProjectId,
-        inflatedProject: initialAppState.inflatedProject,
-        selectedTaskEntity: initialAppState.selectedTaskEntity,
+        inflatedProject: Optional.fromNullable(initialAppState.inflatedProject),
+        selectedTaskEntity: Optional.fromNullable(initialAppState.selectedTaskEntity),
         focusedTaskListId: initialAppState.focusedTaskListId,
         lastUsedTaskLists: initialAppState.lastUsedTaskLists,
         projectInvites: initialAppState.projectInvites,
@@ -338,7 +346,7 @@ AppState appReducer(AppState state, dynamic action) {
         memberLookup: initialAppState.memberLookup,
         showCompletedTasks: initialAppState.showCompletedTasks,
         showOnlySelfTasks: initialAppState.showOnlySelfTasks,
-        accountConfig: initialAppState.accountConfig,
+        accountConfig: Optional.fromNullable(initialAppState.accountConfig),
         enableState: state.enableState.copyWith(
           isLoggedIn: false,
         ));
@@ -346,10 +354,10 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is OpenShareProjectScreen) {
     return state.copyWith(
-      projectShareMenuEntity: state.projects.firstWhere(
-          (project) => project.uid == action.projectId,
+        projectShareMenuEntity: Optional.fromNullable(
+      state.projects.firstWhere((project) => project.uid == action.projectId,
           orElse: () => null),
-    );
+    ));
   }
 
   if (action is ReceiveProjectInvites) {
@@ -382,7 +390,7 @@ AppState appReducer(AppState state, dynamic action) {
         members: members,
         memberLookup:
             _updateMemberLookup(state.memberLookup, action.membersList),
-        inflatedProject: inflatedProject);
+        inflatedProject: Optional.fromNullable(inflatedProject));
   }
 
   if (action is SetIsInvitingUser) {
@@ -407,7 +415,8 @@ AppState appReducer(AppState state, dynamic action) {
         : state.inflatedProject;
 
     return state.copyWith(
-        listSorting: listSorting, inflatedProject: inflatedProject);
+        listSorting: listSorting,
+        inflatedProject: Optional.fromNullable(inflatedProject));
   }
 
   if (action is ReceiveTaskComments) {
@@ -430,13 +439,13 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is SetLastUndoAction) {
     return state.copyWith(
-      lastUndoAction: action.lastUndoAction,
-      enableState: state.enableState.copyWith(
-        canUndo: action.isInitializing != true && action.lastUndoAction is NoAction == false,
-        // On appInitialization, we don't let the user Trigger an Undo, even if there is a lastUndoAction available.
-        // Otherwise, they could undo something they did from a previous session.
-      )
-    );
+        lastUndoAction: Optional.fromNullable(action.lastUndoAction),
+        enableState: state.enableState.copyWith(
+          canUndo: action.isInitializing != true &&
+              action.lastUndoAction is NoAction == false,
+          // On appInitialization, we don't let the user Trigger an Undo, even if there is a lastUndoAction available.
+          // Otherwise, they could undo something they did from a previous session.
+        ));
   }
 
   return state;
@@ -465,15 +474,16 @@ _filterTasks(String projectId, Map<String, List<TaskModel>> tasksByProject) {
   return tasksByProject[projectId] ?? <TaskModel>[];
 }
 
-TaskModel _updateSelectedTaskEntity(
+Optional<TaskModel> _updateSelectedTaskEntity(
     TaskModel originalEntity, List<TaskModel> tasks) {
   if (originalEntity == null) {
     // No need to update.
-    return null;
+    return Optional.absent();
   }
 
-  return tasks.firstWhere((task) => task.uid == originalEntity.uid,
-      orElse: () => null);
+  return Optional.fromNullable(tasks.firstWhere(
+      (task) => task.uid == originalEntity.uid,
+      orElse: () => null));
 }
 
 Map<String, MemberModel> _updateMemberLookup(
@@ -528,10 +538,15 @@ List<TaskListModel> _smooshAndMergeTaskLists(
   return list;
 }
 
-Map<String, TaskListModel> _updateDeletedTaskLists(Map<String, TaskListModel> existingMap, List<TaskListModel> incomingDeletedTasks, String originProjectId) {
-  var newPrunedMap = Map<String, TaskListModel>.from(existingMap)..removeWhere((key, value) => value.project == originProjectId);
+Map<String, TaskListModel> _updateDeletedTaskLists(
+    Map<String, TaskListModel> existingMap,
+    List<TaskListModel> incomingDeletedTasks,
+    String originProjectId) {
+  var newPrunedMap = Map<String, TaskListModel>.from(existingMap)
+    ..removeWhere((key, value) => value.project == originProjectId);
 
-  newPrunedMap.addEntries(incomingDeletedTasks.map( (item) => MapEntry(item.uid, item)));
+  newPrunedMap
+      .addEntries(incomingDeletedTasks.map((item) => MapEntry(item.uid, item)));
 
   return newPrunedMap;
 }
@@ -574,9 +589,9 @@ Map<String, List<TaskListModel>> _updateTaskListsByProject(
 
 Map<String, TaskModel> _buildTasksById(List<TaskModel> allTasks) {
   return Map<String, TaskModel>.fromIterable(allTasks,
-  key: (item) {
-    var taskModel = item as TaskModel;
-    return taskModel.uid;
-  },
-  value: (item) => item);
+      key: (item) {
+        var taskModel = item as TaskModel;
+        return taskModel.uid;
+      },
+      value: (item) => item);
 }

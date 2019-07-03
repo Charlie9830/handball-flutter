@@ -12,6 +12,7 @@ import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/models/UndoActions/UndoAction.dart';
 import 'package:handball_flutter/models/User.dart';
+import 'package:quiver/core.dart';
 
 class AppState {
   final List<ProjectModel> projects;
@@ -99,8 +100,8 @@ class AppState {
     List<ProjectModel> projects,
     Map<String, ProjectType> projectTypeLookup,
     String selectedProjectId,
-    ProjectModel projectShareMenuEntity,
-    TaskModel selectedTaskEntity,
+    Optional<ProjectModel> projectShareMenuEntity,
+    Optional<TaskModel> selectedTaskEntity,
     User user,
     List<TaskModel> tasks,
     Map<String, List<TaskModel>> tasksByProject,
@@ -109,7 +110,7 @@ class AppState {
     String focusedTaskListId,
     TextInputDialogModel textInputDialog,
     Map<String, IndicatorGroup> projectIndicatorGroups,
-    InflatedProjectModel inflatedProject,
+    Optional<InflatedProjectModel> inflatedProject,
     Map<String, String> lastUsedTaskLists,
     AccountState accountState,
     List<ProjectInviteModel> projectInvites,
@@ -130,9 +131,9 @@ class AppState {
     bool showCompletedTasks,
     Map<String, List<TaskModel>> completedTasksByProject,
     Map<String, List<TaskModel>> incompletedTasksByProject,
-    AccountConfigModel accountConfig,
+    Optional<AccountConfigModel> accountConfig,
     EnableStateModel enableState,
-    UndoActionModel lastUndoAction,
+    Optional<UndoActionModel> lastUndoAction,
     Map<String, TaskModel> tasksById,
     Map<String, TaskModel> completedTasksById,
     Map<String, TaskModel> incompletedTasksById,
@@ -141,9 +142,8 @@ class AppState {
     return AppState(
       projects: projects ?? this.projects,
       selectedProjectId: selectedProjectId ?? this.selectedProjectId,
-      projectShareMenuEntity:
-          projectShareMenuEntity ?? this.projectShareMenuEntity,
-      selectedTaskEntity: selectedTaskEntity ?? this.selectedTaskEntity,
+      projectShareMenuEntity: projectShareMenuEntity == null ? this.projectShareMenuEntity : projectShareMenuEntity.orNull,
+      selectedTaskEntity: selectedTaskEntity == null ? this.selectedTaskEntity : selectedTaskEntity.orNull,
       user: user ?? this.user,
       tasks: tasks ?? this.tasks,
       tasksByProject: tasksByProject ?? this.tasksByProject,
@@ -154,7 +154,7 @@ class AppState {
       textInputDialog: textInputDialog ?? this.textInputDialog,
       projectIndicatorGroups:
           projectIndicatorGroups ?? this.projectIndicatorGroups,
-      inflatedProject: inflatedProject ?? this.inflatedProject,
+      inflatedProject: inflatedProject == null ? this.inflatedProject : inflatedProject.orNull,
       accountState: accountState ?? this.accountState,
       projectInvites: projectInvites ?? this.projectInvites,
       processingProjectInviteIds:
@@ -180,9 +180,9 @@ class AppState {
           completedTasksByProject ?? this.completedTasksByProject,
       incompletedTasksByProject:
           incompletedTasksByProject ?? this.incompletedTasksByProject,
-      accountConfig: accountConfig ?? this.accountConfig,
+      accountConfig: accountConfig == null ? this.accountConfig : accountConfig.orNull,
       enableState: enableState ?? this.enableState,
-      lastUndoAction: lastUndoAction ?? this.lastUndoAction,
+      lastUndoAction: lastUndoAction == null ? this.lastUndoAction : lastUndoAction.orNull,
       tasksById: tasksById ?? this.tasksById,
       deletedTaskLists: deletedTaskLists ?? this.deletedTaskLists,
     );
