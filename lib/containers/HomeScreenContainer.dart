@@ -52,14 +52,26 @@ class HomeScreenContainer extends StatelessWidget {
               context))
           : null,
       showOnlySelfTasks: store.state.showOnlySelfTasks,
-      onShowOnlySelfTasksChanged: (newValue) => store.dispatch(setShowOnlySelfTasks(newValue)),
-      isProjectShared: store.state.members[projectId] != null && store.state.members[projectId].length > 1,
+      onShowOnlySelfTasksChanged: (newValue) =>
+          store.dispatch(setShowOnlySelfTasks(newValue)),
+      isProjectShared: store.state.members[projectId] != null &&
+          store.state.members[projectId].length > 1,
       showCompletedTasks: store.state.showCompletedTasks,
-      onShowCompletedTasksChanged: (newValue) => store.dispatch(setShowCompletedTasks(newValue, projectId)),
-      onAddNewProjectButtonPressed: () => store.dispatch(addNewProjectWithDialog(context)),
-      onLogInHintButtonPress: () => store.dispatch(handleLogInHintButtonPress()),
-      onRenameProject: () => store.dispatch(updateProjectName(projectName, projectId, context)),
-      onUndoAction: store.state.lastUndoAction == null ? null : () => store.dispatch(undo()),
+      onShowCompletedTasksChanged: (newValue) =>
+          store.dispatch(setShowCompletedTasks(newValue, projectId)),
+      onAddNewProjectButtonPressed: () =>
+          store.dispatch(addNewProjectWithDialog(context)),
+      onLogInHintButtonPress: () =>
+          store.dispatch(handleLogInHintButtonPress()),
+      onRenameProject: () =>
+          store.dispatch(updateProjectName(projectName, projectId, context)),
+      onUndoAction: store.state.lastUndoAction == null
+          ? null
+          : () => store.dispatch(undo()),
+      onMultiCompleteTasks: store.state.multiSelectedTasks.length > 0
+          ? () => store.dispatch(multiCompleteTasks(
+              store.state.multiSelectedTasks.values.toList(), projectId))
+          : null,
     );
   }
 
@@ -83,7 +95,8 @@ class HomeScreenContainer extends StatelessWidget {
         assignments: task.getAssignments(store.state.memberLookup),
         onCheckboxChanged: (newValue) => store
             .dispatch(updateTaskComplete(task.uid, newValue, task.metadata)),
-        onDelete: () => store.dispatch(deleteTask(task.uid, task.project, task.taskName, context)),
+        onDelete: () => store.dispatch(
+            deleteTask(task.uid, task.project, task.taskName, context)),
         onMove: () => store.dispatch(moveTasksToListWithDialog(
             <TaskModel>[task],
             task.project,
@@ -92,12 +105,16 @@ class HomeScreenContainer extends StatelessWidget {
                 .toList(),
             context)),
         onTap: store.state.isInMultiSelectTaskMode == true
-            ? () => _handleTaskMultiSelectChange(!store.state.multiSelectedTasks.containsKey(task.uid), task, store)
+            ? () => _handleTaskMultiSelectChange(
+                !store.state.multiSelectedTasks.containsKey(task.uid),
+                task,
+                store)
             : () => store.dispatch(OpenTaskInspector(taskEntity: task)),
         onLongPress: () => store.dispatch(SetIsInMultiSelectTaskMode(
             isInMultiSelectTaskMode: true, initialSelection: task)),
         isMultiSelected: store.state.multiSelectedTasks.containsKey(task.uid),
-        onRadioChanged: (value) => _handleTaskMultiSelectChange(value, task, store),
+        onRadioChanged: (value) =>
+            _handleTaskMultiSelectChange(value, task, store),
         isInMultiSelectMode: store.state.isInMultiSelectTaskMode,
       );
     }).toList();
@@ -111,40 +128,41 @@ class HomeScreenContainer extends StatelessWidget {
 
     return store.state.inflatedProject.inflatedTaskLists.map((taskList) {
       return TaskListViewModel(
-        data: taskList.data,
-        isMenuDisabled: store.state.isInMultiSelectTaskMode,
-        childTaskViewModels:
-            _buildTaskViewModels(taskList.tasks, store, context),
-        isFocused: store.state.focusedTaskListId == taskList.data.uid,
-        onTaskListFocus: () =>
-            store.dispatch(SetFocusedTaskListId(taskListId: taskList.data.uid)),
-        onDelete: () => store.dispatch(deleteTaskListWithDialog(
-            taskList.data.uid, taskList.data.taskListName, context)),
-        onRename: () => store.dispatch(renameTaskListWithDialog(
-            taskList.data.uid, taskList.data.taskListName, context)),
-        onAddNewTaskButtonPressed: store.state.isInMultiSelectTaskMode == true
-            ? null
-            : () => store.dispatch(addNewTaskWithDialog(
-                taskList.data.project, context,
-                taskListId: taskList.data.uid)),
-        onSortingChange: (sorting) => store.dispatch(updateTaskSorting(
-            taskList.data.project,
-            taskList.data.uid,
-            taskList.data.settings,
-            sorting)),
-        onOpenChecklistSettings: () =>
-            store.dispatch(openChecklistSettings(taskList.data, context)),
-        onMoveToProject: () => store.dispatch(moveTaskListToProjectWithDialog(taskList.data.uid, taskList.data.project, taskList.data.taskListName, context))
-      );
+          data: taskList.data,
+          isMenuDisabled: store.state.isInMultiSelectTaskMode,
+          childTaskViewModels:
+              _buildTaskViewModels(taskList.tasks, store, context),
+          isFocused: store.state.focusedTaskListId == taskList.data.uid,
+          onTaskListFocus: () => store
+              .dispatch(SetFocusedTaskListId(taskListId: taskList.data.uid)),
+          onDelete: () => store.dispatch(deleteTaskListWithDialog(
+              taskList.data.uid, taskList.data.taskListName, context)),
+          onRename: () => store.dispatch(renameTaskListWithDialog(
+              taskList.data.uid, taskList.data.taskListName, context)),
+          onAddNewTaskButtonPressed: store.state.isInMultiSelectTaskMode == true
+              ? null
+              : () => store.dispatch(addNewTaskWithDialog(taskList.data.project, context,
+                  taskListId: taskList.data.uid)),
+          onSortingChange: (sorting) => store.dispatch(updateTaskSorting(
+              taskList.data.project,
+              taskList.data.uid,
+              taskList.data.settings,
+              sorting)),
+          onOpenChecklistSettings: () =>
+              store.dispatch(openChecklistSettings(taskList.data, context)),
+          onMoveToProject: () => store.dispatch(moveTaskListToProjectWithDialog(
+              taskList.data.uid,
+              taskList.data.project,
+              taskList.data.taskListName,
+              context)));
     }).toList();
   }
 
-  void _handleTaskMultiSelectChange(bool value, TaskModel task, Store<AppState> store) {
+  void _handleTaskMultiSelectChange(
+      bool value, TaskModel task, Store<AppState> store) {
     if (value == true) {
       store.dispatch(AddMultiSelectedTask(task: task));
-    }
-
-    else {
+    } else {
       store.dispatch(RemoveMultiSelectedTask(task: task));
     }
   }

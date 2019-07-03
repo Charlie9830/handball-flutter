@@ -30,7 +30,7 @@ UndoActionModel parseUndoAction(String json) {
     case UndoActionType.completeTask:
       // TODO: Handle this case.
       break;
-    case UndoActionType.multiCompletedTasks:
+    case UndoActionType.multiCompleteTasks:
       // TODO: Handle this case.
       break;
     case UndoActionType.moveTask:

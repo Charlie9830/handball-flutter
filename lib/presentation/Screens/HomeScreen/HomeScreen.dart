@@ -35,6 +35,7 @@ class HomeScreen extends StatelessWidget {
             secondChild: MultiSelectTaskAppBar(
               onCancel: viewModel.onCancelMultiSelectTaskMode,
               onMoveTasks: viewModel.onMoveTasksButtonPressed,
+              onCompleteTasks: viewModel.onMultiCompleteTasks,
             ),
             crossFadeState: viewModel.isInMultiSelectTaskMode
                 ? CrossFadeState.showSecond

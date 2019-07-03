@@ -23,4 +23,4 @@ enum TasksSnapshotType { completed, incompleted }
 enum MaterialColorPickerType { primary, accent }
 
 // You serialize these by index, don't screw around with the order.
-enum UndoActionType { deleteProject, deleteTaskList, deleteTask, completeTask, multiCompletedTasks, moveTask, multiMoveTask, }
+enum UndoActionType { deleteProject, deleteTaskList, deleteTask, completeTask, multiCompleteTasks, moveTask, multiMoveTask, }

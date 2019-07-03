@@ -33,6 +33,7 @@ import 'package:handball_flutter/models/UndoActions/CompleteTaskUndoAction.dart'
 import 'package:handball_flutter/models/UndoActions/DeleteProjectUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/DeleteTaskListUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/DeleteTaskUndoAction.dart';
+import 'package:handball_flutter/models/UndoActions/MultiCompleteTasksUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/NoAction.dart';
 import 'package:handball_flutter/models/UndoActions/UndoAction.dart';
 import 'package:handball_flutter/models/User.dart';
@@ -725,7 +726,8 @@ showSnackBar(
   }
 
   // Close any currently open Snackbars on targetGlobalKey.
-  targetGlobalKey.currentState.hideCurrentSnackBar(reason: SnackBarClosedReason.hide);
+  targetGlobalKey.currentState
+      .hideCurrentSnackBar(reason: SnackBarClosedReason.hide);
 
   var duration =
       autoHideSeconds == 0 ? null : Duration(seconds: autoHideSeconds);
@@ -1612,9 +1614,10 @@ Future _deleteTaskList(
       store);
 
   var batch = Firestore.instance.batch();
-  batch.updateData(taskListRef, ({'isDeleted': Timestamp.fromDate(DateTime.now())}));
+  batch.updateData(
+      taskListRef, ({'isDeleted': Timestamp.fromDate(DateTime.now())}));
   batch.updateData(taskListRef, ({'isDeleted': true}));
-  
+
   return batch.commit();
 }
 
@@ -2216,6 +2219,56 @@ TaskListModel _getAddTaskDialogPreselectedTaskList(
 
   // Everything has Failed. TaskList could not be retrieved.
   return null;
+}
+
+ThunkAction<AppState> multiCompleteTasks(
+    List<TaskModel> tasks, String projectId) {
+  return (Store<AppState> store) async {
+    if (tasks == null || tasks.length == 0) {
+      return;
+    }
+    var refPaths = tasks
+        .map(
+            (task) => _getTasksCollectionRef(projectId).document(task.uid).path)
+        .toList();
+
+    pushUndoAction(
+        MultiCompleteTasksUndoActionModel(
+          taskRefPaths: refPaths,
+        ),
+        store);
+
+    showSnackBar(
+        targetGlobalKey: homeScreenScaffoldKey,
+        message:
+            'Completed ${tasks.where((item) => item.isComplete == false).length} tasks',
+        actionLabel: 'Undo',
+        autoHideSeconds: 6,
+        onClosed: (reason) {
+          if (reason == SnackBarClosedReason.action) {
+            undoLastAction(store);
+          }
+        });
+
+    var batch = Firestore.instance.batch();
+
+    for (var task in tasks) {
+      batch.updateData(_getTasksCollectionRef(projectId).document(task.uid),
+          {'isComplete': true});
+      batch.updateData(_getTasksCollectionRef(projectId).document(task.uid), {
+        'metadata': _getUpdatedTaskMetadata(task.metadata,
+            TaskMetadataUpdateType.completed, store.state.user.displayName).toMap(),
+      });
+    }
+
+    store.dispatch(SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: false));
+
+    try {
+      await batch.commit();
+    } catch (error) {
+      throw error;
+    }
+  };
 }
 
 ThunkAction<AppState> updateTaskComplete(

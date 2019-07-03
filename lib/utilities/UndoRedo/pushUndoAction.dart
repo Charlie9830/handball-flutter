@@ -45,8 +45,8 @@ _executeLastUndoAction(UndoActionModel lastUndoAction) async {
     case UndoActionType.completeTask:
       // No execute action required.
       break;
-    case UndoActionType.multiCompletedTasks:
-      // TODO: Handle this case.
+    case UndoActionType.multiCompleteTasks:
+      // No execute action required.
       break;
     case UndoActionType.moveTask:
       // TODO: Handle this case.

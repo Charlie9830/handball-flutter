@@ -24,6 +24,7 @@ class HomeScreenViewModel {
   final dynamic onAddNewProjectButtonPressed;
   final dynamic onLogInHintButtonPress;
   final dynamic onRenameProject;
+  final dynamic onMultiCompleteTasks;
 
   HomeScreenViewModel({
     this.projectId,
@@ -46,5 +47,6 @@ class HomeScreenViewModel {
     this.onLogInHintButtonPress,
     this.onRenameProject,
     this.onUndoAction,
+    this.onMultiCompleteTasks,
     });
 }
