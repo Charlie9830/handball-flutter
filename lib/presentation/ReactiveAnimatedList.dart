@@ -104,9 +104,9 @@ WidgetCollectionDiff diffChildren(
       .toSet();
 
   var addedIndexes =
-      newSet.difference(oldSet).map((item) => item.index).toList();
+      newSet.difference(oldSet).map((item) => item.index).toList()..sort( (a, b) => a - b);
   var removedIndexes =
-      oldSet.difference(newSet).map((item) => item.index).toList();
+      oldSet.difference(newSet).map((item) => item.index).toList()..sort( (a, b) => b - a );
 
   return WidgetCollectionDiff(
     addedIndexes: addedIndexes,
