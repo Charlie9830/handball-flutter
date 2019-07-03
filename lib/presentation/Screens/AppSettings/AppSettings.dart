@@ -2,7 +2,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/AppSettingsViewModel.dart';
-import 'package:handball_flutter/presentation/Screens/AppSettings/AboutTab.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/AccountTab/AccountTab.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/GeneralTab/GeneralTab.dart';
 
@@ -29,7 +28,6 @@ class AppSettings extends StatelessWidget {
               tabs: <Widget>[
                 Tab(text: 'General'),
                 Tab(text: 'Account'),
-                Tab(text: 'About'),
               ],
             )),
         body: TabBarView(
@@ -44,7 +42,6 @@ class AppSettings extends StatelessWidget {
               onSignUpButtonPressed: viewModel.onSignUpButtonPressed,
               onAccountChange: viewModel.onAccountChange,
             ),
-            AboutTab(),
           ],
         ),
       ),
@@ -58,9 +55,6 @@ class AppSettings extends StatelessWidget {
 
       case AppSettingsTabs.account:
         return 1;
-
-      case AppSettingsTabs.about:
-        return 2;
 
       default:
         return 0;
