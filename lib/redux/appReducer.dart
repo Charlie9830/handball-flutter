@@ -65,9 +65,23 @@ AppState appReducer(AppState state, dynamic action) {
     var filteredProjects =
         projects.where((item) => item.isDeleted == false).toList();
 
+    // Coerce selectedProjectId and inflatedProject.
+    var selectedProjectId = filteredProjects.firstWhere(
+                (item) => item.uid == state.selectedProjectId,
+                orElse: () => null) ==
+            null
+        ? '-1'
+        : state.selectedProjectId;
+
+    var inflatedProject =
+        selectedProjectId == '-1' ? null : state.inflatedProject;
+
     return state.copyWith(
         projects: filteredProjects,
+        selectedProjectId: selectedProjectId,
+        inflatedProject: Optional.fromNullable(inflatedProject),
         enableState: state.enableState.copyWith(
+          isProjectSelected: selectedProjectId != '-1' ? true : state.enableState.isProjectSelected,
           showNoProjectsHint: filteredProjects.length == 0,
           showSelectAProjectHint: filteredProjects.length > 0 &&
               (state.selectedProjectId == '-1' ||
@@ -337,7 +351,8 @@ AppState appReducer(AppState state, dynamic action) {
         projectIndicatorGroups: initialAppState.projectIndicatorGroups,
         selectedProjectId: initialAppState.selectedProjectId,
         inflatedProject: Optional.fromNullable(initialAppState.inflatedProject),
-        selectedTaskEntity: Optional.fromNullable(initialAppState.selectedTaskEntity),
+        selectedTaskEntity:
+            Optional.fromNullable(initialAppState.selectedTaskEntity),
         focusedTaskListId: initialAppState.focusedTaskListId,
         lastUsedTaskLists: initialAppState.lastUsedTaskLists,
         projectInvites: initialAppState.projectInvites,
