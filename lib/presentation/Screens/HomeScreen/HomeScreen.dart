@@ -36,6 +36,7 @@ class HomeScreen extends StatelessWidget {
               onCancel: viewModel.onCancelMultiSelectTaskMode,
               onMoveTasks: viewModel.onMoveTasksButtonPressed,
               onCompleteTasks: viewModel.onMultiCompleteTasks,
+              onDeleteTasks: viewModel.onMultiDeleteTasks,
             ),
             crossFadeState: viewModel.isInMultiSelectTaskMode
                 ? CrossFadeState.showSecond

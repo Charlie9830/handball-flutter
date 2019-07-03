@@ -4,6 +4,7 @@ import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/UndoActions/DeleteProjectUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/DeleteTaskListUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/DeleteTaskUndoAction.dart';
+import 'package:handball_flutter/models/UndoActions/MultiDeleteTasksUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/NoAction.dart';
 import 'package:handball_flutter/models/UndoActions/UndoAction.dart';
 import 'package:handball_flutter/redux/actions.dart';
@@ -48,11 +49,8 @@ _executeLastUndoAction(UndoActionModel lastUndoAction) async {
     case UndoActionType.multiCompleteTasks:
       // No execute action required.
       break;
-    case UndoActionType.moveTask:
-      // TODO: Handle this case.
-      break;
-    case UndoActionType.multiMoveTask:
-      // TODO: Handle this case.
+    case UndoActionType.multiDeleteTasks:
+      _executeMultiDeleteTasks(lastUndoAction);
       break;
   }
 
@@ -128,6 +126,25 @@ _executeProjectDelete(DeleteProjectUndoActionModel undoAction) async {
     await batch.commit();
     return;
   } catch (error) {
+    throw error;
+  }
+}
+
+_executeMultiDeleteTasks(MultiDeleteTasksUndoActionModel undoAction) async {
+  if (undoAction.taskRefPaths == null || undoAction.taskRefPaths.length == 0) {
+    return;
+  }
+
+  var refs = undoAction.taskRefPaths.map((path) => Firestore.instance.document(path));
+  var batch = Firestore.instance.batch();
+
+  for (var ref in refs) {
+    batch.delete(ref);
+  }
+
+  try {
+    await batch.commit();
+  } catch(error) {
     throw error;
   }
 }

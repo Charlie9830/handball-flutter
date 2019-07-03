@@ -72,6 +72,10 @@ class HomeScreenContainer extends StatelessWidget {
           ? () => store.dispatch(multiCompleteTasks(
               store.state.multiSelectedTasks.values.toList(), projectId))
           : null,
+      onMultiDeleteTasks: store.state.multiSelectedTasks.length > 0
+          ? () => store.dispatch(multiDeleteTasks(
+              store.state.multiSelectedTasks.values.toList(), projectId, context))
+          : null,
     );
   }
 

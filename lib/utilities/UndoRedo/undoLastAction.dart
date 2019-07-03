@@ -5,6 +5,7 @@ import 'package:handball_flutter/models/UndoActions/DeleteTaskListUndoAction.dar
 import 'package:handball_flutter/models/UndoActions/DeleteTaskUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/CompleteTaskUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/MultiCompleteTasksUndoAction.dart';
+import 'package:handball_flutter/models/UndoActions/MultiDeleteTasksUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/NoAction.dart';
 import 'package:handball_flutter/redux/actions.dart';
 import 'package:handball_flutter/redux/appState.dart';
@@ -35,11 +36,8 @@ undoLastAction(Store<AppState> store) async {
     case UndoActionType.multiCompleteTasks:
       _undoMultiCompleteTasks(lastUndoAction);
       break;
-    case UndoActionType.moveTask:
-      // TODO: Handle this case.
-      break;
-    case UndoActionType.multiMoveTask:
-      // TODO: Handle this case.
+    case UndoActionType.multiDeleteTasks:
+      _undoMultiDeleteTasks(lastUndoAction);
       break;
   }
 
@@ -47,6 +45,25 @@ undoLastAction(Store<AppState> store) async {
 
   var sharedPrefs = await SharedPreferences.getInstance();
   sharedPrefs.remove(undoActionSharedPreferencesKey);
+}
+
+void _undoMultiDeleteTasks(MultiDeleteTasksUndoActionModel undoAction) async {
+  if (undoAction.taskRefPaths == null || undoAction.taskRefPaths.length == 0) {
+    return;
+  }
+
+  var refs = undoAction.taskRefPaths.map((path) => Firestore.instance.document(path));
+  var batch = Firestore.instance.batch();
+
+  for (var ref in refs) {
+    batch.updateData(ref, {'isDeleted': false});
+  }
+
+  try {
+    await batch.commit();
+  } catch(error) {
+    throw error;
+  }
 }
 
 void _undoMultiCompleteTasks(MultiCompleteTasksUndoActionModel lastUndoAction) async {

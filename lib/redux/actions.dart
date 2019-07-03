@@ -34,6 +34,7 @@ import 'package:handball_flutter/models/UndoActions/DeleteProjectUndoAction.dart
 import 'package:handball_flutter/models/UndoActions/DeleteTaskListUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/DeleteTaskUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/MultiCompleteTasksUndoAction.dart';
+import 'package:handball_flutter/models/UndoActions/MultiDeleteTasksUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/NoAction.dart';
 import 'package:handball_flutter/models/UndoActions/UndoAction.dart';
 import 'package:handball_flutter/models/User.dart';
@@ -2221,6 +2222,64 @@ TaskListModel _getAddTaskDialogPreselectedTaskList(
   return null;
 }
 
+ThunkAction<AppState> multiDeleteTasks(
+    List<TaskModel> tasks, String projectId, BuildContext context) {
+  return (Store<AppState> store) async {
+    if (tasks == null || tasks.length == 0) {
+      return;
+    }
+
+    var dialogResult = await postConfirmationDialog(
+        'Delete Tasks',
+        'Are you sure you want to delete ${tasks.length} tasks?',
+        'Delete',
+        'Cancel',
+        context);
+
+    if (dialogResult is DialogResult && dialogResult == DialogResult.negative) {
+      return;
+    }
+
+    var refPaths = tasks
+        .map(
+            (task) => _getTasksCollectionRef(projectId).document(task.uid).path)
+        .toList();
+
+    pushUndoAction(
+        MultiDeleteTasksUndoActionModel(
+          taskRefPaths: refPaths,
+        ),
+        store);
+
+    showSnackBar(
+        targetGlobalKey: homeScreenScaffoldKey,
+        message:
+            'Deleted ${tasks.where((item) => item.isComplete == false).length} task${tasks.length > 1 ? 's' : ''}',
+        actionLabel: 'Undo',
+        autoHideSeconds: 6,
+        onClosed: (reason) {
+          if (reason == SnackBarClosedReason.action) {
+            undoLastAction(store);
+          }
+        });
+
+    var batch = Firestore.instance.batch();
+
+    for (var task in tasks) {
+      batch.updateData(_getTasksCollectionRef(projectId).document(task.uid),
+          {'isDeleted': true});
+    }
+
+    store.dispatch(SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: false));
+
+    try {
+      await batch.commit();
+    } catch (error) {
+      throw error;
+    }
+  };
+}
+
 ThunkAction<AppState> multiCompleteTasks(
     List<TaskModel> tasks, String projectId) {
   return (Store<AppState> store) async {
@@ -2241,7 +2300,7 @@ ThunkAction<AppState> multiCompleteTasks(
     showSnackBar(
         targetGlobalKey: homeScreenScaffoldKey,
         message:
-            'Completed ${tasks.where((item) => item.isComplete == false).length} tasks',
+            'Completed ${tasks.where((item) => item.isComplete == false).length} task${tasks.length > 1 ? 's' : ''}',
         actionLabel: 'Undo',
         autoHideSeconds: 6,
         onClosed: (reason) {
@@ -2257,7 +2316,8 @@ ThunkAction<AppState> multiCompleteTasks(
           {'isComplete': true});
       batch.updateData(_getTasksCollectionRef(projectId).document(task.uid), {
         'metadata': _getUpdatedTaskMetadata(task.metadata,
-            TaskMetadataUpdateType.completed, store.state.user.displayName).toMap(),
+                TaskMetadataUpdateType.completed, store.state.user.displayName)
+            .toMap(),
       });
     }
 
