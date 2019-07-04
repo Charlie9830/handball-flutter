@@ -425,6 +425,9 @@ ThunkAction<AppState> initializeApp() {
     // Auth Listener
     auth.onAuthStateChanged.listen((user) => onAuthStateChanged(store, user));
 
+    // Stripe.
+    //StripeSource.setPublishableKey("pk_test_5utVgPAtC8r6wNUtFzlSZAnE00BhffRN0G");
+
     // Pull listSorting and lastUndoAction from SharedPreferences.
     SharedPreferences prefs = await SharedPreferences.getInstance();
     TaskListSorting listSorting =
