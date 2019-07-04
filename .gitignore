@@ -19,6 +19,9 @@
 # Firebase
 android/app/google-services.json
 
+# Code Signing Keys
+android/key.properties
+
 # Visual Studio Code related
 .vscode/
 
