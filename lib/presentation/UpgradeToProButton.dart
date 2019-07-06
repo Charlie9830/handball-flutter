@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/containers/UpgradeToProDialogContainer.dart';
+import 'package:handball_flutter/presentation/Dialogs/UpgradeToProDialog/UpgradeToProDialog.dart';
 
 class UpgradeToProButton extends StatelessWidget {
   const UpgradeToProButton({Key key}) : super(key: key);
@@ -6,7 +8,7 @@ class UpgradeToProButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: _handleTap,
+      onTap: () => _handleTap(context),
         child: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Row(children: <Widget>[
@@ -22,7 +24,10 @@ class UpgradeToProButton extends StatelessWidget {
         ));
   }
 
-  void _handleTap() async {
-
+  void _handleTap(BuildContext context) async {
+    await showDialog(
+      context: context,
+      builder: (context) => UpgradeToProDialogContainer(),
+    );
   }
 }

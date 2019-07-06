@@ -65,10 +65,12 @@ import 'package:redux/redux.dart';
 import 'package:redux_thunk/redux_thunk.dart';
 import 'package:handball_flutter/utilities/CloudFunctionLayer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 
 final FirebaseAuth auth = FirebaseAuth.instance;
 final FirestoreStreamsContainer _firestoreStreams = FirestoreStreamsContainer();
 final CloudFunctionsLayer _cloudFunctionsLayer = CloudFunctionsLayer();
+StreamSubscription<List<PurchaseDetails>> _purchaseUpdateStreamSubscription;
 
 class OpenAppSettings {
   final AppSettingsTabs tab;
@@ -422,6 +424,10 @@ ThunkAction<AppState> initializeApp() {
     // TODO: Is this even doing anything?
     Firestore.instance.settings(timestampsInSnapshotsEnabled: true);
 
+    // In App Purchases.
+    final Stream purchaseUpdates = InAppPurchaseConnection.instance.purchaseUpdatedStream;
+    _purchaseUpdateStreamSubscription = purchaseUpdates.listen((purchases) => handlePurchaseUpdates(purchases));
+
     // Auth Listener
     auth.onAuthStateChanged.listen((user) => onAuthStateChanged(store, user));
 
@@ -440,6 +446,9 @@ ThunkAction<AppState> initializeApp() {
     store.dispatch(SetLastUndoAction(
         lastUndoAction: lastUndoAction ?? NoAction(), isInitializing: true));
   };
+}
+
+void handlePurchaseUpdates(List<PurchaseDetails> purchases) {
 }
 
 void onAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
