@@ -67,6 +67,7 @@ flutter:
    - assets/release_notes/
 
 
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.io/assets-and-images/#resolution-aware.
 
@@ -92,3 +93,14 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.io/custom-fonts/#from-packages
+  fonts:
+    - family: Ubuntu
+      fonts: 
+        - asset: assets/fonts/Ubuntu/Ubuntu-Light.ttf
+        - asset: assets/fonts/Ubuntu/Ubuntu-Regular.ttf
+        - asset: assets/fonts/Ubuntu/Ubuntu-Medium.ttf
+        - asset: assets/fonts/Ubuntu/Ubuntu-Bold.ttf
+        - asset: assets/fonts/Archivo/Archivo-Regular.ttf
+        - asset: assets/fonts/Archivo/Archivo-Medium.ttf
+        - asset: assets/fonts/Archivo/Archivo-SemiBold.ttf
+        - asset: assets/fonts/Archivo/Archivo-Bold.ttf

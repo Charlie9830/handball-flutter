@@ -25,7 +25,9 @@ class ProjectListItem extends StatelessWidget {
       child: ListTile(
           selected: viewModel.isSelected,
           title: Text('${viewModel.data.projectName}',
-              style: Theme.of(context).textTheme.body1),
+              style: TextStyle(
+                fontFamily: 'Ubuntu'
+              )),
           onTap: viewModel.onSelect,
           trailing: new ProjectIndicators(
             laterDueDates: viewModel.laterDueDates,

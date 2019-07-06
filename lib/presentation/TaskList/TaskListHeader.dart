@@ -31,38 +31,50 @@ class TaskListHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color backgroundColor = Theme.of(context).colorScheme.secondary;
-
-    return new Container(
-      child: Row(
-        children: <Widget>[
-          TaskListSettingsMenu(
-            isDisabled: isMenuDisabled,
-            onDelete: onDelete,
-            onRename: onRename,
-            onSortingChange: onSortingChange,
-            onOpenChecklistSettings: onOpenChecklistSettings,
-            sorting: sorting,
-            onMoveToProject: onMoveToProject,
-          ),
-          if (isChecklist == true)
+    return Container(
+      margin: EdgeInsets.only(bottom: 4),
+      color: Theme.of(context).canvasColor,
+      child: new Container(
+        margin: EdgeInsets.symmetric(horizontal: 4),
+        padding: EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+        decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            border: Border.all(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            borderRadius: BorderRadius.all(Radius.circular(8))),
+        child: Row(
+          children: <Widget>[
+            TaskListSettingsMenu(
+              isDisabled: isMenuDisabled,
+              onDelete: onDelete,
+              onRename: onRename,
+              onSortingChange: onSortingChange,
+              onOpenChecklistSettings: onOpenChecklistSettings,
+              sorting: sorting,
+              onMoveToProject: onMoveToProject,
+            ),
+            if (isChecklist == true)
+              IconButton(
+                  icon: Icon(Icons.playlist_add_check),
+                  onPressed: isMenuDisabled == true
+                      ? null
+                      : () => onOpenChecklistSettings()),
+            Expanded(
+                child: Text(name,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Ubuntu',
+                      fontSize: 15,
+                    ))),
             IconButton(
-                icon: Icon(Icons.playlist_add_check),
-                onPressed: isMenuDisabled == true
-                    ? null
-                    : () => onOpenChecklistSettings()),
-          Expanded(
-              child: Text(
-            name,
-            textAlign: TextAlign.center,
-          )),
-          IconButton(
-            icon: Icon(Icons.add_circle),
-            onPressed: onAddTaskButtonPressed,
-          )
-        ],
+              icon: Icon(Icons.add_circle),
+              onPressed: onAddTaskButtonPressed,
+            )
+          ],
+        ),
       ),
-      color: backgroundColor,
     );
   }
 }

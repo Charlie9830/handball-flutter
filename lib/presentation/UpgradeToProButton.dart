@@ -8,19 +8,24 @@ class UpgradeToProButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => _handleTap(context),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(children: <Widget>[
-      Icon(
-          Icons.new_releases,
-          color: Theme.of(context).accentColor,
-      ),
-      Padding(
-        padding: const EdgeInsets.only(left: 7),
-        child: Text("Upgrade to Pro", style: TextStyle(color: Theme.of(context).accentColor, fontWeight: FontWeight.w700)),
-      ),
-    ]),
+        onTap: () => _handleTap(context),
+        child: Container(
+          color: Theme.of(context).colorScheme.background,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(children: <Widget>[
+              Icon(
+                Icons.new_releases,
+                color: Theme.of(context).colorScheme.onBackground,
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 7),
+                child: Text("Upgrade to Pro",
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700)),
+              ),
+            ]),
+          ),
         ));
   }
 

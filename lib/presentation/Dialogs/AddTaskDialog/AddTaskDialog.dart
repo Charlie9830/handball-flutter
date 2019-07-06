@@ -160,6 +160,9 @@ class _AddTaskDialog extends State<AddTaskDialog> {
                                       _submit(_controller.text, context),
                                   textCapitalization:
                                       TextCapitalization.sentences,
+                                  style: TextStyle(
+                                    fontFamily: 'Ubuntu'
+                                  )
                                 ),
                               ),
                               IconButton(

@@ -8,6 +8,7 @@ class EditableTextInput extends StatefulWidget {
   final String hintText;
   final bool isMultiline;
   final bool autofocus;
+  final TextStyle style;
   final dynamic onChanged;
 
   EditableTextInput({
@@ -15,6 +16,7 @@ class EditableTextInput extends StatefulWidget {
     this.hintText = '',
     this.onChanged,
     this.isMultiline,
+    this.style,
     this.autofocus,
   });
 
@@ -48,6 +50,7 @@ class _EditableTextInputState extends State<EditableTextInput> {
         maxLines: null,
         textCapitalization: TextCapitalization.sentences,
         onEditingComplete: () => _submit(_controller.text),
+        style: widget.style,
       );
   }
 

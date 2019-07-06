@@ -15,31 +15,36 @@ class TaskListsListView extends StatelessWidget {
   final dynamic onLogInButttonPress;
 
   TaskListsListView(
-      {Key key, this.taskListViewModels, this.onAddNewTaskListButtonPressed, this.onAddNewProjectButtonPressed, this.onLogInButttonPress})
+      {Key key,
+      this.taskListViewModels,
+      this.onAddNewTaskListButtonPressed,
+      this.onAddNewProjectButtonPressed,
+      this.onLogInButttonPress})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     var showHintsMask = EnableStates.of(context).state.showHomeScreenMask;
-    
+
     var taskLists = _buildTaskLists(context, taskListViewModels);
 
     var listView = ListView(
-        shrinkWrap: showHintsMask == true,
-        children: taskLists,
-      );
+      shrinkWrap: showHintsMask == true,
+      children: taskLists,
+    );
 
     return PredicateBuilder(
-      predicate: () => showHintsMask == true,
-      childIfTrue: HomeScreenHintsMask(
-        listView: listView,
-        firstTaskListName: taskListViewModels.length > 0 ? taskListViewModels.first?.data?.taskListName : null,
-        onAddNewProjectButtonPressed: onAddNewProjectButtonPressed,
-        onAddNewTaskListButtonPressed: onAddNewTaskListButtonPressed,
-        onLogInButtonPress: onLogInButttonPress,
-      ),
-      childIfFalse: listView
-    );
+        predicate: () => showHintsMask == true,
+        childIfTrue: HomeScreenHintsMask(
+          listView: listView,
+          firstTaskListName: taskListViewModels.length > 0
+              ? taskListViewModels.first?.data?.taskListName
+              : null,
+          onAddNewProjectButtonPressed: onAddNewProjectButtonPressed,
+          onAddNewTaskListButtonPressed: onAddNewTaskListButtonPressed,
+          onLogInButtonPress: onLogInButttonPress,
+        ),
+        childIfFalse: listView);
   }
 
   List<Widget> _buildTaskLists(
@@ -62,9 +67,13 @@ class TaskListsListView extends StatelessWidget {
               onOpenChecklistSettings: vm.onOpenChecklistSettings,
               onMoveToProject: vm.onMoveToProject,
             ),
-            children: vm.childTaskViewModels
-                .map((taskVm) => Task(key: Key(taskVm.data.uid), model: taskVm))
-                .toList()),
+            children: vm.childTaskViewModels.map((taskVm) {
+              var showDivider = vm.childTaskViewModels.length != 1 && taskVm != vm.childTaskViewModels.last;
+              return Task(
+                key: Key(taskVm.data.uid),
+                model: taskVm,
+                showDivider: showDivider ,);
+            }).toList()),
       );
     }).toList();
 

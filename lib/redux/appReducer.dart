@@ -281,7 +281,7 @@ AppState appReducer(AppState state, dynamic action) {
   }
 
   if (action is SetSelectedTaskEntity) {
-    return state.copyWith(selectedTaskEntity: action.taskEntity);
+    return state.copyWith(selectedTaskEntity: Optional.fromNullable(action.taskEntity));
   }
 
   if (action is RemoveProjectEntities) {

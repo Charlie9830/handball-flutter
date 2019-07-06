@@ -16,7 +16,11 @@ class PriorityIndicator extends StatelessWidget {
           duration: Duration(milliseconds: 150),
           child: SizedBox(
               width: isHighPriority == true ? 12 : 0,
-              child: Container(color: Colors.orange))),
+              child: ClipRRect(
+                  borderRadius: BorderRadius.only(topRight: Radius.circular(4), bottomRight: Radius.circular(4)),
+                  child: Container(
+                color: Colors.orange,
+              )))),
     );
   }
 }

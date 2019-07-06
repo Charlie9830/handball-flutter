@@ -53,6 +53,9 @@ class TaskInspectorScreen extends StatelessWidget {
                             child: EditableTextInput(
                                 text: viewModel.taskEntity.taskName,
                                 hintText: 'Task Name',
+                                style: TextStyle(
+                                  fontFamily: 'Ubuntu',
+                                ),
                                 onChanged: viewModel.onTaskNameChange),
                           ),
                         ),

@@ -59,6 +59,9 @@ class _TextInputDialogState extends State<TextInputDialog> {
                             keyboardAppearance: Theme.of(context).brightness,
                             onEditingComplete: () => _submit(_controller.text, context),
                             textCapitalization: TextCapitalization.sentences,
+                            style: TextStyle(
+                              fontFamily: 'Ubuntu'
+                            )
                           ),
                         ),
                         IconButton(

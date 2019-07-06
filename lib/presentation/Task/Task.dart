@@ -11,7 +11,8 @@ import 'package:handball_flutter/presentation/Task/TaskCheckbox.dart';
 import 'package:handball_flutter/utilities/ParseDueDate.dart';
 
 class Task extends StatelessWidget {
-  Task({Key key, this.model});
+  final bool showDivider;
+  Task({Key key, this.model, this.showDivider = true});
 
   final TaskViewModel model;
 
@@ -19,7 +20,8 @@ class Task extends StatelessWidget {
     final ParsedDueDate parsedDueDate =
         ParseDueDate(model.data.isComplete, model.data.dueDate);
 
-    var showPriorityIndicator = model.isInMultiSelectMode == false && model.data.isHighPriority;
+    var showPriorityIndicator =
+        model.isInMultiSelectMode == false && model.data.isHighPriority;
 
     return new Slidable(
       delegate: new SlidableDrawerDelegate(),
@@ -49,7 +51,8 @@ class Task extends StatelessWidget {
                           Expanded(
                             child: Padding(
                               padding: EdgeInsets.symmetric(vertical: 12),
-                              child: Text(model.data.taskName),
+                              child: Text(model.data.taskName,
+                                  style: TextStyle(fontFamily: 'Ubuntu')),
                             ),
                           ),
                           PredicateBuilder(
@@ -64,8 +67,8 @@ class Task extends StatelessWidget {
                         ],
                       ),
                       Padding(
-                        padding:
-                            const EdgeInsets.only(left: 12, right: 8, bottom: 0),
+                        padding: const EdgeInsets.only(
+                            left: 12, right: 8, bottom: 0),
                         child: Row(
                           children: <Widget>[
                             if (model.hasNote)
@@ -81,10 +84,11 @@ class Task extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Divider(
-                        indent: showPriorityIndicator == true ? 8 : 16,
-                        height: 1,
-                      ),
+                      if (showDivider == true)
+                        Divider(
+                          indent: showPriorityIndicator == true ? 8 : 16,
+                          height: 1,
+                        ),
                     ],
                   ),
                 ),

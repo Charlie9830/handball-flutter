@@ -25,6 +25,6 @@ ThemeData buildAppThemeData(AppThemeModel appTheme) {
     primaryColorBrightness: primaryColorBrightness,
     accentColor: accentColor,
     accentColorBrightness: accentColorBrightness,
-
+    fontFamily: 'Archivo',
   );
 }
