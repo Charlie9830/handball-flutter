@@ -19,6 +19,8 @@ class FoldedTasks {
 
 FoldedTasks foldTasksTogether(TasksSnapshotType type,
     List<TaskModel> incomingTasks, String originProjectId, AppState state) {
+  incomingTasks = incomingTasks ?? <TaskModel>[];
+
   if (type == TasksSnapshotType.completed) {
     var completedTasksByProject = _getUpdatedTasksByProject(
       state.completedTasksByProject,
@@ -83,8 +85,10 @@ Map<String, List<TaskModel>> _getUpdatedTasksByProject(
     Map<String, List<TaskModel>> existingTasksByProject,
     List<TaskModel> newTasks,
     String originProjectId) {
+  var coercedNewTasks = newTasks == null ? <TaskModel>[] : newTasks;
+
   Map<String, List<TaskModel>> newMap = Map.from(existingTasksByProject);
-  newMap[originProjectId] = newTasks.toList();
+  newMap[originProjectId] = coercedNewTasks.toList();
 
   return newMap;
 }

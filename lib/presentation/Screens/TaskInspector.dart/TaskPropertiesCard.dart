@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/models/Assignment.dart';
 import 'package:handball_flutter/presentation/DateSelectListTile.dart';
+import 'package:handball_flutter/presentation/ReminderSelectListTile.dart';
 import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/NoteInputListItem.dart';
 import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/TaskAssignmentInput.dart';
 
@@ -9,22 +10,28 @@ class TaskPropertiesCard extends StatelessWidget {
   final String note;
   final String taskName;
   final bool isAssignmentInputVisible;
+  final bool enableReminder;
+  final DateTime reminder;
   final List<Assignment> assignments;
   final List<Assignment> assignmentOptions;
   final dynamic onDueDateChange;
   final dynamic onNoteChange;
   final dynamic onAssignmentsChange;
+  final dynamic onReminderChange;
 
   TaskPropertiesCard({
     this.dueDate,
     this.onDueDateChange,
     this.note,
+    this.reminder,
+    this.enableReminder,
     this.isAssignmentInputVisible,
     this.assignmentOptions,
     this.assignments,
     this.onNoteChange,
     this.taskName,
     this.onAssignmentsChange,
+    this.onReminderChange,
   });
 
   @override
@@ -35,10 +42,19 @@ class TaskPropertiesCard extends StatelessWidget {
           DateSelectListTile(
             firstDate: DateTime.now().subtract(Duration(days: 360)),
             lastDate: DateTime.now().add(Duration(days: 360)),
-            initialDate: dueDate ?? DateTime.now(),
+            initialDate: dueDate,
             onChange: onDueDateChange,
             hintText: 'Pick due date',
           ),
+            ReminderSelectListTile(
+              enabled: enableReminder,
+              firstDate: DateTime.now(),
+              lastDate: DateTime.now().add(Duration(days: 360)),
+              hintText: 'Set a reminder',
+              isClearable: true,
+              initialDate: reminder,
+              onChange: onReminderChange,
+            ),
           NoteInputListItem(
             note: note,
             onChange: onNoteChange,

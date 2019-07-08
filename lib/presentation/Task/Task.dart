@@ -71,6 +71,9 @@ class Task extends StatelessWidget {
                             left: 12, right: 8, bottom: 0),
                         child: Row(
                           children: <Widget>[
+                            if (model.data.reminder != null && model.data.reminder.isNotEmpty)
+                              Icon(Icons.alarm,
+                                color: Theme.of(context).disabledColor),
                             if (model.hasNote)
                               Icon(Icons.note,
                                   color: Theme.of(context).disabledColor),

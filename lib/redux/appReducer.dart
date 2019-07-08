@@ -146,8 +146,10 @@ AppState appReducer(AppState state, dynamic action) {
   }
 
   if (action is ReceiveIncompletedTasks) {
+    var incomingTasks = _mergeRemindersWithTasks(state.members[action.originProjectId], action.tasks, state.user.userId);
+
     var foldedTasks = foldTasksTogether(TasksSnapshotType.incompleted,
-        action.tasks, action.originProjectId, state);
+        incomingTasks, action.originProjectId, state);             // Here
 
     var inflatedProject = action.originProjectId == state.selectedProjectId
         ? buildInflatedProject(
@@ -390,9 +392,14 @@ AppState appReducer(AppState state, dynamic action) {
     var members =
         _updateMembers(state.members, action.projectId, action.membersList);
 
+    var incompletedMutatedTasks = _mergeRemindersWithTasks(action.membersList, state.incompletedTasksByProject[action.projectId], state.user.userId);
+    
+    
+    var foldedTasks = foldTasksTogether(TasksSnapshotType.incompleted, incompletedMutatedTasks, action.projectId, state);
+
     var inflatedProject = action.projectId == state.selectedProjectId
         ? buildInflatedProject(
-            tasks: state.tasksByProject[state.selectedProjectId],
+            tasks: foldedTasks.tasksByProject[state.selectedProjectId],
             taskLists: state.taskListsByProject[state.selectedProjectId],
             project: extractProject(state.selectedProjectId, state.projects),
             listCustomSortOrder: extractListCustomSortOrder(
@@ -405,7 +412,12 @@ AppState appReducer(AppState state, dynamic action) {
         members: members,
         memberLookup:
             _updateMemberLookup(state.memberLookup, action.membersList),
-        inflatedProject: Optional.fromNullable(inflatedProject));
+        inflatedProject: Optional.fromNullable(inflatedProject),
+        tasks: foldedTasks.allTasks,
+        tasksById: _buildTasksById(foldedTasks.allTasks),
+        tasksByProject: foldedTasks.tasksByProject,
+        completedTasksByProject: foldedTasks.completedTasksByProject,
+        incompletedTasksByProject: foldedTasks.incompletedTasksByProject,);
   }
 
   if (action is SetIsInvitingUser) {
@@ -609,4 +621,33 @@ Map<String, TaskModel> _buildTasksById(List<TaskModel> allTasks) {
         return taskModel.uid;
       },
       value: (item) => item);
+}
+
+List<TaskModel> _mergeRemindersWithTasks(List<MemberModel> members, List<TaskModel> tasks, String userId) {
+  if (members == null) {
+    return tasks;
+  }
+
+  var self = members.firstWhere((member) => member.userId == userId, orElse: () => null);
+
+  if (self == null) {
+    // Nothing to Update.
+    return tasks;
+  }
+
+  if (tasks == null) {
+    return <TaskModel>[];
+  }
+
+  var reminderMap = self.taskReminders;
+
+  return tasks.map((task) {
+    if (reminderMap.containsKey(task.uid)) {
+      return task..reminder = Optional.fromNullable(reminderMap[task.uid]);
+    }
+
+    else {
+      return task..reminder = Optional.absent();
+    }
+  }).toList();
 }

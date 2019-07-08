@@ -23,6 +23,7 @@ import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/ProjectIdModel.dart';
 import 'package:handball_flutter/models/ProjectInvite.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
+import 'package:handball_flutter/models/Reminder.dart';
 import 'package:handball_flutter/models/ServerCleanupJobs/CleanupTaskListMove.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
@@ -377,6 +378,40 @@ Future<void> postAlertDialog(
       });
 }
 
+ThunkAction<AppState> updateTaskReminder(DateTime newValue,
+    DateTime existingValue, String taskId, String projectId) {
+  return (Store<AppState> store) async {
+    var targetMember = store.state.members[projectId].firstWhere(
+        (member) => member.userId == store.state.user.userId,
+        orElse: () => null);
+
+    if (targetMember == null) {
+      return;
+    }
+
+    var newTaskReminders =
+        Map<String, ReminderModel>.from(targetMember.taskReminders);
+    if (newValue == null) {
+      newTaskReminders.remove(taskId);
+    } else {
+      newTaskReminders[taskId] =
+          ReminderModel(originTaskId: taskId, isSeen: false, time: newValue);
+    }
+
+    var ref =
+        _getMembersCollectionRef(projectId).document(store.state.user.userId);
+
+    try {
+      ref.updateData({
+        'taskReminders':
+            newTaskReminders.map((key, value) => MapEntry(key, value.toMap()))
+      });
+    } catch (error) {
+      throw error;
+    }
+  };
+}
+
 Future<String> postDelegateOwnerDialog(
     List<MemberModel> nonOwnerMembers, BuildContext context) {
   // Returns userId of selected user or null if User cancelled dialog.
@@ -425,8 +460,10 @@ ThunkAction<AppState> initializeApp() {
     Firestore.instance.settings(timestampsInSnapshotsEnabled: true);
 
     // In App Purchases.
-    final Stream purchaseUpdates = InAppPurchaseConnection.instance.purchaseUpdatedStream;
-    _purchaseUpdateStreamSubscription = purchaseUpdates.listen((purchases) => handlePurchaseUpdates(purchases));
+    final Stream purchaseUpdates =
+        InAppPurchaseConnection.instance.purchaseUpdatedStream;
+    _purchaseUpdateStreamSubscription =
+        purchaseUpdates.listen((purchases) => handlePurchaseUpdates(purchases));
 
     // Auth Listener
     auth.onAuthStateChanged.listen((user) => onAuthStateChanged(store, user));
@@ -448,8 +485,7 @@ ThunkAction<AppState> initializeApp() {
   };
 }
 
-void handlePurchaseUpdates(List<PurchaseDetails> purchases) {
-}
+void handlePurchaseUpdates(List<PurchaseDetails> purchases) {}
 
 void onAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
   if (user == null) {
@@ -2089,14 +2125,14 @@ ThunkAction<AppState> addNewTaskWithDialog(
       barrierDismissible: true,
       context: context,
       builder: (context) => AddTaskDialog(
-            preselectedTaskList: preselectedTaskList,
-            taskLists: store.state.taskListsByProject[projectId],
-            allowTaskListChange: taskListId == null,
-            assignmentOptions: assignmentOptions,
-            memberLookup: store.state.memberLookup,
-            isProjectShared: store.state.members[projectId] != null &&
-                store.state.members[projectId].length > 1,
-          ),
+        preselectedTaskList: preselectedTaskList,
+        taskLists: store.state.taskListsByProject[projectId],
+        allowTaskListChange: taskListId == null,
+        assignmentOptions: assignmentOptions,
+        memberLookup: store.state.memberLookup,
+        isProjectShared: store.state.members[projectId] != null &&
+            store.state.members[projectId].length > 1,
+      ),
     );
 
     if (result == null) {
@@ -2660,11 +2696,11 @@ ThunkAction<AppState> openChecklistSettings(
       context: context,
       barrierDismissible: false,
       builder: (context) => ChecklistSettingsDialog(
-            renewDate: currentSettings.nextRenewDate ??
-                currentSettings.initialStartDate,
-            isChecklist: currentSettings.isChecklist,
-            renewInterval: currentSettings.renewInterval,
-          ),
+        renewDate:
+            currentSettings.nextRenewDate ?? currentSettings.initialStartDate,
+        isChecklist: currentSettings.isChecklist,
+        renewInterval: currentSettings.renewInterval,
+      ),
     );
 
     if (result != null && result is ChecklistSettingsDialogResult) {

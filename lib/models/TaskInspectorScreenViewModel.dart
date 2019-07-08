@@ -15,6 +15,7 @@ class TaskInspectorScreenViewModel {
   final dynamic onClose;
   final dynamic onOpenTaskCommentScreen;
   final dynamic onAssignmentsChange;
+  final dynamic onReminderChange;
 
   TaskInspectorScreenViewModel({
     this.taskEntity,
@@ -29,5 +30,6 @@ class TaskInspectorScreenViewModel {
     this.onOpenTaskCommentScreen,
     this.assignments,
     this.onAssignmentsChange,
+    this.onReminderChange,
   });
 }

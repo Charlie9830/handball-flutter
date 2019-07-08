@@ -25,8 +25,6 @@ class TaskInspectorScreenContainer extends StatelessWidget {
   _converter(Store<AppState> store, BuildContext context) {
     var selectedTaskEntity = store.state.selectedTaskEntity;
 
-
-    print(selectedTaskEntity.getAssignments(store.state.memberLookup).runtimeType.toString());
     return new TaskInspectorScreenViewModel(
         onClose: () => store.dispatch(CloseTaskInspector()),
         taskEntity: selectedTaskEntity,
@@ -66,7 +64,8 @@ class TaskInspectorScreenContainer extends StatelessWidget {
           selectedTaskEntity.uid, 
           selectedTaskEntity.project,
           selectedTaskEntity.metadata
-          )));
+          )),
+          onReminderChange: (newValue) => store.dispatch(updateTaskReminder(newValue, selectedTaskEntity.reminder.orNull?.time, selectedTaskEntity.uid, selectedTaskEntity.project)));
   }
 
   bool _isAssignmentInputVisible(Store<AppState> store, TaskModel selectedTaskEntity) {

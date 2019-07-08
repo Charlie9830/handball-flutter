@@ -2,11 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:handball_flutter/models/Assignment.dart';
 import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/Member.dart';
+import 'package:handball_flutter/models/Reminder.dart';
 import 'package:handball_flutter/models/TaskMetadata.dart';
 import 'package:handball_flutter/utilities/TaskArgumentParser/TaskArgumentParser.dart';
 import 'package:handball_flutter/utilities/coerceDate.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
 import 'package:meta/meta.dart';
+import 'package:quiver/core.dart';
 
 class TaskModel {
   String uid;
@@ -24,6 +26,7 @@ class TaskModel {
   TaskMetadata metadata;
   List<String> assignedTo;
   bool isDeleted;
+  Optional<ReminderModel> reminder = const Optional.absent(); // Stored on MemberModel.
   /* 
     UPDATE THE copyWith METHOD BELOW
   */
@@ -44,6 +47,7 @@ class TaskModel {
     this.unseenTaskCommentMembers,
     this.assignedTo,
     this.isDeleted = false,
+    this.reminder = const Optional.absent(),
   });
 
   TaskModel.fromDoc(DocumentSnapshot doc, String userId) {
@@ -117,6 +121,7 @@ class TaskModel {
     Map<String, String> unseenTaskCommentMembers,
     TaskMetadata metadata,
     bool isDeleted,
+    Optional<ReminderModel> reminder,
   }) {
     return TaskModel(
         uid: uid ?? this.uid,
@@ -134,7 +139,10 @@ class TaskModel {
         unseenTaskCommentMembers:
             unseenTaskCommentMembers ?? this.unseenTaskCommentMembers,
         metadata: metadata ?? this.metadata,
-        isDeleted: isDeleted ?? this.isDeleted,);
+        isDeleted: isDeleted ?? this.isDeleted,
+        reminder: reminder == null
+            ? this.reminder
+            : Optional.fromNullable(reminder.orNull));
   }
 
   List<Assignment> getAssignments(
