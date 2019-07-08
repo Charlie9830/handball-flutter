@@ -65,7 +65,10 @@ class HomeScreen extends StatelessWidget {
 
   Widget _getStandardAppBar(BuildContext context) {
     return AppBar(
-        title: Text(viewModel.projectName ?? ''),
+        title: Text(viewModel.projectName ?? '',
+        style: TextStyle(
+          fontFamily: 'Ubuntu'
+        )),
         actions: <Widget>[
           if (EnableStates.of(context).state.isProjectMenuEnabled)
             IconButton(

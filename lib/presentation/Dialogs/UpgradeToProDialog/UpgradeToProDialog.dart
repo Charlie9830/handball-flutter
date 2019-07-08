@@ -16,7 +16,7 @@ class UpgradeToProDialog extends StatefulWidget {
 class _UpgradeToProDialogState extends State<UpgradeToProDialog> {
   bool isLoading = true;
   bool isStoreAvailable = true;
-  List<ProductDetails> products = <ProductDetails>[];
+  ProductDetails product;
 
   @override
   void initState() {
@@ -46,18 +46,12 @@ class _UpgradeToProDialogState extends State<UpgradeToProDialog> {
     } else {
       return StoreShelf(
         onPurchase: _handlePurchase,
-        product: ProductDetails(
-          title: 'Monthly Subscription',
-          description: 'Get upgraded benefits',
-          id: 'Test.Product',
-          price: '\$4.99usd',
-        )
+        product: product
       );
     }
   }
 
   void _handlePurchase() async {
-    ProductDetails product = products.first;
     PurchaseParam purchaseParam = PurchaseParam(productDetails: product, applicationUserName: widget.viewModel.userId);
 
     InAppPurchaseConnection.instance.buyNonConsumable(purchaseParam: purchaseParam);
@@ -84,7 +78,7 @@ class _UpgradeToProDialogState extends State<UpgradeToProDialog> {
       });
     } else {
       setState(() {
-        products = response.productDetails;
+        product = response.productDetails.first;
         isLoading = false;
         isStoreAvailable = true;
       });
