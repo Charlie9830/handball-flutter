@@ -66,6 +66,8 @@ class TaskListsListView extends StatelessWidget {
               sorting: vm.data.settings.sortBy,
               onOpenChecklistSettings: vm.onOpenChecklistSettings,
               onMoveToProject: vm.onMoveToProject,
+              onChooseColor: vm.onChooseColor,
+              customColor: vm.data.customColor,
             ),
             children: vm.childTaskViewModels.map((taskVm) {
               var showDivider = vm.childTaskViewModels.length != 1 && taskVm != vm.childTaskViewModels.last;

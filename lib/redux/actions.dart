@@ -41,6 +41,7 @@ import 'package:handball_flutter/models/UndoActions/NoAction.dart';
 import 'package:handball_flutter/models/UndoActions/UndoAction.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialog.dart';
+import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/TaskListColorSelectDialog/TaskListColorSelectDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/DelegateOwnerDialog/DelegateOwnerDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/MoveListBottomSheet.dart';
@@ -391,7 +392,7 @@ ThunkAction<AppState> updateTaskReminder(DateTime newValue,
     }
 
     var userId = store.state.user.userId;
-    
+
     // User has removed Reminder.
     if (newValue == null) {
       var ref = _getTasksCollectionRef(projectId).document(taskId);
@@ -469,7 +470,8 @@ Future<void> _printPendingNotifications() async {
   print('');
   print(' ========== PENDING NOTIFICATIONS ==========');
   for (var notification in pendingNotifications) {
-    print('${notification.id}    :    ${notification.body}     :     Payload ${notification.payload}');
+    print(
+        '${notification.id}    :    ${notification.body}     :     Payload ${notification.payload}');
   }
   print('==========    ============');
   print('');
@@ -550,9 +552,7 @@ Future onSelectNotification(String payload, Store<AppState> store) async {
 
   if (task == null || task.isDeleted == true) {
     // Show Task Deleted.
-  }
-
-  else {
+  } else {
     clearTaskReminder(taskId, task.project, store.state.user.userId);
     store.dispatch(SelectProject(task.project));
     store.dispatch(OpenTaskInspector(taskEntity: task));
@@ -565,7 +565,7 @@ void clearTaskReminder(String taskId, String projectId, String userId) async {
   var ref = _getTasksCollectionRef(projectId).document(taskId);
 
   try {
-    await ref.updateData({'reminders.$userId' : FieldValue.delete()});
+    await ref.updateData({'reminders.$userId': FieldValue.delete()});
   } catch (error) {
     throw error;
   }
@@ -2199,6 +2199,39 @@ ThunkAction<AppState> updateTaskName(String newValue, String oldValue,
   };
 }
 
+ThunkAction<AppState> updateTaskListColorWithDialog(
+    String taskListId,
+    String projectId,
+    String taskListName,
+    bool hasCustomColor,
+    int colorIndex,
+    BuildContext context) {
+  return (Store<AppState> store) async {
+    if (taskListId == null) {
+      return;
+    }
+
+    var result = await showDialog(
+        context: context,
+        builder: (context) => TaskListColorSelectDialog(
+              colorIndex: colorIndex,
+              hasCustomColor: hasCustomColor,
+              taskListName: taskListName,
+            ));
+
+    if (result is int) {
+      var ref = _getTaskListsCollectionRef(projectId).document(taskListId);
+
+      try {
+        await ref.updateData(
+            {'hasCustomColor': result != -1, 'customColorIndex': result});
+      } catch (error) {
+        throw error;
+      }
+    }
+  };
+}
+
 ThunkAction<AppState> addNewTaskWithDialog(
     String projectId, BuildContext context,
     {String taskListId}) {
@@ -2251,7 +2284,9 @@ ThunkAction<AppState> addNewTaskWithDialog(
 
         // New Task
         var taskRef = _getTasksCollectionRef(projectId).document();
-        var taskName = result.taskName.trim().isEmpty ? 'Untitled Task' : result.taskName.trim();
+        var taskName = result.taskName.trim().isEmpty
+            ? 'Untitled Task'
+            : result.taskName.trim();
 
         var task = TaskModel(
             uid: taskRef.documentID,
@@ -2264,7 +2299,8 @@ ThunkAction<AppState> addNewTaskWithDialog(
             dateAdded: DateTime.now(),
             assignedTo: result.assignedToIds,
             note: result.note,
-            reminders: _buildNewRemindersMap(taskRef.documentID, taskName, store.state.user.userId, result.reminderTime),
+            reminders: _buildNewRemindersMap(taskRef.documentID, taskName,
+                store.state.user.userId, result.reminderTime),
             metadata: TaskMetadata(
               createdBy: store.state.user.displayName,
               createdOn: DateTime.now(),
@@ -2289,7 +2325,9 @@ ThunkAction<AppState> addNewTaskWithDialog(
         var taskRef = _getTasksCollectionRef(projectId).document();
         var targetTaskListId = result.taskListId ??
             taskListId; // Use the taskListId parameter if Dialog returns a null taskListId.
-        var taskName = result.taskName.trim().isEmpty ? 'Untitled Task' : result.taskName.trim();
+        var taskName = result.taskName.trim().isEmpty
+            ? 'Untitled Task'
+            : result.taskName.trim();
 
         var task = TaskModel(
             uid: taskRef.documentID,
@@ -2302,7 +2340,8 @@ ThunkAction<AppState> addNewTaskWithDialog(
             dateAdded: DateTime.now(),
             assignedTo: result.assignedToIds,
             note: result.note,
-            reminders: _buildNewRemindersMap(taskRef.documentID, taskName, store.state.user.userId, result.reminderTime),
+            reminders: _buildNewRemindersMap(taskRef.documentID, taskName,
+                store.state.user.userId, result.reminderTime),
             metadata: TaskMetadata(
                 createdBy: store.state.user.displayName,
                 createdOn: DateTime.now()));
@@ -2323,7 +2362,8 @@ ThunkAction<AppState> addNewTaskWithDialog(
   };
 }
 
-Map<String, ReminderModel> _buildNewRemindersMap(String taskId, String taskName, String userId, DateTime reminderTime) {
+Map<String, ReminderModel> _buildNewRemindersMap(
+    String taskId, String taskName, String userId, DateTime reminderTime) {
   if (reminderTime == null) {
     return <String, ReminderModel>{};
   }
@@ -2334,7 +2374,7 @@ Map<String, ReminderModel> _buildNewRemindersMap(String taskId, String taskName,
     time: reminderTime,
     title: taskReminderTitle,
     isSeen: false,
-    userId: userId, 
+    userId: userId,
   );
 
   return <String, ReminderModel>{

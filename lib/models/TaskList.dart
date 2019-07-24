@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/ChecklistSettings.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskListSettings.dart';
+import 'package:handball_flutter/utilities/Colors/AppThemeColors.dart';
 import 'package:handball_flutter/utilities/coerceDate.dart';
 import 'package:meta/meta.dart';
 
@@ -13,6 +15,8 @@ class TaskListModel {
   DateTime dateAdded;
   TaskListSettingsModel settings;
   bool isDeleted;
+  bool hasCustomColor;
+  int customColorIndex;
 
   /*
     Update CopyWith Method Below.
@@ -24,6 +28,8 @@ class TaskListModel {
     this.taskListName = '',
     this.settings,
     this.isDeleted = false,
+    this.hasCustomColor,
+    this.customColorIndex,
     @required this.dateAdded,
   });
 
@@ -34,6 +40,8 @@ class TaskListModel {
     this.dateAdded = coerceDate(doc['created']);
     this.settings = TaskListSettingsModel.fromDocMap(doc['settings']);
     this.isDeleted = doc['isDeleted'] ?? false;
+    this.hasCustomColor = doc['hasCustomColor'] ?? false;
+    this.customColorIndex = doc['customColorIndex'] ?? 0;
   }
 
   Map<String, dynamic> toMap() {
@@ -44,6 +52,8 @@ class TaskListModel {
       'dateAdded': this.dateAdded ?? '',
       'settings': this.settings?.toMap() ?? TaskListSettingsModel().toMap(),
       'isDeleted': this.isDeleted ?? false,
+      'hasCustomColor': this.hasCustomColor,
+      'customColorIndex': this.customColorIndex,
     };
   }
 
@@ -54,6 +64,8 @@ class TaskListModel {
     DateTime dateAdded,
     TaskListSettingsModel settings,
     bool isDeleted,
+    bool hasCustomColor,
+    int customColorIndex,
   }) {
     return TaskListModel(
       uid: uid ?? this.uid,
@@ -62,7 +74,17 @@ class TaskListModel {
       dateAdded: dateAdded ?? this.dateAdded,
       settings: settings ?? this.settings,
       isDeleted: isDeleted ?? this.isDeleted,
+      hasCustomColor: hasCustomColor ?? this.hasCustomColor,
+      customColorIndex: customColorIndex ?? this.customColorIndex,
     );
+  }
+
+  Color get customColor {
+    if (hasCustomColor == true && customColorIndex < AppThemeColors.materialColors.length) {
+      return AppThemeColors.materialColors[customColorIndex];
+    }
+
+    return null;
   }
 }
 
@@ -77,7 +99,7 @@ class TaskListViewModel {
   final onSortingChange;
   final onOpenChecklistSettings;
   final onMoveToProject;
-
+  final onChooseColor;
   final onTaskListFocus;
 
   TaskListViewModel({
@@ -92,5 +114,6 @@ class TaskListViewModel {
     this.onSortingChange,
     this.onOpenChecklistSettings,
     this.onMoveToProject,
+    this.onChooseColor,
   });
 }

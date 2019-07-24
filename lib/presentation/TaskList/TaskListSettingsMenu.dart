@@ -10,6 +10,7 @@ class TaskListSettingsMenu extends StatelessWidget {
   final onOpenChecklistSettings;
   final onDelete;
   final onMoveToProject;
+  final onChooseColor;
 
   TaskListSettingsMenu({
     Key key,
@@ -20,6 +21,7 @@ class TaskListSettingsMenu extends StatelessWidget {
     this.onOpenChecklistSettings,
     this.onDelete,
     this.onMoveToProject,
+    this.onChooseColor,
   });
 
   @override
@@ -80,11 +82,21 @@ class TaskListSettingsMenu extends StatelessWidget {
               child: Text('Checklist Settings'),
               value: 'checklist settings',
             ),
+            PopupMenuItem(
+              child: Row(children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(right: 16.0),
+                    child: Icon(Icons.color_lens),
+                  ),
+                  Text('Choose Color')
+                ]),
+              value: 'choose-color'
+            ),
             if (EnableStates.of(context).state.canMoveTaskList == true)
               PopupMenuItem(
                 child: Row(children: <Widget>[
                   Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
+                    padding: const EdgeInsets.only(right: 16.0),
                     child: Icon(Icons.arrow_forward),
                   ),
                   Text('Move to project')
@@ -123,6 +135,10 @@ class TaskListSettingsMenu extends StatelessWidget {
       case 'delete list':
         onDelete();
         break;
+      
+      case 'choose-color':
+        onChooseColor();
+      break;
 
       default:
         // Sorting Options

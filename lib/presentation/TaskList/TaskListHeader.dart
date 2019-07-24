@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/presentation/TaskList/TaskListSettingsMenu.dart';
+import 'package:handball_flutter/utilities/Colors/AppThemeColors.dart';
 
 class TaskListHeader extends StatelessWidget {
   final String name;
   final TaskSorting sorting;
   final bool isChecklist;
   final bool isMenuDisabled;
+  final Color customColor;
   final onDelete;
   final onRename;
   final onAddTaskButtonPressed;
   final onSortingChange;
   final onOpenChecklistSettings;
+  final onChooseColor;
   final dynamic onMoveToProject;
 
   TaskListHeader({
@@ -20,6 +23,7 @@ class TaskListHeader extends StatelessWidget {
     this.name,
     this.isMenuDisabled,
     this.isChecklist,
+    this.customColor,
     this.sorting,
     this.onDelete,
     this.onRename,
@@ -27,6 +31,7 @@ class TaskListHeader extends StatelessWidget {
     this.onSortingChange,
     this.onOpenChecklistSettings,
     this.onMoveToProject,
+    this.onChooseColor,
   });
 
   @override
@@ -38,7 +43,7 @@ class TaskListHeader extends StatelessWidget {
         margin: EdgeInsets.symmetric(horizontal: 4),
         padding: EdgeInsets.symmetric(vertical: 4, horizontal: 0),
         decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+            color: customColor ?? Theme.of(context).colorScheme.surface,
             border: Border.all(
               color: Theme.of(context).colorScheme.onSurface,
             ),
@@ -53,6 +58,7 @@ class TaskListHeader extends StatelessWidget {
               onOpenChecklistSettings: onOpenChecklistSettings,
               sorting: sorting,
               onMoveToProject: onMoveToProject,
+              onChooseColor: onChooseColor,
             ),
             if (isChecklist == true)
               IconButton(

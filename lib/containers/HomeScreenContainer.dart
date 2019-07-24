@@ -74,9 +74,11 @@ class HomeScreenContainer extends StatelessWidget {
           : null,
       onMultiDeleteTasks: store.state.multiSelectedTasks.length > 0
           ? () => store.dispatch(multiDeleteTasks(
-              store.state.multiSelectedTasks.values.toList(), projectId, context))
+              store.state.multiSelectedTasks.values.toList(),
+              projectId,
+              context))
           : null,
-    onDebugButtonPressed: () => store.dispatch(debugButtonPressed()),
+      onDebugButtonPressed: () => store.dispatch(debugButtonPressed()),
     );
   }
 
@@ -159,7 +161,12 @@ class HomeScreenContainer extends StatelessWidget {
               taskList.data.uid,
               taskList.data.project,
               taskList.data.taskListName,
-              context)));
+              context)),
+          onChooseColor: () => store.dispatch(updateTaskListColorWithDialog(taskList.data.uid,
+          taskList.data.project,
+          taskList.data.taskListName,
+          taskList.data.hasCustomColor,
+          taskList.data.customColorIndex, context)));
     }).toList();
   }
 

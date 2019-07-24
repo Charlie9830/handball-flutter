@@ -22,7 +22,7 @@ class MaterialColorPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        Text(title),
+        Text(title ?? ''),
         Wrap(
           alignment: WrapAlignment.start,
           crossAxisAlignment: WrapCrossAlignment.center,
