@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/models/TaskList.dart';
+import 'package:handball_flutter/presentation/TaskListColorChit.dart';
 import 'package:handball_flutter/utilities/Colors/AppThemeColors.dart';
 import 'package:handball_flutter/utilities/getPositionFromGlobalKey.dart';
 
@@ -86,7 +87,7 @@ class _TaskListSelectChipState extends State<TaskListSelectChip> {
           key: Key(taskList.uid),
           value: taskList.uid,
           child: ListTile(
-            trailing: _getTaskListColorChit(taskList.customColor),
+            trailing: TaskListColorChit(color: taskList.customColor),
             title: Text(taskList.taskListName),
           ));
     }).toList();
@@ -100,27 +101,7 @@ class _TaskListSelectChipState extends State<TaskListSelectChip> {
         )));
 
     return list;
-  }
-
-  Widget _getTaskListColorChit(Color customColor) {
-    if (customColor == null) {
-      return null;
-    }
-
-    return Container(
-      alignment: Alignment.center,
-      width: 16,
-      height: 48,
-      child: Container(
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: customColor,
-        ),
-      ),
-    );
-  }
+  }  
 }
 
 class TaskListSelectChipResult {

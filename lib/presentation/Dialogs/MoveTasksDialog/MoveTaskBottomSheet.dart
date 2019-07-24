@@ -3,6 +3,7 @@ import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
+import 'package:handball_flutter/presentation/TaskListColorChit.dart';
 
 class MoveTasksBottomSheet extends StatefulWidget {
   final List<TaskListModel> taskListOptions;
@@ -44,6 +45,9 @@ class _MoveTasksBottomSheetState extends State<MoveTasksBottomSheet> {
         key: Key(taskList.uid),
         child: ListTile(
           title: Text(taskList.taskListName),
+          trailing: TaskListColorChit(
+            color: taskList.customColor,
+          ),
           onTap: () =>
               _submit(MoveTaskBottomSheetResult(taskListId: taskList.uid)),
         ),
