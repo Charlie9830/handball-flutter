@@ -26,6 +26,7 @@ class HomeScreenViewModel {
   final dynamic onRenameProject;
   final dynamic onMultiCompleteTasks;
   final dynamic onMultiDeleteTasks;
+  final dynamic onDebugButtonPressed;
 
   HomeScreenViewModel({
     this.projectId,
@@ -49,6 +50,7 @@ class HomeScreenViewModel {
     this.onRenameProject,
     this.onUndoAction,
     this.onMultiCompleteTasks,
-    this.onMultiDeleteTasks
+    this.onMultiDeleteTasks,
+    this.onDebugButtonPressed,
     });
 }

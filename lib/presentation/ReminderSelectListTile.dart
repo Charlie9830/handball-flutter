@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
+import 'package:handball_flutter/utilities/getDateTimeText.dart';
+import 'package:handball_flutter/utilities/showReminderPicker.dart';
 import 'package:intl/intl.dart';
 
 class ReminderSelectListTile extends StatelessWidget {
@@ -25,8 +27,8 @@ class ReminderSelectListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
         enabled: enabled,
-        leading: Icon(Icons.alarm),
-        title: Text(_getDateTimeText(initialDate)),
+        leading: Icon(Icons.notifications),
+        title: Text(getDateTimeText(initialDate, 'Reminder')),
         trailing: PredicateBuilder(
           predicate: () => initialDate != null && isClearable == true,
           childIfTrue: IconButton(
@@ -39,37 +41,16 @@ class ReminderSelectListTile extends StatelessWidget {
   }
 
   void handleTap(BuildContext context) async {
-    var dateResult = await showDatePicker(
+    var result = await showReminderPicker(
+      context: context,
       firstDate: firstDate,
       lastDate: lastDate,
-      context: context,
-      initialDate: initialDate ?? DateTime.now(),
+      initialDate: initialDate,
     );
 
-    if (dateResult == null) {
-      return;
-    }
-
-    var timeResult = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(hour: 12, minute: 0),
-    );
-
-    if (dateResult != null && timeResult != null) {
-      var result = dateResult.subtract(Duration(hours: dateResult.hour, minutes: dateResult.minute, seconds: dateResult.second));
-      result.add(Duration(hours: timeResult.hour, minutes: timeResult.minute));
+    if (result != null) {
       onChange(result);
     }
   }
 
-  String _getDateTimeText(DateTime date) {
-    print(date);
-    if (date == null) {
-      return hintText ?? 'Pick date';
-    }
-
-    var dateFormater = new DateFormat('EEEE MMMM d');
-    var timeFormatter = new DateFormat('jm');
-    return '${dateFormater.format(date)} at ${timeFormatter.format(date)}';
-  }
 }

@@ -70,6 +70,10 @@ class HomeScreen extends StatelessWidget {
           fontFamily: 'Ubuntu'
         )),
         actions: <Widget>[
+          IconButton(
+              icon: Icon(Icons.bug_report),
+              onPressed: viewModel.onDebugButtonPressed,
+            ),
           if (EnableStates.of(context).state.isProjectMenuEnabled)
             IconButton(
               icon: Icon(Icons.share),
@@ -87,7 +91,8 @@ class HomeScreen extends StatelessWidget {
                   viewModel.onShowCompletedTasksChanged,
               onRenameProject: viewModel.onRenameProject,
               onUndoAction: viewModel.onUndoAction,
-            )
+            ),
+            
         ],
         bottom: viewModel.showOnlySelfTasks == true
             ? PreferredSize(

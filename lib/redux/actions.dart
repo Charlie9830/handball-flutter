@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:handball_flutter/FirestoreStreamsContainer.dart';
 import 'package:handball_flutter/configValues.dart';
 import 'package:handball_flutter/enums.dart';
@@ -59,9 +60,11 @@ import 'package:handball_flutter/utilities/buildInflatedProject.dart';
 import 'package:handball_flutter/utilities/convertMemberRole.dart';
 import 'package:handball_flutter/utilities/extractListCustomSortOrder.dart';
 import 'package:handball_flutter/utilities/extractProject.dart';
+import 'package:handball_flutter/utilities/isSameTime.dart';
 import 'package:handball_flutter/utilities/listSortingHelpers.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
 import 'package:handball_flutter/utilities/truncateString.dart';
+import 'package:handball_flutter/utilities/ReminderNotificationSync/syncRemindersToDeviceNotifications.dart';
 import 'package:redux/redux.dart';
 import 'package:redux_thunk/redux_thunk.dart';
 import 'package:handball_flutter/utilities/CloudFunctionLayer.dart';
@@ -71,6 +74,8 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 final FirebaseAuth auth = FirebaseAuth.instance;
 final FirestoreStreamsContainer _firestoreStreams = FirestoreStreamsContainer();
 final CloudFunctionsLayer _cloudFunctionsLayer = CloudFunctionsLayer();
+final FlutterLocalNotificationsPlugin _notificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 StreamSubscription<List<PurchaseDetails>> _purchaseUpdateStreamSubscription;
 
 class OpenAppSettings {
@@ -379,35 +384,41 @@ Future<void> postAlertDialog(
 }
 
 ThunkAction<AppState> updateTaskReminder(DateTime newValue,
-    DateTime existingValue, String taskId, String projectId) {
+    DateTime existingValue, String taskId, String taskName, String projectId) {
   return (Store<AppState> store) async {
-    var targetMember = store.state.members[projectId].firstWhere(
-        (member) => member.userId == store.state.user.userId,
-        orElse: () => null);
-
-    if (targetMember == null) {
+    if (isSameTime(newValue, existingValue)) {
       return;
     }
 
-    var newTaskReminders =
-        Map<String, ReminderModel>.from(targetMember.taskReminders);
+    var userId = store.state.user.userId;
+    
+    // User has removed Reminder.
     if (newValue == null) {
-      newTaskReminders.remove(taskId);
+      var ref = _getTasksCollectionRef(projectId).document(taskId);
+
+      try {
+        await ref.updateData({'reminders.$userId': FieldValue.delete()});
+      } catch (error) {
+        throw error;
+      }
     } else {
-      newTaskReminders[taskId] =
-          ReminderModel(originTaskId: taskId, isSeen: false, time: newValue);
-    }
+      // User has updated Reminder Time.
+      var reminder = ReminderModel(
+        originTaskId: taskId,
+        time: newValue,
+        title: taskReminderTitle,
+        message: truncateString(taskName, taskReminderMessageLength),
+        userId: userId,
+        isSeen: false,
+      );
 
-    var ref =
-        _getMembersCollectionRef(projectId).document(store.state.user.userId);
+      var ref = _getTasksCollectionRef(projectId).document(taskId);
 
-    try {
-      ref.updateData({
-        'taskReminders':
-            newTaskReminders.map((key, value) => MapEntry(key, value.toMap()))
-      });
-    } catch (error) {
-      throw error;
+      try {
+        ref.updateData({'reminders.$userId': reminder.toMap()});
+      } catch (error) {
+        throw error;
+      }
     }
   };
 }
@@ -451,9 +462,30 @@ ThunkAction<AppState> updateProjectName(
   };
 }
 
+Future<void> _printPendingNotifications() async {
+  var pendingNotifications =
+      await _notificationsPlugin.pendingNotificationRequests();
+
+  print('');
+  print(' ========== PENDING NOTIFICATIONS ==========');
+  for (var notification in pendingNotifications) {
+    print('${notification.id}    :    ${notification.body}     :     Payload ${notification.payload}');
+  }
+  print('==========    ============');
+  print('');
+}
+
 ThunkAction<AppState> initializeApp() {
   return (Store<AppState> store) async {
     homeScreenScaffoldKey?.currentState?.openDrawer();
+
+    // Notifications.
+    await initializeLocalNotifications(store);
+
+    _notificationsPlugin.cancelAll();
+
+    // Debugging.
+    _printPendingNotifications();
 
     // Firestore settings.
     // TODO: Is this even doing anything?
@@ -485,12 +517,72 @@ ThunkAction<AppState> initializeApp() {
   };
 }
 
+ThunkAction<AppState> debugButtonPressed() {
+  return (Store<AppState> store) async {
+    _printPendingNotifications();
+  };
+}
+
+Future initializeLocalNotifications(Store<AppState> store) {
+  var initializationSettingsAndroid =
+      new AndroidInitializationSettings('handball_notification_icon');
+
+  var initializationSettingsIOS = new IOSInitializationSettings(
+      onDidReceiveLocalNotification:
+          iosOnDidReceiveLocalNotificationWhileForegrounded);
+
+  var initializationSettings = new InitializationSettings(
+      initializationSettingsAndroid, initializationSettingsIOS);
+
+  return _notificationsPlugin.initialize(initializationSettings,
+      onSelectNotification: (payload) => onSelectNotification(payload, store));
+}
+
+Future onSelectNotification(String payload, Store<AppState> store) async {
+  if (payload == null) {
+    return Future.value();
+  }
+
+  var reminder = ReminderModel.fromJSON(payload);
+  var taskId = reminder.originTaskId;
+
+  var task = store.state.tasksById[taskId];
+
+  if (task == null || task.isDeleted == true) {
+    // Show Task Deleted.
+  }
+
+  else {
+    clearTaskReminder(taskId, task.project, store.state.user.userId);
+    store.dispatch(SelectProject(task.project));
+    store.dispatch(OpenTaskInspector(taskEntity: task));
+  }
+
+  return Future.value();
+}
+
+void clearTaskReminder(String taskId, String projectId, String userId) async {
+  var ref = _getTasksCollectionRef(projectId).document(taskId);
+
+  try {
+    await ref.updateData({'reminders.$userId' : FieldValue.delete()});
+  } catch (error) {
+    throw error;
+  }
+}
+
+Future iosOnDidReceiveLocalNotificationWhileForegrounded(
+    int id, String title, String body, String payload) {
+  return Future.value();
+}
+
 void handlePurchaseUpdates(List<PurchaseDetails> purchases) {}
 
 void onAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
   if (user == null) {
     store.dispatch(SignOut());
     _firestoreStreams.cancelAll();
+    _notificationsPlugin.cancelAll();
     return;
   }
 
@@ -2159,19 +2251,20 @@ ThunkAction<AppState> addNewTaskWithDialog(
 
         // New Task
         var taskRef = _getTasksCollectionRef(projectId).document();
+        var taskName = result.taskName.trim().isEmpty ? 'Untitled Task' : result.taskName.trim();
+
         var task = TaskModel(
             uid: taskRef.documentID,
             taskList: newTaskList.uid,
             project: projectId,
             userId: store.state.user.userId,
-            taskName: result.taskName.trim().isEmpty
-                ? 'Untitled Task'
-                : result.taskName.trim(),
+            taskName: taskName,
             dueDate: result.selectedDueDate,
             isHighPriority: result.isHighPriority,
             dateAdded: DateTime.now(),
             assignedTo: result.assignedToIds,
             note: result.note,
+            reminders: _buildNewRemindersMap(taskRef.documentID, taskName, store.state.user.userId, result.reminderTime),
             metadata: TaskMetadata(
               createdBy: store.state.user.displayName,
               createdOn: DateTime.now(),
@@ -2196,20 +2289,20 @@ ThunkAction<AppState> addNewTaskWithDialog(
         var taskRef = _getTasksCollectionRef(projectId).document();
         var targetTaskListId = result.taskListId ??
             taskListId; // Use the taskListId parameter if Dialog returns a null taskListId.
+        var taskName = result.taskName.trim().isEmpty ? 'Untitled Task' : result.taskName.trim();
 
         var task = TaskModel(
             uid: taskRef.documentID,
             taskList: targetTaskListId,
             userId: store.state.user.userId,
             project: projectId,
-            taskName: result.taskName.trim().isEmpty
-                ? 'Untitled Task'
-                : result.taskName.trim(),
+            taskName: taskName,
             dueDate: result.selectedDueDate,
             isHighPriority: result.isHighPriority,
             dateAdded: DateTime.now(),
             assignedTo: result.assignedToIds,
             note: result.note,
+            reminders: _buildNewRemindersMap(taskRef.documentID, taskName, store.state.user.userId, result.reminderTime),
             metadata: TaskMetadata(
                 createdBy: store.state.user.displayName,
                 createdOn: DateTime.now()));
@@ -2227,6 +2320,25 @@ ThunkAction<AppState> addNewTaskWithDialog(
         }
       }
     }
+  };
+}
+
+Map<String, ReminderModel> _buildNewRemindersMap(String taskId, String taskName, String userId, DateTime reminderTime) {
+  if (reminderTime == null) {
+    return <String, ReminderModel>{};
+  }
+
+  var reminder = ReminderModel(
+    message: truncateString(taskName, taskReminderMessageLength),
+    originTaskId: taskId,
+    time: reminderTime,
+    title: taskReminderTitle,
+    isSeen: false,
+    userId: userId, 
+  );
+
+  return <String, ReminderModel>{
+    userId: reminder,
   };
 }
 
@@ -2552,6 +2664,15 @@ void _handleTasksSnapshot(TasksSnapshotType type, QuerySnapshot snapshot,
       tasks.add(TaskModel.fromDoc(doc, store.state.user.userId));
     }
   });
+
+  // Reminder Notification Sync
+  if (type == TasksSnapshotType.incompleted) {
+    syncRemindersToDeviceNotifications(
+        _notificationsPlugin,
+        snapshot.documentChanges,
+        store.state.tasksById,
+        store.state.user.userId);
+  }
 
   if (store.state.selectedProjectId == originProjectId) {
     // Animation.
@@ -2897,14 +3018,14 @@ bool _didMoveTaskList(
 void _driveTaskAdditionAnimations(
     List<TaskAnimationUpdate> taskAnimationUpdates) {
   /*
-    WHAT THE F**K?
-    AnimatedLists and their component removeItem() and insertItem() methods are designed to really only deal with single
-    mutations at a time. When you try and make multiple mutations in one pass, you have to make sure that the index is
-    updated for each following item, otherwise the AnimatedList will try to start removing items at incorrect indexes,
-    throwing an out of range index exception. The easiest way to do this is to Build the doc changes into a List of
-    TaskAnimationUpdate objects, then sort them by TaskList, then index in descending order. That way, we don't have to
-    adjust any following indexes as we are mutating the AnimatedList.
-  */
+          WHAT THE F**K?
+          AnimatedLists and their component removeItem() and insertItem() methods are designed to really only deal with single
+          mutations at a time. When you try and make multiple mutations in one pass, you have to make sure that the index is
+          updated for each following item, otherwise the AnimatedList will try to start removing items at incorrect indexes,
+          throwing an out of range index exception. The easiest way to do this is to Build the doc changes into a List of
+          TaskAnimationUpdate objects, then sort them by TaskList, then index in descending order. That way, we don't have to
+          adjust any following indexes as we are mutating the AnimatedList.
+        */
 
   for (var update in taskAnimationUpdates) {
     var index = update.index;
@@ -2922,14 +3043,14 @@ void _driveTaskAdditionAnimations(
 void _driveTaskRemovalAnimations(
     List<TaskAnimationUpdate> taskRemovalAnimationUpdates) {
   /*
-    WHAT THE F**K?
-    AnimatedLists and their component removeItem() and insertItem() methods are designed to really only deal with single
-    mutations at a time. When you try and make multiple mutations in one pass, you have to make sure that the index is
-    updated for each following item, otherwise the AnimatedList will try to start removing items at incorrect indexes,
-    throwing an out of range index exception. The easiest way to do this is to Build the doc changes into a List of
-    TaskAnimationUpdate objects, then sort them by TaskList, then index in descending order. That way, we don't have to
-    adjust any following indexes as we are mutating the AnimatedList.
-  */
+          WHAT THE F**K?
+          AnimatedLists and their component removeItem() and insertItem() methods are designed to really only deal with single
+          mutations at a time. When you try and make multiple mutations in one pass, you have to make sure that the index is
+          updated for each following item, otherwise the AnimatedList will try to start removing items at incorrect indexes,
+          throwing an out of range index exception. The easiest way to do this is to Build the doc changes into a List of
+          TaskAnimationUpdate objects, then sort them by TaskList, then index in descending order. That way, we don't have to
+          adjust any following indexes as we are mutating the AnimatedList.
+        */
 
   for (var update in taskRemovalAnimationUpdates) {
     var index = update.index;

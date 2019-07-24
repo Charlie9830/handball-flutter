@@ -26,7 +26,7 @@ class TaskModel {
   TaskMetadata metadata;
   List<String> assignedTo;
   bool isDeleted;
-  Optional<ReminderModel> reminder = const Optional.absent(); // Stored on MemberModel.
+  Map<String, ReminderModel> reminders;
   /* 
     UPDATE THE copyWith METHOD BELOW
   */
@@ -47,7 +47,7 @@ class TaskModel {
     this.unseenTaskCommentMembers,
     this.assignedTo,
     this.isDeleted = false,
-    this.reminder = const Optional.absent(),
+    this.reminders,
   });
 
   TaskModel.fromDoc(DocumentSnapshot doc, String userId) {
@@ -68,6 +68,7 @@ class TaskModel {
     this.metadata = TaskMetadata.fromMap(doc['metadata']);
     this.assignedTo = _coerceAssignedTo(doc['assignedTo']);
     this.isDeleted = doc['isDeleted'] ?? false;
+    this.reminders = _coerceReminders(doc['reminders']);
   }
 
   Map<String, dynamic> toMap() {
@@ -90,7 +91,12 @@ class TaskModel {
       'metadata': this.metadata?.toMap() ?? <dynamic, dynamic>{},
       'assignedTo': this.assignedTo ?? <String>[],
       'isDeleted': this.isDeleted,
+      'reminders': _convertRemindersToMap(),
     };
+  }
+
+  ReminderModel get ownReminder {
+    return this.reminders[this.userId];
   }
 
   bool get hasUnseenComments {
@@ -121,28 +127,46 @@ class TaskModel {
     Map<String, String> unseenTaskCommentMembers,
     TaskMetadata metadata,
     bool isDeleted,
-    Optional<ReminderModel> reminder,
+    Map<String, ReminderModel> reminders,
   }) {
     return TaskModel(
-        uid: uid ?? this.uid,
-        userId: userId ?? this.userId,
-        project: project ?? this.project,
-        taskList: taskList ?? this.taskList,
-        taskName: taskName ?? this.taskName,
-        dueDate: dueDate ?? this.dueDate,
-        dateAdded: dateAdded ?? this.dateAdded,
-        isComplete: isComplete ?? this.isComplete,
-        isHighPriority: isHighPriority ?? this.isHighPriority,
-        note: note ?? this.note,
-        assignedTo: assignedTo ?? this.assignedTo,
-        commentPreview: commentPreview ?? this.commentPreview,
-        unseenTaskCommentMembers:
-            unseenTaskCommentMembers ?? this.unseenTaskCommentMembers,
-        metadata: metadata ?? this.metadata,
-        isDeleted: isDeleted ?? this.isDeleted,
-        reminder: reminder == null
-            ? this.reminder
-            : Optional.fromNullable(reminder.orNull));
+      uid: uid ?? this.uid,
+      userId: userId ?? this.userId,
+      project: project ?? this.project,
+      taskList: taskList ?? this.taskList,
+      taskName: taskName ?? this.taskName,
+      dueDate: dueDate ?? this.dueDate,
+      dateAdded: dateAdded ?? this.dateAdded,
+      isComplete: isComplete ?? this.isComplete,
+      isHighPriority: isHighPriority ?? this.isHighPriority,
+      note: note ?? this.note,
+      assignedTo: assignedTo ?? this.assignedTo,
+      commentPreview: commentPreview ?? this.commentPreview,
+      unseenTaskCommentMembers:
+          unseenTaskCommentMembers ?? this.unseenTaskCommentMembers,
+      metadata: metadata ?? this.metadata,
+      isDeleted: isDeleted ?? this.isDeleted,
+      reminders: reminders ?? this.reminders,
+    );
+  }
+
+  Map<dynamic, dynamic> _convertRemindersToMap() {
+    if (this.reminders == null) {
+      return {};
+    }
+
+    return this.reminders.map((key, value) => MapEntry(key, value.toMap()));
+  }
+
+  Map<String, ReminderModel> _coerceReminders(Map<dynamic, dynamic> map) {
+    if (map == null) {
+      return <String,ReminderModel>{};
+    }
+
+    return map.map<String, ReminderModel>((key, value) {
+      return MapEntry<String, ReminderModel>( key as String, ReminderModel.fromMap(value));
+    });
+
   }
 
   List<Assignment> getAssignments(

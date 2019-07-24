@@ -28,7 +28,8 @@ class TaskInspectorScreenContainer extends StatelessWidget {
     return new TaskInspectorScreenViewModel(
         onClose: () => store.dispatch(CloseTaskInspector()),
         taskEntity: selectedTaskEntity,
-        isAssignmentInputVisible: _isAssignmentInputVisible(store, selectedTaskEntity),
+        isAssignmentInputVisible:
+            _isAssignmentInputVisible(store, selectedTaskEntity),
         assignments:
             selectedTaskEntity.getAssignments(store.state.memberLookup),
         assignmentOptions: _getAssignmentOptions(
@@ -55,20 +56,15 @@ class TaskInspectorScreenContainer extends StatelessWidget {
             selectedTaskEntity.uid,
             selectedTaskEntity.project,
             selectedTaskEntity.metadata)),
-        onOpenTaskCommentScreen: () => store.dispatch(openTaskCommentsScreen(
-            selectedTaskEntity.project, selectedTaskEntity.uid)),
+        onOpenTaskCommentScreen: () => store
+            .dispatch(openTaskCommentsScreen(selectedTaskEntity.project, selectedTaskEntity.uid)),
         commentPreviewViewModels: _buildCommentPreviewViewModels(selectedTaskEntity?.commentPreview, store.state.user.userId),
-        onAssignmentsChange: (newAssignmentIds) => store.dispatch(updateTaskAssignments(
-          newAssignmentIds,
-          selectedTaskEntity.assignedTo, 
-          selectedTaskEntity.uid, 
-          selectedTaskEntity.project,
-          selectedTaskEntity.metadata
-          )),
-          onReminderChange: (newValue) => store.dispatch(updateTaskReminder(newValue, selectedTaskEntity.reminder.orNull?.time, selectedTaskEntity.uid, selectedTaskEntity.project)));
+        onAssignmentsChange: (newAssignmentIds) => store.dispatch(updateTaskAssignments(newAssignmentIds, selectedTaskEntity.assignedTo, selectedTaskEntity.uid, selectedTaskEntity.project, selectedTaskEntity.metadata)),
+        onReminderChange: (newValue) => store.dispatch(updateTaskReminder(newValue, selectedTaskEntity.ownReminder?.time, selectedTaskEntity.uid, selectedTaskEntity.taskName, selectedTaskEntity.project)));
   }
 
-  bool _isAssignmentInputVisible(Store<AppState> store, TaskModel selectedTaskEntity) {
+  bool _isAssignmentInputVisible(
+      Store<AppState> store, TaskModel selectedTaskEntity) {
     var members = store.state.members[selectedTaskEntity.project];
 
     return members != null && members.length > 1;

@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:handball_flutter/enums.dart';
-import 'package:handball_flutter/models/Reminder.dart';
 import 'package:handball_flutter/utilities/coerceStringList.dart';
 import 'package:handball_flutter/utilities/parseMemberRole.dart';
 
@@ -11,7 +10,6 @@ class MemberModel {
   MemberStatus status;
   MemberRole role;
   List<String> listCustomSortOrder;
-  Map<String, ReminderModel> taskReminders;
 
   MemberModel({
     this.userId,
@@ -20,7 +18,6 @@ class MemberModel {
     this.status = MemberStatus.pending,
     this.role = MemberRole.member,
     this.listCustomSortOrder,
-    this.taskReminders,
   });
 
   MemberModel.fromDoc(DocumentSnapshot doc) {
@@ -30,7 +27,6 @@ class MemberModel {
     this.status = _parseStatus(doc.data['status']);
     this.role = parseMemberRole(doc.data['role']);
     this.listCustomSortOrder = coerceStringList(doc.data['listCustomSortOrder']) ?? <String>[];
-    this.taskReminders = _coerceTaskReminders(doc.data['taskReminders']);
   }
 
   Map<String, dynamic> toMap() {
@@ -41,17 +37,8 @@ class MemberModel {
       'status': _convertStatusToString(this.status),
       'role': _convertRoleToString(this.role),
       'listCustomSortOrder': this.listCustomSortOrder ?? <String>[],
-      'taskReminders': this.taskReminders.map((key, value) => MapEntry(key, value.toMap()))
     };
   }
-
-  Map<String, ReminderModel> _coerceTaskReminders(Map<dynamic, dynamic> map) {
-    if (map == null || map.isEmpty) {
-      return <String, ReminderModel>{};
-    }
-
-    return map.map( (key, value) => MapEntry(key, ReminderModel.fromMap(value)));
-  }  
 
   String _convertStatusToString(MemberStatus status) {
     switch(status) {

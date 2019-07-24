@@ -48,7 +48,7 @@ class TaskPropertiesCard extends StatelessWidget {
           ),
             ReminderSelectListTile(
               enabled: enableReminder,
-              firstDate: DateTime.now(),
+              firstDate: DateTime.now().subtract(Duration(days: 1)),
               lastDate: DateTime.now().add(Duration(days: 360)),
               hintText: 'Set a reminder',
               isClearable: true,

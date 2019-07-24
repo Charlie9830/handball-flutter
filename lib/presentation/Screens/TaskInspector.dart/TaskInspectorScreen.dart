@@ -63,7 +63,7 @@ class TaskInspectorScreen extends StatelessWidget {
                   TaskPropertiesCard(
                     dueDate: viewModel.taskEntity.dueDate,
                     onDueDateChange: viewModel.onDueDateChange,
-                    reminder: viewModel.taskEntity.reminder.orNull?.time,
+                    reminder: viewModel.taskEntity.ownReminder?.time,
                     enableReminder: viewModel.taskEntity.isComplete == false,
                     onReminderChange: viewModel.onReminderChange,
                     note: viewModel.taskEntity.note,

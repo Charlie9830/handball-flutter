@@ -9,6 +9,7 @@ import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AssignmentSh
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/DueDateShorcutChip.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/NoteShortcutChip.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/PriorityShortcutChip.dart';
+import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/ReminderShortcutChip.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/TaskListSelectChip.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/redux/actions.dart';
@@ -22,6 +23,7 @@ class AddTaskDialog extends StatefulWidget {
   Map<String, MemberModel> memberLookup;
   bool isProjectShared;
   bool allowTaskListChange;
+  DateTime reminderTime;
 
   AddTaskDialog(
       {this.taskLists,
@@ -30,7 +32,8 @@ class AddTaskDialog extends StatefulWidget {
       this.allowTaskListChange,
       this.assignmentOptions,
       this.isProjectShared,
-      this.memberLookup});
+      this.memberLookup,
+      this.reminderTime});
 
   @override
   _AddTaskDialog createState() => _AddTaskDialog();
@@ -47,6 +50,7 @@ class _AddTaskDialog extends State<AddTaskDialog> {
   Map<String, Assignment> assignmentMap;
   TaskArgumentParser _argumentParser;
   String _note;
+  DateTime _reminderTime;
 
   @override
   void initState() {
@@ -129,7 +133,8 @@ class _AddTaskDialog extends State<AddTaskDialog> {
                                           () => _isHighPriority = newValue)),
                                   if (widget.isProjectShared == true)
                                     AssignmentShortcutChip(
-                                      padding: EdgeInsets.only(left: 4, right: 4),
+                                      padding:
+                                          EdgeInsets.only(left: 4, right: 4),
                                       assignmentOptions:
                                           widget.assignmentOptions,
                                       assignments: assignments,
@@ -137,33 +142,37 @@ class _AddTaskDialog extends State<AddTaskDialog> {
                                           _handleAssignmentsChange(
                                               newValue, context),
                                     ),
-                                    NoteShortcutChip(
-                                      padding: EdgeInsets.only(left: 4, right: 4),
-                                      note: _note,
-                                      onChanged:  (newValue) => setState(() => _note = newValue),
-                                    )
+                                  NoteShortcutChip(
+                                    padding: EdgeInsets.only(left: 4, right: 4),
+                                    note: _note,
+                                    onChanged: (newValue) =>
+                                        setState(() => _note = newValue),
+                                  ),
+                                  ReminderShortcutChip(
+                                    padding: EdgeInsets.only(left: 4, right: 4),
+                                    reminderTime: _reminderTime,
+                                    onChanged: (newValue) => setState(
+                                        () => _reminderTime = newValue),
+                                  )
                                 ]),
                           ),
                           Row(
                             children: <Widget>[
                               Expanded(
                                 child: TextField(
-                                  controller: _controller,
-                                  autofocus: true,
-                                  focusNode: _textInputFocusNode,
-                                  keyboardType: TextInputType.text,
-                                  maxLines: null,
-                                  onChanged: _handleTaskNameChange,
-                                  keyboardAppearance:
-                                      Theme.of(context).brightness,
-                                  onEditingComplete: () =>
-                                      _submit(_controller.text, context),
-                                  textCapitalization:
-                                      TextCapitalization.sentences,
-                                  style: TextStyle(
-                                    fontFamily: 'Ubuntu'
-                                  )
-                                ),
+                                    controller: _controller,
+                                    autofocus: true,
+                                    focusNode: _textInputFocusNode,
+                                    keyboardType: TextInputType.text,
+                                    maxLines: null,
+                                    onChanged: _handleTaskNameChange,
+                                    keyboardAppearance:
+                                        Theme.of(context).brightness,
+                                    onEditingComplete: () =>
+                                        _submit(_controller.text, context),
+                                    textCapitalization:
+                                        TextCapitalization.sentences,
+                                    style: TextStyle(fontFamily: 'Ubuntu')),
                               ),
                               IconButton(
                                 icon: Icon(Icons.add),
@@ -215,7 +224,7 @@ class _AddTaskDialog extends State<AddTaskDialog> {
   }
 
   List<Assignment> _mapNewAssignments(List<String> assignmentIds) {
-       return assignmentIds.map((userId) {
+    return assignmentIds.map((userId) {
       return Assignment(
         userId: userId,
         displayName: widget.memberLookup[userId]?.displayName ?? '',
@@ -274,6 +283,7 @@ class _AddTaskDialog extends State<AddTaskDialog> {
       taskName: TaskArgumentParser.trimArguments(taskName),
       assignedToIds: assignments.map((item) => item.userId).toList(),
       note: _note,
+      reminderTime: _reminderTime,
     );
   }
 
@@ -347,6 +357,7 @@ class AddTaskDialogResult {
   List<String> assignedToIds;
   bool isHighPriority;
   String note;
+  DateTime reminderTime;
 
   AddTaskDialogResult({
     this.result,
@@ -358,5 +369,6 @@ class AddTaskDialogResult {
     this.selectedDueDate,
     this.assignedToIds,
     this.note,
+    this.reminderTime,
   });
 }
