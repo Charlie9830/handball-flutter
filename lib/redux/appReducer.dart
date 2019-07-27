@@ -55,8 +55,8 @@ AppState appReducer(AppState state, dynamic action) {
             showSelectAProjectHint: action.uid == '-1' ||
                 action.uid == null && state.projects.length > 0,
             showNoProjectsHint: state.projects.length == 0,
-            showNoTaskListsHint: projectTaskLists.length == 0,
-            showSingleListNoTasksHint:
+            showNoTaskListsHint: projectTaskLists == null || projectTaskLists.length == 0,
+            showSingleListNoTasksHint: projectTaskLists != null &&
                 projectTaskLists.length == 1 && projectTasks.length == 0));
   }
 
@@ -334,7 +334,7 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is SignOut) {
     return state.copyWith(
-        user: User(
+        user: UserModel(
           displayName: '',
           email: '',
           userId: '',

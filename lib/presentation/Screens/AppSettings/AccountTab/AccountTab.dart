@@ -8,7 +8,7 @@ import 'package:handball_flutter/presentation/Screens/AppSettings/AccountTab/Log
 import 'package:handball_flutter/presentation/Screens/AppSettings/AccountTab/QuickAccountChanger.dart';
 
 class AccountTab extends StatelessWidget {
-  final User user;
+  final UserModel user;
   final AccountState accountState;
   final dynamic onSignIn;
   final dynamic onSignOut;

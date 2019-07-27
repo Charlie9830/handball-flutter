@@ -21,7 +21,7 @@ class AppState {
   final InflatedProjectModel inflatedProject;
   final String selectedTaskId;
   final TaskModel selectedTaskEntity;
-  final User user;
+  final UserModel user;
   final Map<String, String> lastUsedTaskLists;
   final List<TaskModel> tasks;
   final Map<String, TaskModel> tasksById;
@@ -102,7 +102,7 @@ class AppState {
     String selectedProjectId,
     Optional<ProjectModel> projectShareMenuEntity,
     Optional<TaskModel> selectedTaskEntity,
-    User user,
+    UserModel user,
     List<TaskModel> tasks,
     Map<String, List<TaskModel>> tasksByProject,
     List<TaskListModel> taskLists,

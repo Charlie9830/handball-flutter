@@ -52,6 +52,7 @@ class _UpgradeToProDialogState extends State<UpgradeToProDialog> {
   }
 
   void _handlePurchase() async {
+    // TODO: Make sure you aren't doing something stupid with the applicationUserName parameter below. Read the Intellisense entry on it.
     PurchaseParam purchaseParam = PurchaseParam(productDetails: product, applicationUserName: widget.viewModel.userId);
 
     InAppPurchaseConnection.instance.buyNonConsumable(purchaseParam: purchaseParam);

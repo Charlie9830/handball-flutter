@@ -78,27 +78,16 @@ _executeTaskListDelete(DeleteTaskListUndoActionModel undoAction) async {
 }
 
 _executeProjectDelete(DeleteProjectUndoActionModel undoAction) async {
-  var projectId = undoAction.projectId;
-  var userId = undoAction.userId;
-  var allMemberIds = undoAction.allMemberIds;
-  var otherMemberIds = undoAction.otherMemberIds;
+  // A cloud Function will kick in and delete the Members and remove RemoteProjectIds from other users collections.
+
   var taskListIds = undoAction.taskListIds;
   var taskIds = undoAction.taskIds;
   var tasksPath = undoAction.tasksPath;
   var taskListsPath = undoAction.taskListsPath;
-  var membersPath = undoAction.membersPath;
   var projectPath = undoAction.projectPath;
   var projectIdPath = undoAction.projectIdPath;
 
   var batch = Firestore.instance.batch();
-  bool isOnlySharedWithSelf =
-      allMemberIds.length == 1 && allMemberIds[0] == userId;
-
-  if (isOnlySharedWithSelf) {
-    // Project not shared with anyone else. It is safe to remove the user from the Members collection.
-    // TODO: Deleting this first, does that cause Firebase Security rules to kick in?
-    batch.delete(Firestore.instance.collection(membersPath).document(userId));
-  }
 
   // Build Tasks into Batch
   for (var id in taskIds) {
@@ -114,15 +103,6 @@ _executeProjectDelete(DeleteProjectUndoActionModel undoAction) async {
   batch.delete(Firestore.instance.document(projectIdPath));
 
   try {
-    if (!isOnlySharedWithSelf) {
-      // Remove for other Users.
-      // var cloudFunctionRequests = otherMemberIds.map((id) =>
-      //     _cloudFunctionsLayer.kickUserFromProject(
-      //         userId: id, projectId: projectId));
-      // await Future.wait(cloudFunctionRequests);
-
-      // TODO: Rework above to use a CleanupRequest so that it can still work even when offline.
-    }
     await batch.commit();
     return;
   } catch (error) {
@@ -135,7 +115,8 @@ _executeMultiDeleteTasks(MultiDeleteTasksUndoActionModel undoAction) async {
     return;
   }
 
-  var refs = undoAction.taskRefPaths.map((path) => Firestore.instance.document(path));
+  var refs =
+      undoAction.taskRefPaths.map((path) => Firestore.instance.document(path));
   var batch = Firestore.instance.batch();
 
   for (var ref in refs) {
@@ -144,7 +125,7 @@ _executeMultiDeleteTasks(MultiDeleteTasksUndoActionModel undoAction) async {
 
   try {
     await batch.commit();
-  } catch(error) {
+  } catch (error) {
     throw error;
   }
 }

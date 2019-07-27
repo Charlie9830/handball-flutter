@@ -231,7 +231,7 @@ class SetAccountState {
 class SignOut {}
 
 class SignIn {
-  final User user;
+  final UserModel user;
 
   SignIn({this.user});
 }
@@ -496,8 +496,8 @@ ThunkAction<AppState> initializeApp() {
     // In App Purchases.
     final Stream purchaseUpdates =
         InAppPurchaseConnection.instance.purchaseUpdatedStream;
-    _purchaseUpdateStreamSubscription =
-        purchaseUpdates.listen((purchases) => handlePurchaseUpdates(purchases));
+    _purchaseUpdateStreamSubscription = purchaseUpdates
+        .listen((purchases) => handlePurchaseUpdates(purchases, store));
 
     // Auth Listener
     auth.onAuthStateChanged.listen((user) => onAuthStateChanged(store, user));
@@ -576,7 +576,29 @@ Future iosOnDidReceiveLocalNotificationWhileForegrounded(
   return Future.value();
 }
 
-void handlePurchaseUpdates(List<PurchaseDetails> purchases) {}
+void handlePurchaseUpdates(
+    List<PurchaseDetails> purchases, Store<AppState> store) async {
+  var purchase = purchases.last;
+
+  if (purchase.status == PurchaseStatus.purchased) {
+    var ref = Firestore.instance
+        .collection('users')
+        .document(store.state.user.userId);
+
+    try {
+      await ref.updateData({
+        'isPro': true,
+        'playPurchaseId': purchase.purchaseID,
+        'playPurchaseDate': purchase.transactionDate,
+        'playProductId': purchase.productID,
+      });
+
+      // TODO: Notify the user that they have sucessfully upgraded. Or Handle an error if this fails to complete.
+    } catch (error) {
+      throw error;
+    }
+  }
+}
 
 void onAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
   if (user == null) {
@@ -587,13 +609,30 @@ void onAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
   }
 
   store.dispatch(SignIn(
-      user: new User(
+      user: new UserModel(
           isLoggedIn: true,
           displayName: user.displayName,
           userId: user.uid,
           email: user.email)));
 
   subscribeToDatabase(store, user.uid);
+  
+  // TODO: Sort this code out below. You are trying to extract the User document. But if it is the users first time Logging in. It won't exist yet.
+  // We could use that to detect first Account Log in and activation.
+  // But perhaps it would be better to handle this differently. As storage pressure could cause Firestore to drop the user document from it's cache, which would make the 
+  // app think its a first time log in if the user is offline. So perhaps we should store on device if the user was last a Pro or not, and honor that until we can make a seperate
+  // call to check their status. Don't store their purchase IDs though.
+
+  // var userDoc =
+  //     await Firestore.instance.collection('users').document(user.uid).get();
+  // if (userDoc.exists) {
+  //   store.dispatch(SignIn(user: UserModel.fromDoc(userDoc, true)));
+
+  //   subscribeToDatabase(store, user.uid);
+  // } else {
+  //   // TODO: Handle Log in error, userDoc did not exist. User Could be a new User.
+  //   print("Could not find User");
+  // }
 }
 
 void subscribeToDatabase(Store<AppState> store, String userId) {
@@ -1132,13 +1171,7 @@ ThunkAction<AppState> leaveSharedProject(String projectId, String projectName,
 void _deleteSharedProject(String projectId, String projectName,
     Store<AppState> store, BuildContext context) async {
   var members = store.state.members[projectId];
-  if (members == null) {
-    // Not a shared project.
-    await _deleteProject(projectId, projectName, store);
-    return;
-  }
-
-  if (_canDeleteSharedProject(store.state.user.userId, members) == false) {
+  if (_canDeleteProject(store.state.user.userId, members) == false) {
     // User does not have sufficent permissions to Delete Project. Inform and bail out.
     await postAlertDialog(
         'Insufficent permissions',
@@ -1148,16 +1181,16 @@ void _deleteSharedProject(String projectId, String projectName,
     return;
   }
 
-  try {
-    await _cloudFunctionsLayer.removeRemoteProject(projectId: projectId);
-    store.dispatch(SelectProject('-1'));
-    Navigator.of(context).popUntil((route) => route.isFirst);
-  } catch (error) {
-    throw error;
-  }
+  store.dispatch(SelectProject('-1'));
+  Navigator.of(context).popUntil((route) => route.isFirst);
+  await _deleteProject(projectId, projectName, store);
 }
 
-bool _canDeleteSharedProject(String userId, List<MemberModel> members) {
+bool _canDeleteProject(String userId, List<MemberModel> members) {
+  if (members.length == 0) {
+    return true;
+  }
+
   var selfMember =
       members.firstWhere((item) => item.userId == userId, orElse: () => null);
 
@@ -1606,22 +1639,16 @@ ThunkAction<AppState> deleteProjectWithDialog(
 Future<void> _deleteProject(
     String projectId, String projectName, Store<AppState> store) async {
   var userId = store.state.user.userId;
-  var allMemberIds =
-      _getProjectRelatedMemberIds(projectId, store.state.members);
-  var otherMemberIds = allMemberIds.where((id) => id != userId).toList();
   var taskIds = _getProjectRelatedTaskIds(projectId, store.state.tasks);
   var taskListIds =
-      _getProjectRelatedTaskListIds(projectId, store.state.taskLists);
+      _getProjectRelatedTaskListIds(projectId, store.state.taskListsByProject);
+
+      print(taskListIds);
 
   pushUndoAction(
       DeleteProjectUndoActionModel(
-        projectId: projectId,
-        userId: userId,
-        allMemberIds: allMemberIds.toList(),
-        otherMemberIds: otherMemberIds.toList(),
         taskIds: taskIds.toList(),
         taskListIds: taskListIds.toList(),
-        membersPath: _getMembersCollectionRef(projectId).path,
         taskListsPath: _getTaskListsCollectionRef(projectId).path,
         tasksPath: _getTasksCollectionRef(projectId).path,
         projectIdPath:
@@ -1776,11 +1803,15 @@ Iterable<String> _getProjectRelatedTaskIds(
       .map((task) => task.uid);
 }
 
-Iterable<String> _getProjectRelatedTaskListIds(
-    String projectId, List<TaskListModel> taskLists) {
-  return taskLists
-      .where((list) => list.project == projectId)
-      .map((list) => list.uid);
+List<String> _getProjectRelatedTaskListIds(
+    String projectId, Map<String, List<TaskListModel>> taskListsByProject) {
+      if (taskListsByProject.containsKey(projectId) && taskListsByProject[projectId] != null) {
+        return taskListsByProject[projectId].map((list) => list.uid).toList();
+      }
+
+      else {
+        return <String>[];
+      }
 }
 
 ThunkAction<AppState> deleteTask(

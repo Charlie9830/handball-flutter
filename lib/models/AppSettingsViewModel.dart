@@ -3,7 +3,7 @@ import 'package:handball_flutter/models/User.dart';
 
 class AppSettingsViewModel {
   final AppSettingsTabs initialTab;
-  final User user;
+  final UserModel user;
   final AccountState accountState;
   final dynamic onClose;
   final dynamic onSignIn;

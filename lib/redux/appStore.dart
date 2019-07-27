@@ -29,7 +29,7 @@ final initialAppState = AppState(
   inflatedProject: null,
   selectedTaskEntity: null,
   focusedTaskListId: '-1',
-  user: new User(
+  user: new UserModel(
     isLoggedIn: false,
     displayName: '',
     userId: '-1',
