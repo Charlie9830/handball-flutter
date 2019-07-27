@@ -616,10 +616,10 @@ void onAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
           email: user.email)));
 
   subscribeToDatabase(store, user.uid);
-  
+
   // TODO: Sort this code out below. You are trying to extract the User document. But if it is the users first time Logging in. It won't exist yet.
   // We could use that to detect first Account Log in and activation.
-  // But perhaps it would be better to handle this differently. As storage pressure could cause Firestore to drop the user document from it's cache, which would make the 
+  // But perhaps it would be better to handle this differently. As storage pressure could cause Firestore to drop the user document from it's cache, which would make the
   // app think its a first time log in if the user is offline. So perhaps we should store on device if the user was last a Pro or not, and honor that until we can make a seperate
   // call to check their status. Don't store their purchase IDs though.
 
@@ -1168,24 +1168,6 @@ ThunkAction<AppState> leaveSharedProject(String projectId, String projectName,
   };
 }
 
-void _deleteSharedProject(String projectId, String projectName,
-    Store<AppState> store, BuildContext context) async {
-  var members = store.state.members[projectId];
-  if (_canDeleteProject(store.state.user.userId, members) == false) {
-    // User does not have sufficent permissions to Delete Project. Inform and bail out.
-    await postAlertDialog(
-        'Insufficent permissions',
-        'Sorry, you do not have permission to delete this project, only Owners can delete projects shared with other contributors.',
-        'Okay',
-        context);
-    return;
-  }
-
-  store.dispatch(SelectProject('-1'));
-  Navigator.of(context).popUntil((route) => route.isFirst);
-  await _deleteProject(projectId, projectName, store);
-}
-
 bool _canDeleteProject(String userId, List<MemberModel> members) {
   if (members.length == 0) {
     return true;
@@ -1604,8 +1586,38 @@ ThunkAction<AppState> kickUserFromProject(String userId, String projectId,
 ThunkAction<AppState> deleteProjectWithDialog(
     String projectId, String projectName, BuildContext context) {
   return (Store<AppState> store) async {
+    if (store.state.members[projectId] == null ||
+        store.state.members[projectId].length <= 1) {
+      // No other Contributors. Simple Delete.
+      var dialogResult = await postConfirmationDialog(
+          "Delete Project",
+          'Are you sure you want to delete $projectName?',
+          'Delete',
+          'Cancel',
+          context);
+
+      if (dialogResult == DialogResult.negative) {
+        return;
+      }
+
+      await _deleteProject(projectId, projectName, store);
+    }
+
+    if (_canDeleteProject(
+            store.state.user.userId, store.state.members[projectId]) ==
+        false) {
+      // User is not allowed to Delete Project.
+      await postAlertDialog(
+          'Insufficent permissions',
+          'Sorry, you do not have permission to delete this project, only Owners can delete projects shared with other contributors.',
+          'Okay',
+          context);
+      return;
+    }
+
     if (store.state.members[projectId] != null &&
         store.state.members[projectId].length > 1) {
+          // User has Sufficent privledges to delete project, but project contains other contributors. Inform and Confirm.
       var dialogResult = await postConfirmationDialog(
         'Delete Project',
         'Are you sure you want to delete $projectName? It will be permanently deleted for all contributors',
@@ -1618,21 +1630,8 @@ ThunkAction<AppState> deleteProjectWithDialog(
         return;
       }
 
-      _deleteSharedProject(projectId, projectName, store, context);
+      await _deleteProject(projectId, projectName, store);
     }
-
-    var dialogResult = await postConfirmationDialog(
-        "Delete Project",
-        'Are you sure you want to delete $projectName?',
-        'Delete',
-        'Cancel',
-        context);
-
-    if (dialogResult == DialogResult.negative) {
-      return;
-    }
-
-    await _deleteProject(projectId, projectName, store);
   };
 }
 
@@ -1643,7 +1642,7 @@ Future<void> _deleteProject(
   var taskListIds =
       _getProjectRelatedTaskListIds(projectId, store.state.taskListsByProject);
 
-      print(taskListIds);
+  print(taskListIds);
 
   pushUndoAction(
       DeleteProjectUndoActionModel(
@@ -1805,13 +1804,12 @@ Iterable<String> _getProjectRelatedTaskIds(
 
 List<String> _getProjectRelatedTaskListIds(
     String projectId, Map<String, List<TaskListModel>> taskListsByProject) {
-      if (taskListsByProject.containsKey(projectId) && taskListsByProject[projectId] != null) {
-        return taskListsByProject[projectId].map((list) => list.uid).toList();
-      }
-
-      else {
-        return <String>[];
-      }
+  if (taskListsByProject.containsKey(projectId) &&
+      taskListsByProject[projectId] != null) {
+    return taskListsByProject[projectId].map((list) => list.uid).toList();
+  } else {
+    return <String>[];
+  }
 }
 
 ThunkAction<AppState> deleteTask(

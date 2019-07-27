@@ -135,8 +135,6 @@ class AppState {
     EnableStateModel enableState,
     Optional<UndoActionModel> lastUndoAction,
     Map<String, TaskModel> tasksById,
-    Map<String, TaskModel> completedTasksById,
-    Map<String, TaskModel> incompletedTasksById,
     Map<String, TaskListModel> deletedTaskLists,
   }) {
     return AppState(

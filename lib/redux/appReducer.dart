@@ -286,21 +286,37 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is RemoveProjectEntities) {
     var projectId = action.projectId;
+    var didDeleteSelectedProject = projectId == state.selectedProjectId;
+    var selectedProjectId = didDeleteSelectedProject ? '-1' : state.selectedProjectId;
+    var inflatedProject = didDeleteSelectedProject ? initialAppState.inflatedProject : state.inflatedProject;
+
     var projects =
         state.projects.where((project) => project.uid != projectId).toList();
     var taskLists = state.taskLists
         .where((taskList) => taskList.project != projectId)
         .toList();
+    var taskListsByProject = Map<String, List<TaskListModel>>.from(state.taskListsByProject..remove(projectId));
+    
     var tasks = state.tasks.where((task) => task.project != projectId).toList();
+    var tasksByProject = Map<String, List<TaskModel>>.from(state.tasksByProject..remove(projectId));
+    var incompletedTasksByProject = Map<String, List<TaskModel>>.from(state.incompletedTasksByProject..remove(projectId));
+    var completedTasksByProject = Map<String, List<TaskModel>>.from(state.completedTasksByProject..remove(projectId));
+    var tasksById = Map<String, TaskModel>.from(state.tasksById..removeWhere((key, value) => value.project == projectId));
+
     var members = Map<String, List<MemberModel>>.from(state.members)
       ..remove(projectId);
 
     return state.copyWith(
-      selectedProjectId: '-1',
-      inflatedProject: Optional.fromNullable(initialAppState.inflatedProject),
+      selectedProjectId: selectedProjectId,
+      inflatedProject: Optional.fromNullable(inflatedProject),
       projects: projects,
       taskLists: taskLists,
+      taskListsByProject: taskListsByProject,
       tasks: tasks,
+      tasksById: tasksById,
+      tasksByProject: tasksByProject,
+      incompletedTasksByProject: incompletedTasksByProject,
+      completedTasksByProject: completedTasksByProject,
       selectedTaskEntity:
           _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
       projectIndicatorGroups: getProjectIndicatorGroups(
