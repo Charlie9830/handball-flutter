@@ -5,6 +5,7 @@ import 'package:handball_flutter/models/EnableState.dart';
 import 'package:handball_flutter/models/IndicatorGroup.dart';
 import 'package:handball_flutter/models/InflatedProject.dart';
 import 'package:handball_flutter/models/Member.dart';
+import 'package:handball_flutter/models/ProjectIdModel.dart';
 import 'package:handball_flutter/models/ProjectInvite.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
@@ -15,6 +16,7 @@ import 'package:handball_flutter/models/User.dart';
 import 'package:quiver/core.dart';
 
 class AppState {
+  final List<ProjectIdModel> projectIds;
   final List<ProjectModel> projects;
   final String selectedProjectId;
   final ProjectModel projectShareMenuEntity;
@@ -56,6 +58,7 @@ class AppState {
   final TextInputDialogModel textInputDialog;
 
   AppState({
+    this.projectIds,
     this.projects,
     this.selectedProjectId,
     this.projectShareMenuEntity,
@@ -97,6 +100,7 @@ class AppState {
   });
 
   AppState copyWith({
+    List<ProjectIdModel> projectIds,
     List<ProjectModel> projects,
     Map<String, ProjectType> projectTypeLookup,
     String selectedProjectId,
@@ -138,6 +142,7 @@ class AppState {
     Map<String, TaskListModel> deletedTaskLists,
   }) {
     return AppState(
+      projectIds: projectIds ?? this.projectIds,
       projects: projects ?? this.projects,
       selectedProjectId: selectedProjectId ?? this.selectedProjectId,
       projectShareMenuEntity: projectShareMenuEntity == null ? this.projectShareMenuEntity : projectShareMenuEntity.orNull,

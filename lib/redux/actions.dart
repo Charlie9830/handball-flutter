@@ -14,6 +14,7 @@ import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/AccountConfig.dart';
 import 'package:handball_flutter/models/AppTheme.dart';
+import 'package:handball_flutter/models/ArchivedProject.dart';
 import 'package:handball_flutter/models/Assignment.dart';
 import 'package:handball_flutter/models/ChecklistSettings.dart';
 import 'package:handball_flutter/models/Comment.dart';
@@ -42,6 +43,7 @@ import 'package:handball_flutter/models/UndoActions/UndoAction.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/TaskListColorSelectDialog/TaskListColorSelectDialog.dart';
+import 'package:handball_flutter/presentation/Dialogs/ArchivedProjectsBottomSheet/ArchivedProjectsBottomSheet.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/DelegateOwnerDialog/DelegateOwnerDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/MoveListBottomSheet.dart';
@@ -162,6 +164,12 @@ class SetProcessingMembers {
   SetProcessingMembers({
     this.processingMembers,
   });
+}
+
+class ReceiveProjectIds {
+  final List<ProjectIdModel> projectIds;
+
+  ReceiveProjectIds({this.projectIds});
 }
 
 class SetShowOnlySelfTasks {
@@ -1583,6 +1591,47 @@ ThunkAction<AppState> kickUserFromProject(String userId, String projectId,
   };
 }
 
+ThunkAction<AppState> archiveProjectWithDialog(
+    String projectId, String projectName, BuildContext context) {
+  return (Store<AppState> store) async {
+    if (projectId == null || projectName == null) {
+      return;
+    }
+
+    var message =
+        'Are you sure you want to archive $projectName? Archiving a project will hide it from you until you restore it via the General App Settings.';
+    var result = await postConfirmationDialog(
+        'Archive Project', message, 'Archive', 'Cancel', context);
+
+    if (result == DialogResult.negative) {
+      return;
+    }
+
+    var ref = _getProjectIdsCollectionRef(store.state.user.userId)
+        .document(projectId);
+
+    try {
+      homeScreenScaffoldKey?.currentState?.openDrawer();
+      store.dispatch(SelectProject('-1'));
+
+      if (appDrawerScaffoldKey.currentState != null) {
+        showSnackBar(
+            targetGlobalKey: appDrawerScaffoldKey,
+            message: '$projectName archived',
+            autoHideSeconds: 4);
+      }
+
+      await ref.updateData({
+        'isArchived': true,
+        'archivedProjectName': projectName,
+        'archivedOn': DateTime.now().toIso8601String(),
+      });
+    } catch (error) {
+      throw error;
+    }
+  };
+}
+
 ThunkAction<AppState> deleteProjectWithDialog(
     String projectId, String projectName, BuildContext context) {
   return (Store<AppState> store) async {
@@ -1617,7 +1666,7 @@ ThunkAction<AppState> deleteProjectWithDialog(
 
     if (store.state.members[projectId] != null &&
         store.state.members[projectId].length > 1) {
-          // User has Sufficent privledges to delete project, but project contains other contributors. Inform and Confirm.
+      // User has Sufficent privledges to delete project, but project contains other contributors. Inform and Confirm.
       var dialogResult = await postConfirmationDialog(
         'Delete Project',
         'Are you sure you want to delete $projectName? It will be permanently deleted for all contributors',
@@ -1890,6 +1939,9 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
           _getProjectIdsCollectionRef(userId).document(projectRef.documentID);
       var projectId = ProjectIdModel(
         uid: projectRef.documentID,
+        archivedOn: null,
+        archivedProjectName: null,
+        isArchived: false,
       );
 
       // Member Ref.
@@ -2824,26 +2876,57 @@ StreamSubscription<QuerySnapshot> _subscribeToProjectIds(
     String userId, Store<AppState> store) {
   return _getProjectIdsCollectionRef(userId).snapshots().listen((data) {
     for (var change in data.documentChanges) {
-      var projectId = change.document.documentID;
-      // Added.
-      if (change.type == DocumentChangeType.added) {
-        _firestoreStreams.projectSubscriptions[projectId] =
-            ProjectSubscriptionContainer(
-                uid: projectId,
-                project: _subscribeToProject(projectId, store),
-                members: _subscribeToMembers(projectId, store),
-                taskLists: _subscribeToTaskLists(projectId, store),
-                incompletedTasks:
-                    _subscribeToIncompletedTasks(projectId, store));
+      var projectIdModel = ProjectIdModel.fromDoc(change.document);
+      var projectId = projectIdModel.uid;
+      var isArchived = projectIdModel.isArchived;
+
+      if (change.type == DocumentChangeType.added && isArchived == false) {
+        _addProjectSubscription(projectId, store);
       }
 
       if (change.type == DocumentChangeType.removed) {
-        // Deleted.
-        _firestoreStreams.projectSubscriptions[projectId]?.cancelAll();
-        store.dispatch(RemoveProjectEntities(projectId: projectId));
+        _removeProjectSubscription(projectId, store);
+      }
+
+      if (change.type == DocumentChangeType.modified) {
+        if (isArchived == true) {
+          _removeProjectSubscription(projectId, store);
+        } else {
+          _addProjectSubscription(projectId,
+              store); // _addProjectSubscription will ignore if we have already added it.
+        }
       }
     }
+
+    store.dispatch(ReceiveProjectIds(
+        projectIds:
+            data.documents.map((doc) => ProjectIdModel.fromDoc(doc)).toList()));
   });
+}
+
+void _addProjectSubscription(String projectId, Store<AppState> store) {
+  if (_firestoreStreams.projectSubscriptions.containsKey(projectId) ||
+      _firestoreStreams.projectSubscriptions[projectId] != null) {
+    return;
+  }
+
+  _firestoreStreams.projectSubscriptions[projectId] =
+      ProjectSubscriptionContainer(
+          uid: projectId,
+          project: _subscribeToProject(projectId, store),
+          members: _subscribeToMembers(projectId, store),
+          taskLists: _subscribeToTaskLists(projectId, store),
+          incompletedTasks: _subscribeToIncompletedTasks(projectId, store));
+}
+
+void _removeProjectSubscription(String projectId, Store<AppState> store) async {
+  if (_firestoreStreams.projectSubscriptions.containsKey(projectId)) {
+    await _firestoreStreams.projectSubscriptions[projectId]?.cancelAll();
+
+    _firestoreStreams.projectSubscriptions.remove(projectId);
+
+    store.dispatch(RemoveProjectEntities(projectId: projectId));
+  }
 }
 
 StreamSubscription<QuerySnapshot> _subscribeToMembers(
@@ -2875,6 +2958,46 @@ void _handleProjectSnapshot(DocumentSnapshot doc, Store<AppState> store) {
     // Filtering of projects with isDeleted flag is handled by the Reducer.
     store.dispatch(ReceiveProject(project: ProjectModel.fromDoc(doc)));
   }
+}
+
+ThunkAction<AppState> restoreProjectWithDialog(BuildContext context) {
+  return (Store<AppState> store) async {
+    var currentlyArchivedProjects = store.state.projectIds
+        .where((item) => item.isArchived == true)
+        .map((item) => ArchivedProjectModel(
+            archivedProjectName: item.archivedProjectName,
+            uid: item.uid,
+            archivedOn: item.archivedOn))
+        .toList();
+
+    var result = await showModalBottomSheet(
+        context: context,
+        builder: (context) => ArchivedProjectsBottomSheet(
+              projectOptions: currentlyArchivedProjects,
+            ));
+
+    if (result == null) {
+      return;
+    }
+
+    if (result is String) {
+      var projectId = result;
+      var ref = _getProjectIdsCollectionRef(store.state.user.userId)
+          .document(projectId);
+
+      showSnackBar(
+        message: 'Project restored',
+        autoHideSeconds: 4,
+        targetGlobalKey: appSettingsScaffoldKey,
+      );
+
+      await ref.updateData({
+        'isArchived': false,
+        'archivedProjectName': null,
+        'archivedOn': null,
+      });
+    }
+  };
 }
 
 ThunkAction<AppState> openChecklistSettings(

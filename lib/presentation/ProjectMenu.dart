@@ -12,6 +12,7 @@ class ProjectMenu extends StatelessWidget {
   final dynamic onShowCompletedTasksChanged;
   final dynamic onRenameProject;
   final dynamic onUndoAction;
+  final dynamic onArchiveProject;
 
   const ProjectMenu(
       {Key key,
@@ -23,7 +24,8 @@ class ProjectMenu extends StatelessWidget {
       this.showCompletedTasks,
       this.onShowCompletedTasksChanged,
       this.onRenameProject,
-      this.onUndoAction,})
+      this.onUndoAction,
+      this.onArchiveProject})
       : super(key: key);
 
   @override
@@ -73,7 +75,20 @@ class ProjectMenu extends StatelessWidget {
                 value: 'show-self-tasks',
               ),
             PopupMenuItem(
-                child: Text('Rename project'), value: 'rename-project')
+                child: Text('Rename project'), value: 'rename-project'),
+            PopupMenuItem(
+              enabled: EnableStates.of(context).state.canArchiveProject,
+              child: Row(
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Icon(Icons.archive),
+                  ),
+                  Text('Archive Project'),
+                ],
+              ),
+              value: 'archive-project',
+            )
           ];
         });
   }
@@ -89,7 +104,7 @@ class ProjectMenu extends StatelessWidget {
         break;
 
       case 'show-self-tasks':
-        onShowOnlySelfTasksChanged(!showOnlySelfTasks);
+        onShowOnlySelfTasksChanged(!showOnlySelfTasks); 
         break;
 
       case 'show-completed-tasks':
@@ -103,6 +118,11 @@ class ProjectMenu extends StatelessWidget {
       case 'undo-action':
         onUndoAction();
         break;
+
+      case 'archive-project':
+        onArchiveProject();
+        break;
+
       default:
         break;
     }

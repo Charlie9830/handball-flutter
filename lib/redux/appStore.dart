@@ -3,6 +3,7 @@ import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/EnableState.dart';
 import 'package:handball_flutter/models/IndicatorGroup.dart';
 import 'package:handball_flutter/models/Member.dart';
+import 'package:handball_flutter/models/ProjectIdModel.dart';
 import 'package:handball_flutter/models/ProjectInvite.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
@@ -18,6 +19,7 @@ import 'package:handball_flutter/redux/middleware/navigationMiddleware.dart';
 import 'package:redux_logging/redux_logging.dart';
 
 final initialAppState = AppState(
+  projectIds: <ProjectIdModel>[],
   tasks: <TaskModel>[],
   tasksByProject: <String, List<TaskModel>>{},
   taskLists: <TaskListModel>[],

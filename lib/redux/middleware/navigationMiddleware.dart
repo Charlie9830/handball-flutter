@@ -19,7 +19,9 @@ void navigationMiddleware(
   next(action);
 
   if (action is SelectProject) {
-    navigatorKey.currentState.pop();
+    if (homeScreenScaffoldKey?.currentState?.isDrawerOpen == true && action.uid != '-1') {
+      navigatorKey.currentState.pop();
+    }
   }
 
   if (action is OpenAppSettings) {

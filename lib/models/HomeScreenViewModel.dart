@@ -27,6 +27,7 @@ class HomeScreenViewModel {
   final dynamic onMultiCompleteTasks;
   final dynamic onMultiDeleteTasks;
   final dynamic onDebugButtonPressed;
+  final dynamic onArchiveProject;
 
   HomeScreenViewModel({
     this.projectId,
@@ -52,5 +53,6 @@ class HomeScreenViewModel {
     this.onMultiCompleteTasks,
     this.onMultiDeleteTasks,
     this.onDebugButtonPressed,
+    this.onArchiveProject,
     });
 }

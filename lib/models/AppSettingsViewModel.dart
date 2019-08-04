@@ -10,6 +10,7 @@ class AppSettingsViewModel {
   final dynamic onSignOut;
   final dynamic onSignUpButtonPressed;
   final dynamic onAccountChange;
+  final dynamic onViewArchivedProjects;
 
   AppSettingsViewModel({
     this.initialTab,
@@ -20,5 +21,6 @@ class AppSettingsViewModel {
     this.onClose,
     this.onSignUpButtonPressed,
     this.onAccountChange,
+    this.onViewArchivedProjects,
   });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
+import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/AppSettingsViewModel.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/AccountTab/AccountTab.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/GeneralTab/GeneralTab.dart';
@@ -18,6 +19,7 @@ class AppSettings extends StatelessWidget {
       length: 2,
       initialIndex: _getInitialTabIndex(),
       child: Scaffold(
+        key: appSettingsScaffoldKey,
         appBar: AppBar(
             title: Text('Settings'),
             leading: IconButton(
@@ -33,7 +35,9 @@ class AppSettings extends StatelessWidget {
         body: TabBarView(
           physics: NeverScrollableScrollPhysics(),
           children: <Widget>[
-            GeneralTab(),
+            GeneralTab(
+              onViewArchivedProjectsTap: viewModel.onViewArchivedProjects,
+            ),
             AccountTab(
               accountState: viewModel.accountState,
               user: viewModel.user,

@@ -4,6 +4,12 @@ import 'package:handball_flutter/presentation/Screens/AppSettings/GeneralTab/Set
 import 'package:handball_flutter/presentation/Screens/AppSettings/GeneralTab/ThemeEditor.dart';
 
 class GeneralTab extends StatelessWidget {
+  final dynamic onViewArchivedProjectsTap;
+
+  GeneralTab({
+    this.onViewArchivedProjectsTap
+  });
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -14,6 +20,15 @@ class GeneralTab extends StatelessWidget {
             title: 'Theme',
             children: <Widget>[
               ThemeEditorContainer(),
+            ],
+          ),
+          SettingsCard(
+            title: 'Archived Projects',
+            children: <Widget>[
+              ListTile(
+                  leading: Icon(Icons.archive),
+                  title: Text('View archived projects'),
+                  onTap: onViewArchivedProjectsTap),
             ],
           ),
           SettingsCard(title: 'Feedback', children: <Widget>[

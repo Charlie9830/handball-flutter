@@ -91,6 +91,7 @@ class HomeScreen extends StatelessWidget {
                   viewModel.onShowCompletedTasksChanged,
               onRenameProject: viewModel.onRenameProject,
               onUndoAction: viewModel.onUndoAction,
+              onArchiveProject: viewModel.onArchiveProject,
             ),
             
         ],

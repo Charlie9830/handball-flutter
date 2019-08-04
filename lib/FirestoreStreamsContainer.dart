@@ -15,12 +15,15 @@ class FirestoreStreamsContainer {
     this.projectSubscriptions = <String, ProjectSubscriptionContainer>{};
   }
 
-  void cancelAll() {
-    this.projectIds?.cancel();
-    this.invites?.cancel();
-    this.accountConfig?.cancel();
+  Future<void> cancelAll() {
+    List<Future<void>> requests = [];
 
-    this.projectSubscriptions.forEach( (key, projectSub) => projectSub?.cancelAll());
+    requests.add(this.projectIds?.cancel());
+    requests.add(this.invites?.cancel());
+    requests.add(this.accountConfig?.cancel());
+    requests.addAll(this.projectSubscriptions.values.map((item) => item.cancelAll()));
+
+    return Future.wait(requests.where((item) => item != null));
   }
 }
 
@@ -42,12 +45,16 @@ class ProjectSubscriptionContainer {
     this.members,
   });
 
-  void cancelAll() {
-    this.project?.cancel();
-    this.taskLists?.cancel();
-    this.incompletedTasks?.cancel();
-    this.completedTasks?.cancel();
-    this.members?.cancel();
+  Future<void> cancelAll() {
+    List<Future<void>> requests = [];
+
+    requests.add(this.project?.cancel());
+    requests.add(this.taskLists?.cancel());
+    requests.add(this.incompletedTasks?.cancel());
+    requests.add(this.completedTasks?.cancel());
+    requests.add(this.members?.cancel());
+
+    return Future.wait(requests.where((item) => item != null));
   }
 
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:handball_flutter/InheritatedWidgets/EnableStates.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/HomeScreenViewModel.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
@@ -79,6 +80,8 @@ class HomeScreenContainer extends StatelessWidget {
               context))
           : null,
       onDebugButtonPressed: () => store.dispatch(debugButtonPressed()),
+      onArchiveProject: () => store.dispatch(
+              archiveProjectWithDialog(projectId, projectName, context)),
     );
   }
 
@@ -162,11 +165,7 @@ class HomeScreenContainer extends StatelessWidget {
               taskList.data.project,
               taskList.data.taskListName,
               context)),
-          onChooseColor: () => store.dispatch(updateTaskListColorWithDialog(taskList.data.uid,
-          taskList.data.project,
-          taskList.data.taskListName,
-          taskList.data.hasCustomColor,
-          taskList.data.customColorIndex, context)));
+          onChooseColor: () => store.dispatch(updateTaskListColorWithDialog(taskList.data.uid, taskList.data.project, taskList.data.taskListName, taskList.data.hasCustomColor, taskList.data.customColorIndex, context)));
     }).toList();
   }
 

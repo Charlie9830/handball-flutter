@@ -42,22 +42,32 @@ AppState appReducer(AppState state, dynamic action) {
         : state.inflatedProject;
 
     return state.copyWith(
-        selectedProjectId: action.uid,
-        inflatedProject: Optional.fromNullable(inflatedProject),
-        showCompletedTasks: false, // Assert showCompletedTasks Off.
-        showOnlySelfTasks: false,
-        isInMultiSelectTaskMode: false,
-        multiSelectedTasks: initialAppState.multiSelectedTasks,
-        enableState: state.enableState.copyWith(
-            isProjectSelected: action.uid != '-1' && action.uid != null
-                ? true
-                : state.enableState.isProjectSelected,
-            showSelectAProjectHint: action.uid == '-1' ||
-                action.uid == null && state.projects.length > 0,
-            showNoProjectsHint: state.projects.length == 0,
-            showNoTaskListsHint: projectTaskLists == null || projectTaskLists.length == 0,
-            showSingleListNoTasksHint: projectTaskLists != null &&
-                projectTaskLists.length == 1 && projectTasks.length == 0));
+      selectedProjectId: action.uid,
+      inflatedProject: Optional.fromNullable(inflatedProject),
+      showCompletedTasks: false, // Assert showCompletedTasks Off.
+      showOnlySelfTasks: false,
+      isInMultiSelectTaskMode: false,
+      multiSelectedTasks: initialAppState.multiSelectedTasks,
+      enableState: state.enableState.copyWith(
+          isProjectSelected: action.uid != '-1' && action.uid != null
+              ? true
+              : state.enableState.isProjectSelected,
+          showSelectAProjectHint: action.uid == '-1' ||
+              action.uid == null && state.projects.length > 0,
+          showNoProjectsHint: state.projects.length == 0,
+          showNoTaskListsHint:
+              projectTaskLists == null || projectTaskLists.length == 0,
+          showSingleListNoTasksHint: projectTaskLists != null &&
+              projectTaskLists.length == 1 &&
+              projectTasks.length == 0,
+          canArchiveProject: action.uid != '-1' && action.uid != null),
+    );
+  }
+
+  if (action is ReceiveProjectIds) {
+    return state.copyWith(
+      projectIds: action.projectIds,
+    );
   }
 
   if (action is ReceiveProject) {
@@ -81,7 +91,9 @@ AppState appReducer(AppState state, dynamic action) {
         selectedProjectId: selectedProjectId,
         inflatedProject: Optional.fromNullable(inflatedProject),
         enableState: state.enableState.copyWith(
-          isProjectSelected: selectedProjectId != '-1' ? true : state.enableState.isProjectSelected,
+          isProjectSelected: selectedProjectId != '-1'
+              ? true
+              : state.enableState.isProjectSelected,
           showNoProjectsHint: filteredProjects.length == 0,
           showSelectAProjectHint: filteredProjects.length > 0 &&
               (state.selectedProjectId == '-1' ||
@@ -281,27 +293,36 @@ AppState appReducer(AppState state, dynamic action) {
   }
 
   if (action is SetSelectedTaskEntity) {
-    return state.copyWith(selectedTaskEntity: Optional.fromNullable(action.taskEntity));
+    return state.copyWith(
+        selectedTaskEntity: Optional.fromNullable(action.taskEntity));
   }
 
   if (action is RemoveProjectEntities) {
     var projectId = action.projectId;
     var didDeleteSelectedProject = projectId == state.selectedProjectId;
-    var selectedProjectId = didDeleteSelectedProject ? '-1' : state.selectedProjectId;
-    var inflatedProject = didDeleteSelectedProject ? initialAppState.inflatedProject : state.inflatedProject;
+    var selectedProjectId =
+        didDeleteSelectedProject ? '-1' : state.selectedProjectId;
+    var inflatedProject = didDeleteSelectedProject
+        ? initialAppState.inflatedProject
+        : state.inflatedProject;
 
     var projects =
         state.projects.where((project) => project.uid != projectId).toList();
     var taskLists = state.taskLists
         .where((taskList) => taskList.project != projectId)
         .toList();
-    var taskListsByProject = Map<String, List<TaskListModel>>.from(state.taskListsByProject..remove(projectId));
-    
+    var taskListsByProject = Map<String, List<TaskListModel>>.from(
+        state.taskListsByProject..remove(projectId));
+
     var tasks = state.tasks.where((task) => task.project != projectId).toList();
-    var tasksByProject = Map<String, List<TaskModel>>.from(state.tasksByProject..remove(projectId));
-    var incompletedTasksByProject = Map<String, List<TaskModel>>.from(state.incompletedTasksByProject..remove(projectId));
-    var completedTasksByProject = Map<String, List<TaskModel>>.from(state.completedTasksByProject..remove(projectId));
-    var tasksById = Map<String, TaskModel>.from(state.tasksById..removeWhere((key, value) => value.project == projectId));
+    var tasksByProject = Map<String, List<TaskModel>>.from(
+        state.tasksByProject..remove(projectId));
+    var incompletedTasksByProject = Map<String, List<TaskModel>>.from(
+        state.incompletedTasksByProject..remove(projectId));
+    var completedTasksByProject = Map<String, List<TaskModel>>.from(
+        state.completedTasksByProject..remove(projectId));
+    var tasksById = Map<String, TaskModel>.from(state.tasksById
+      ..removeWhere((key, value) => value.project == projectId));
 
     var members = Map<String, List<MemberModel>>.from(state.members)
       ..remove(projectId);
@@ -322,6 +343,12 @@ AppState appReducer(AppState state, dynamic action) {
       projectIndicatorGroups: getProjectIndicatorGroups(
           tasks, state.deletedTaskLists, state.user.userId),
       members: members,
+      enableState: state.enableState.copyWith(
+        canArchiveProject: selectedProjectId != '-1',
+        isProjectSelected: didDeleteSelectedProject == false,
+        showNoProjectsHint: projects.length == 0,
+        showSelectAProjectHint: selectedProjectId == '-1' && projects.length != 0,
+      )
     );
   }
 
@@ -356,6 +383,7 @@ AppState appReducer(AppState state, dynamic action) {
           userId: '',
           isLoggedIn: false,
         ),
+        projectIds: initialAppState.projectIds,
         accountState: AccountState.loggedOut,
         tasks: initialAppState.tasks,
         tasksByProject: initialAppState.tasksByProject,
