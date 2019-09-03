@@ -18,6 +18,7 @@ import 'package:handball_flutter/utilities/TaskArgumentParser/TaskArgumentParser
 class AddTaskDialog extends StatefulWidget {
   List<TaskListModel> taskLists;
   TaskListModel preselectedTaskList;
+  String favirouteTaskListId;
   String text;
   List<Assignment> assignmentOptions;
   Map<String, MemberModel> memberLookup;
@@ -33,7 +34,8 @@ class AddTaskDialog extends StatefulWidget {
       this.assignmentOptions,
       this.isProjectShared,
       this.memberLookup,
-      this.reminderTime});
+      this.reminderTime,
+      this.favirouteTaskListId});
 
   @override
   _AddTaskDialog createState() => _AddTaskDialog();
@@ -111,6 +113,7 @@ class _AddTaskDialog extends State<AddTaskDialog> {
                                           ? (List.from(widget.taskLists)
                                             ..add(_selectedTaskList))
                                           : widget.taskLists,
+                                      favirouteTaskListId: widget.favirouteTaskListId,
                                       onChanged: (newValue) =>
                                           _handleTaskListSelectChanged(
                                               newValue, context),

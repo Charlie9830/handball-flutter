@@ -2318,7 +2318,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
     {String taskListId}) {
   return (Store<AppState> store) async {
     var preselectedTaskList = _getAddTaskDialogPreselectedTaskList(
-        projectId, taskListId, store.state);
+        projectId, taskListId, store.state.taskListsByProject[projectId], store.state);
 
     var assignmentOptions = store.state.members[projectId] == null
         ? <Assignment>[]
@@ -2333,6 +2333,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
       builder: (context) => AddTaskDialog(
         preselectedTaskList: preselectedTaskList,
         taskLists: store.state.taskListsByProject[projectId],
+        favirouteTaskListId: store.state.favirouteTaskListIds[projectId],
         allowTaskListChange: taskListId == null,
         assignmentOptions: assignmentOptions,
         memberLookup: store.state.memberLookup,
@@ -2464,12 +2465,12 @@ Map<String, ReminderModel> _buildNewRemindersMap(
 }
 
 TaskListModel _getAddTaskDialogPreselectedTaskList(
-    String projectId, String taskListId, AppState state) {
+    String projectId, String taskListId, List<TaskListModel> taskLists, AppState state) {
   // Try to retreive a Tasklist to become the Preselected List for the AddTaskDialog.
   // Honor these rules in order.
   // 1. Try and retrieve Tasklist directly using provided taskListId (if provided). This indicates the user has
   //  used the TaskList addTask button instead of the Fab.
-  // 2. Try and retreive using the Users elected Faviroute Task List: TODO: Implement This.
+  // 2. Try and retreive using the Users elected Faviroute Task List.
   // 3. Try and retreive using the lastUsedTaskLists Map. (Most recent addition).
   // 4. Check if only one TaskList is available.
 
@@ -2479,6 +2480,16 @@ TaskListModel _getAddTaskDialogPreselectedTaskList(
         .firstWhere((item) => item.uid == taskListId, orElse: () => null);
     if (extractedTaskList != null) {
       return extractedTaskList;
+    }
+  }
+
+  // Nothing? Try FavirouteTaskListId.
+  if (state.favirouteTaskListIds.containsKey(projectId)) {
+    var favirouteTaskListId = state.favirouteTaskListIds[projectId];
+    var faviorouteTaskList = taskLists.firstWhere((item) => item.uid == favirouteTaskListId, orElse: () => null);
+    
+    if (faviorouteTaskList != null) {
+      return faviorouteTaskList;
     }
   }
 

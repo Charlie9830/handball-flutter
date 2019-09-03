@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/models/TaskList.dart';
+import 'package:handball_flutter/presentation/Nothing.dart';
+import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/TaskListColorChit.dart';
 import 'package:handball_flutter/utilities/Colors/AppThemeColors.dart';
 import 'package:handball_flutter/utilities/getPositionFromGlobalKey.dart';
@@ -7,6 +9,7 @@ import 'package:handball_flutter/utilities/getPositionFromGlobalKey.dart';
 class TaskListSelectChip extends StatefulWidget {
   final List<TaskListModel> taskLists;
   final TaskListModel selectedTaskList;
+  final String favirouteTaskListId;
   Color backgroundColor;
   EdgeInsets padding;
   final onChanged;
@@ -14,6 +17,7 @@ class TaskListSelectChip extends StatefulWidget {
 
   TaskListSelectChip({
     this.taskLists,
+    this.favirouteTaskListId,
     this.selectedTaskList,
     this.backgroundColor,
     this.padding,
@@ -82,11 +86,23 @@ class _TaskListSelectChipState extends State<TaskListSelectChip> {
   List<PopupMenuEntry> _getPopupMenuItems(List<TaskListModel> taskLists) {
     var sanitizedList = taskLists ?? <TaskListModel>[];
 
+    var favirouteTaskList = _getFavirouteTaskList(sanitizedList, widget.favirouteTaskListId);
+    if ( favirouteTaskList != null) {
+      // Re sort so Faviroute is at the Top.
+      sanitizedList.remove(favirouteTaskList);
+      sanitizedList.insert(0, favirouteTaskList);
+    }
+
     var list = sanitizedList.map((taskList) {
       return PopupMenuItem(
           key: Key(taskList.uid),
           value: taskList.uid,
           child: ListTile(
+            leading: PredicateBuilder(
+              predicate: () => taskList.uid == widget.favirouteTaskListId,
+              childIfTrue: Icon(Icons.favorite),
+              childIfFalse: Nothing(),
+            ),
             trailing: TaskListColorChit(color: taskList.customColor),
             title: Text(taskList.taskListName),
           ));
@@ -102,6 +118,10 @@ class _TaskListSelectChipState extends State<TaskListSelectChip> {
 
     return list;
   }  
+
+  TaskListModel _getFavirouteTaskList(List<TaskListModel> lists, String favirouteTaskListId) {
+    return lists.firstWhere((item) => item.uid == favirouteTaskListId, orElse: () => null);
+  }
 }
 
 class TaskListSelectChipResult {
