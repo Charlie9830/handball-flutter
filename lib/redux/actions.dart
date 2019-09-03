@@ -2503,6 +2503,25 @@ TaskListModel _getAddTaskDialogPreselectedTaskList(
   return null;
 }
 
+ThunkAction<AppState> updateFavouriteTaskList(
+    String taskListId, String projectId, bool isFavourite) {
+  return (Store<AppState> store) async {
+    var userId = store.state.user.userId;
+
+    var memberRef = _getMembersCollectionRef(projectId).document(userId);
+
+    try {
+      await memberRef.updateData({
+        'favouriteTaskListId': isFavourite == true ? taskListId : '-1',
+      });
+
+      print('Updated');
+    } catch (error) {
+      throw error;
+    }
+  };
+}
+
 ThunkAction<AppState> multiDeleteTasks(
     List<TaskModel> tasks, String projectId, BuildContext context) {
   return (Store<AppState> store) async {

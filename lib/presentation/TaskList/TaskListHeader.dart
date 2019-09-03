@@ -10,6 +10,7 @@ class TaskListHeader extends StatelessWidget {
   final bool isChecklist;
   final bool isMenuDisabled;
   final Color customColor;
+  final bool isFaviroute;
   final onDelete;
   final onRename;
   final onAddTaskButtonPressed;
@@ -17,6 +18,7 @@ class TaskListHeader extends StatelessWidget {
   final onOpenChecklistSettings;
   final onChooseColor;
   final dynamic onMoveToProject;
+  final onFavouriteListChange;
 
   TaskListHeader({
     Key key,
@@ -32,6 +34,8 @@ class TaskListHeader extends StatelessWidget {
     this.onOpenChecklistSettings,
     this.onMoveToProject,
     this.onChooseColor,
+    this.onFavouriteListChange,
+    this.isFaviroute,
   });
 
   @override
@@ -59,7 +63,13 @@ class TaskListHeader extends StatelessWidget {
               sorting: sorting,
               onMoveToProject: onMoveToProject,
               onChooseColor: onChooseColor,
+              onFavouriteListChange: onFavouriteListChange,
+              isFaviroute: isFaviroute,
             ),
+
+            if (isFaviroute == true) 
+              Icon(Icons.favorite),
+              
             if (isChecklist == true)
               IconButton(
                   icon: Icon(Icons.playlist_add_check),

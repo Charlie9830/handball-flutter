@@ -5,12 +5,14 @@ import 'package:handball_flutter/enums.dart';
 class TaskListSettingsMenu extends StatelessWidget {
   TaskSorting sorting;
   final bool isDisabled;
+  final bool isFaviroute;
   final onSortingChange;
   final onRename;
   final onOpenChecklistSettings;
   final onDelete;
   final onMoveToProject;
   final onChooseColor;
+  final onFavouriteListChange;
 
   TaskListSettingsMenu({
     Key key,
@@ -22,6 +24,8 @@ class TaskListSettingsMenu extends StatelessWidget {
     this.onDelete,
     this.onMoveToProject,
     this.onChooseColor,
+    this.onFavouriteListChange,
+    this.isFaviroute,
   });
 
   @override
@@ -83,14 +87,23 @@ class TaskListSettingsMenu extends StatelessWidget {
               value: 'checklist settings',
             ),
             PopupMenuItem(
-              child: Row(children: <Widget>[
+                child: Row(children: <Widget>[
                   Padding(
                     padding: const EdgeInsets.only(right: 16.0),
                     child: Icon(Icons.color_lens),
                   ),
                   Text('Choose Color')
                 ]),
-              value: 'choose-color'
+                value: 'choose-color'),
+            PopupMenuItem(
+              child: Row(children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: Icon(Icons.favorite),
+                ),
+                Text('Favourite this List')
+              ]),
+              value: 'favourite-list',
             ),
             if (EnableStates.of(context).state.canMoveTaskList == true)
               PopupMenuItem(
@@ -135,10 +148,14 @@ class TaskListSettingsMenu extends StatelessWidget {
       case 'delete list':
         onDelete();
         break;
-      
+
       case 'choose-color':
         onChooseColor();
-      break;
+        break;
+
+      case 'favourite-list':
+        onFavouriteListChange(!isFaviroute);
+        break;
 
       default:
         // Sorting Options

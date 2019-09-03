@@ -3,6 +3,7 @@ import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/InheritatedWidgets/EnableStates.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/HomeScreenViewModel.dart';
+import 'package:handball_flutter/models/InflatedTaskList.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
@@ -136,9 +137,13 @@ class HomeScreenContainer extends StatelessWidget {
       return List<TaskListViewModel>();
     }
 
+    
+
     return store.state.inflatedProject.inflatedTaskLists.map((taskList) {
+      print(store.state.favirouteTaskListIds);
       return TaskListViewModel(
           data: taskList.data,
+          isFaviroute: _getIsFavirouteTaskList(taskList, store.state),
           isMenuDisabled: store.state.isInMultiSelectTaskMode,
           childTaskViewModels:
               _buildTaskViewModels(taskList.tasks, store, context),
@@ -165,8 +170,22 @@ class HomeScreenContainer extends StatelessWidget {
               taskList.data.project,
               taskList.data.taskListName,
               context)),
+          onFaviourteListChange: (isFavourite) => store.dispatch(updateFavouriteTaskList(taskList.data.uid, taskList.data.project, isFavourite)),
           onChooseColor: () => store.dispatch(updateTaskListColorWithDialog(taskList.data.uid, taskList.data.project, taskList.data.taskListName, taskList.data.hasCustomColor, taskList.data.customColorIndex, context)));
     }).toList();
+  }
+
+  bool _getIsFavirouteTaskList(InflatedTaskListModel taskList, AppState state) {
+    var projectId = taskList.data.project;
+    var currentTaskListId = taskList.data.uid;
+        if (state.favirouteTaskListIds.containsKey(projectId)) {
+        var favirouteTaskListId = state.favirouteTaskListIds[projectId];
+      return favirouteTaskListId == currentTaskListId;
+    }
+
+    else {
+      return false;
+    }
   }
 
   void _handleTaskMultiSelectChange(

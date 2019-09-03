@@ -434,6 +434,9 @@ AppState appReducer(AppState state, dynamic action) {
     var members =
         _updateMembers(state.members, action.projectId, action.membersList);
 
+    var selfMember = action.membersList.firstWhere((item) => item.userId == state.user.userId, orElse: () => null);
+    var favirouteTaskListIds = _updateFavirouteTaskListIds(state.favirouteTaskListIds, selfMember, action.projectId);
+
     var inflatedProject = action.projectId == state.selectedProjectId
         ? buildInflatedProject(
             tasks: state.tasksByProject[state.selectedProjectId],
@@ -449,7 +452,8 @@ AppState appReducer(AppState state, dynamic action) {
         members: members,
         memberLookup:
             _updateMemberLookup(state.memberLookup, action.membersList),
-        inflatedProject: Optional.fromNullable(inflatedProject));
+        inflatedProject: Optional.fromNullable(inflatedProject),
+        favirouteTaskListIds: favirouteTaskListIds);
   }
 
   if (action is SetIsInvitingUser) {
@@ -654,4 +658,19 @@ Map<String, List<MemberModel>> _updateMembers(
   newMembersMap[projectId] = incomingMembersList;
 
   return newMembersMap;
+}
+
+Map<String, String> _updateFavirouteTaskListIds(Map<String,String> original, MemberModel selfMember, String projectId) {
+  var newMap = Map<String,String>.from(original);
+
+  if (selfMember == null || selfMember.favouriteTaskListId == '-1') {
+    newMap.remove(projectId);
+  }
+
+  else {
+    newMap[projectId] = selfMember.favouriteTaskListId;
+  }
+
+  return newMap;
+  
 }

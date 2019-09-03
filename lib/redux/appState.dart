@@ -54,6 +54,7 @@ class AppState {
   final AccountConfigModel accountConfig;
   final EnableStateModel enableState;
   final UndoActionModel lastUndoAction;
+  final Map<String, String> favirouteTaskListIds;
 
   final TextInputDialogModel textInputDialog;
 
@@ -97,6 +98,7 @@ class AppState {
     this.lastUndoAction,
     this.tasksById,
     this.deletedTaskLists,
+    this.favirouteTaskListIds,
   });
 
   AppState copyWith({
@@ -140,6 +142,7 @@ class AppState {
     Optional<UndoActionModel> lastUndoAction,
     Map<String, TaskModel> tasksById,
     Map<String, TaskListModel> deletedTaskLists,
+    Map<String, String> favirouteTaskListIds,
   }) {
     return AppState(
       projectIds: projectIds ?? this.projectIds,
@@ -188,6 +191,7 @@ class AppState {
       lastUndoAction: lastUndoAction == null ? this.lastUndoAction : lastUndoAction.orNull,
       tasksById: tasksById ?? this.tasksById,
       deletedTaskLists: deletedTaskLists ?? this.deletedTaskLists,
+      favirouteTaskListIds: favirouteTaskListIds ?? this.favirouteTaskListIds,
     );
   }
 }

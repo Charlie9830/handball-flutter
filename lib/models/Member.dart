@@ -10,6 +10,7 @@ class MemberModel {
   MemberStatus status;
   MemberRole role;
   List<String> listCustomSortOrder;
+  String favouriteTaskListId;
 
   MemberModel({
     this.userId,
@@ -18,6 +19,7 @@ class MemberModel {
     this.status = MemberStatus.pending,
     this.role = MemberRole.member,
     this.listCustomSortOrder,
+    this.favouriteTaskListId = '-1',
   });
 
   MemberModel.fromDoc(DocumentSnapshot doc) {
@@ -27,6 +29,7 @@ class MemberModel {
     this.status = _parseStatus(doc.data['status']);
     this.role = parseMemberRole(doc.data['role']);
     this.listCustomSortOrder = coerceStringList(doc.data['listCustomSortOrder']) ?? <String>[];
+    this.favouriteTaskListId = _coerceFavouriteTaskListId(doc.data['favouriteTaskListId']);
   }
 
   Map<String, dynamic> toMap() {
@@ -37,7 +40,16 @@ class MemberModel {
       'status': _convertStatusToString(this.status),
       'role': _convertRoleToString(this.role),
       'listCustomSortOrder': this.listCustomSortOrder ?? <String>[],
+      'favouriteTaskListId': this.favouriteTaskListId ?? '-1',
     };
+  }
+  
+  String _coerceFavouriteTaskListId(String taskListId) {
+    if (taskListId == null) {
+      return '-1';
+    }
+
+    return taskListId;
   }
 
   String _convertStatusToString(MemberStatus status) {

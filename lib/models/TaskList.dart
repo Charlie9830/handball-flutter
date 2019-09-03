@@ -101,6 +101,8 @@ class TaskListViewModel {
   final onMoveToProject;
   final onChooseColor;
   final onTaskListFocus;
+  final onFaviourteListChange;
+  final isFaviroute;
 
   TaskListViewModel({
     this.data,
@@ -115,5 +117,7 @@ class TaskListViewModel {
     this.onOpenChecklistSettings,
     this.onMoveToProject,
     this.onChooseColor,
+    this.onFaviourteListChange,
+    this.isFaviroute = false,
   });
 }

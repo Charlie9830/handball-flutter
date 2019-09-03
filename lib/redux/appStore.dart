@@ -67,6 +67,7 @@ final initialAppState = AppState(
   lastUndoAction: null,
   tasksById: <String, TaskModel>{},
   deletedTaskLists: <String, TaskListModel>{},
+  favirouteTaskListIds: <String, String>{},
 );
 
 final appStore = new Store<AppState> (
