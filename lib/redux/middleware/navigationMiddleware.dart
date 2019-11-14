@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/containers/ActivityFeedContainer.dart';
 import 'package:handball_flutter/containers/AppSettingsContainer.dart';
 import 'package:handball_flutter/containers/CommentScreenContainer.dart';
 import 'package:handball_flutter/containers/HomeScreenContainer.dart';
@@ -22,6 +23,16 @@ void navigationMiddleware(
     if (homeScreenScaffoldKey?.currentState?.isDrawerOpen == true && action.uid != '-1') {
       navigatorKey.currentState.pop();
     }
+  }
+
+  if (action is OpenActivityFeed) {
+    navigatorKey.currentState.push(
+      new MaterialPageRoute(
+        builder: (context) {
+          return new ActivityFeedContainer();
+        }
+      )
+    );
   }
 
   if (action is OpenAppSettings) {

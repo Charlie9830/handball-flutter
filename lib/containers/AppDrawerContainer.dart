@@ -28,6 +28,7 @@ class AppDrawerContainer extends StatelessWidget {
       onAddNewProjectButtonPress: () =>
           store.dispatch(addNewProjectWithDialog(context)),
       onAppSettingsOpen: () => store.dispatch(OpenAppSettings()),
+      onActivityFeedButtonPressed: () => store.dispatch(OpenActivityFeed()),
     );
   }
 

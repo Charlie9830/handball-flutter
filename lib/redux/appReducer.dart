@@ -1,3 +1,4 @@
+import 'package:handball_flutter/models/ActivityFeedEventModel.dart';
 import 'package:handball_flutter/models/EnableState.dart';
 import 'package:handball_flutter/models/InflatedProject.dart';
 import 'package:handball_flutter/models/InflatedTaskList.dart';
@@ -328,28 +329,28 @@ AppState appReducer(AppState state, dynamic action) {
       ..remove(projectId);
 
     return state.copyWith(
-      selectedProjectId: selectedProjectId,
-      inflatedProject: Optional.fromNullable(inflatedProject),
-      projects: projects,
-      taskLists: taskLists,
-      taskListsByProject: taskListsByProject,
-      tasks: tasks,
-      tasksById: tasksById,
-      tasksByProject: tasksByProject,
-      incompletedTasksByProject: incompletedTasksByProject,
-      completedTasksByProject: completedTasksByProject,
-      selectedTaskEntity:
-          _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
-      projectIndicatorGroups: getProjectIndicatorGroups(
-          tasks, state.deletedTaskLists, state.user.userId),
-      members: members,
-      enableState: state.enableState.copyWith(
-        canArchiveProject: selectedProjectId != '-1',
-        isProjectSelected: didDeleteSelectedProject == false,
-        showNoProjectsHint: projects.length == 0,
-        showSelectAProjectHint: selectedProjectId == '-1' && projects.length != 0,
-      )
-    );
+        selectedProjectId: selectedProjectId,
+        inflatedProject: Optional.fromNullable(inflatedProject),
+        projects: projects,
+        taskLists: taskLists,
+        taskListsByProject: taskListsByProject,
+        tasks: tasks,
+        tasksById: tasksById,
+        tasksByProject: tasksByProject,
+        incompletedTasksByProject: incompletedTasksByProject,
+        completedTasksByProject: completedTasksByProject,
+        selectedTaskEntity:
+            _updateSelectedTaskEntity(state.selectedTaskEntity, tasks),
+        projectIndicatorGroups: getProjectIndicatorGroups(
+            tasks, state.deletedTaskLists, state.user.userId),
+        members: members,
+        enableState: state.enableState.copyWith(
+          canArchiveProject: selectedProjectId != '-1',
+          isProjectSelected: didDeleteSelectedProject == false,
+          showNoProjectsHint: projects.length == 0,
+          showSelectAProjectHint:
+              selectedProjectId == '-1' && projects.length != 0,
+        ));
   }
 
   if (action is SetShowCompletedTasks) {
@@ -430,12 +431,24 @@ AppState appReducer(AppState state, dynamic action) {
         processingProjectInviteIds: action.processingProjectInviteIds);
   }
 
+  if (action is ReceiveActivityFeed) {
+    return state.copyWith(
+      activityFeed: Map<String, List<ActivityFeedEventModel>>.from(
+          state.activityFeed
+            ..update(action.projectId, (existing) => action.activityFeed,
+                ifAbsent: () => action.activityFeed)),
+    );
+  }
+
   if (action is ReceiveMembers) {
     var members =
         _updateMembers(state.members, action.projectId, action.membersList);
 
-    var selfMember = action.membersList.firstWhere((item) => item.userId == state.user.userId, orElse: () => null);
-    var favirouteTaskListIds = _updateFavirouteTaskListIds(state.favirouteTaskListIds, selfMember, action.projectId);
+    var selfMember = action.membersList.firstWhere(
+        (item) => item.userId == state.user.userId,
+        orElse: () => null);
+    var favirouteTaskListIds = _updateFavirouteTaskListIds(
+        state.favirouteTaskListIds, selfMember, action.projectId);
 
     var inflatedProject = action.projectId == state.selectedProjectId
         ? buildInflatedProject(
@@ -660,17 +673,15 @@ Map<String, List<MemberModel>> _updateMembers(
   return newMembersMap;
 }
 
-Map<String, String> _updateFavirouteTaskListIds(Map<String,String> original, MemberModel selfMember, String projectId) {
-  var newMap = Map<String,String>.from(original);
+Map<String, String> _updateFavirouteTaskListIds(
+    Map<String, String> original, MemberModel selfMember, String projectId) {
+  var newMap = Map<String, String>.from(original);
 
   if (selfMember == null || selfMember.favouriteTaskListId == '-1') {
     newMap.remove(projectId);
-  }
-
-  else {
+  } else {
     newMap[projectId] = selfMember.favouriteTaskListId;
   }
 
   return newMap;
-  
 }

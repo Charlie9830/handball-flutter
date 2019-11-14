@@ -1,4 +1,5 @@
 import 'package:handball_flutter/enums.dart';
+import 'package:handball_flutter/models/ActivityFeedEventModel.dart';
 import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/EnableState.dart';
 import 'package:handball_flutter/models/IndicatorGroup.dart';
@@ -25,6 +26,7 @@ final initialAppState = AppState(
   taskLists: <TaskListModel>[],
   taskListsByProject: <String, List<TaskListModel>>{},
   projects: [],
+  activityFeed: <String, List<ActivityFeedEventModel>>{},
   projectIndicatorGroups: <String, IndicatorGroup>{},
   selectedProjectId: '-1',
   projectShareMenuEntity: null,

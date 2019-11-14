@@ -28,6 +28,7 @@ class AppDrawer extends StatelessWidget {
                   onCreateProjectButtonPressed:
                       viewModel.onAddNewProjectButtonPress,
                   onSettingsButtonPressed: viewModel.onAppSettingsOpen,
+                  onActivityFeedButtonPressed: viewModel.onActivityFeedButtonPressed,
                 ),
                 ProjectInviteList(
                   viewModels: viewModel.projectInviteViewModels,

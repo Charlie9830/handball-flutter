@@ -13,6 +13,7 @@ import 'package:handball_flutter/configValues.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/AccountConfig.dart';
+import 'package:handball_flutter/models/ActivityFeedEventModel.dart';
 import 'package:handball_flutter/models/AppTheme.dart';
 import 'package:handball_flutter/models/ArchivedProject.dart';
 import 'package:handball_flutter/models/Assignment.dart';
@@ -88,6 +89,8 @@ class OpenAppSettings {
     this.tab,
   });
 }
+
+class OpenActivityFeed {}
 
 class ReceiveAccountConfig {
   final AccountConfigModel accountConfig;
@@ -251,6 +254,16 @@ class ReceiveMembers {
   ReceiveMembers({
     this.projectId,
     this.membersList,
+  });
+}
+
+class ReceiveActivityFeed {
+  final String projectId;
+  final List<ActivityFeedEventModel> activityFeed;
+
+  ReceiveActivityFeed({
+    @required this.projectId,
+    this.activityFeed,
   });
 }
 
@@ -2317,8 +2330,8 @@ ThunkAction<AppState> addNewTaskWithDialog(
     String projectId, BuildContext context,
     {String taskListId}) {
   return (Store<AppState> store) async {
-    var preselectedTaskList = _getAddTaskDialogPreselectedTaskList(
-        projectId, taskListId, store.state.taskListsByProject[projectId], store.state);
+    var preselectedTaskList = _getAddTaskDialogPreselectedTaskList(projectId,
+        taskListId, store.state.taskListsByProject[projectId], store.state);
 
     var assignmentOptions = store.state.members[projectId] == null
         ? <Assignment>[]
@@ -2391,6 +2404,25 @@ ThunkAction<AppState> addNewTaskWithDialog(
         batch.setData(taskRef, task.toMap());
         batch.setData(taskListRef, newTaskList.toMap());
 
+        // Activity Feed.
+        var activityFeedRef =
+            _getActivityFeedCollectionRef(projectId)
+                .document();
+        batch.setData(
+            activityFeedRef,
+            ActivityFeedEventModel(
+              uid: activityFeedRef.documentID,
+              originUserId: store.state.user.userId,
+              projectId: projectId,
+              projectName: _getProjectName(store.state.projects, projectId),
+              timestamp: DateTime.now(),
+              description:
+                  '${store.state.user.displayName} created the List ${newTaskList.taskListName} and added a task to it',
+              selfDescription:
+                  'You created the List ${newTaskList.taskListName} and added a task to it',
+              details: task.taskName,
+            ).toMap());
+
         // Push the new value to lastUsedTaskLists
         store.dispatch(PushLastUsedTaskList(
           projectId: projectId,
@@ -2404,6 +2436,8 @@ ThunkAction<AppState> addNewTaskWithDialog(
         }
       } else {
         // User selected an existing TaskList.
+        var batch = Firestore.instance.batch();
+
         var taskRef = _getTasksCollectionRef(projectId).document();
         var targetTaskListId = result.taskListId ??
             taskListId; // Use the taskListId parameter if Dialog returns a null taskListId.
@@ -2428,6 +2462,27 @@ ThunkAction<AppState> addNewTaskWithDialog(
                 createdBy: store.state.user.displayName,
                 createdOn: DateTime.now()));
 
+        batch.setData(taskRef, task.toMap());
+
+        // Activity Feed.
+        var activityFeedRef =
+            _getActivityFeedCollectionRef(projectId)
+                .document();
+        batch.setData(
+            activityFeedRef,
+            ActivityFeedEventModel(
+              uid: activityFeedRef.documentID,
+              originUserId: store.state.user.userId,
+              projectId: projectId,
+              projectName: _getProjectName(store.state.projects, projectId),
+              timestamp: DateTime.now(),
+              description:
+                  '${store.state.user.displayName} created a new Task in ${_getTaskListName(store.state.taskLists, targetTaskListId)}',
+              selfDescription:
+                  'You created a new Task in ${_getTaskListName(store.state.taskLists, targetTaskListId)}',
+              details: task.taskName,
+            ).toMap());
+
         // Push the new value to lastUsedTaskLists
         store.dispatch(PushLastUsedTaskList(
           projectId: projectId,
@@ -2435,7 +2490,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
         ));
 
         try {
-          await taskRef.setData(task.toMap());
+          await batch.commit();
         } catch (error) {
           throw error;
         }
@@ -2464,8 +2519,8 @@ Map<String, ReminderModel> _buildNewRemindersMap(
   };
 }
 
-TaskListModel _getAddTaskDialogPreselectedTaskList(
-    String projectId, String taskListId, List<TaskListModel> taskLists, AppState state) {
+TaskListModel _getAddTaskDialogPreselectedTaskList(String projectId,
+    String taskListId, List<TaskListModel> taskLists, AppState state) {
   // Try to retreive a Tasklist to become the Preselected List for the AddTaskDialog.
   // Honor these rules in order.
   // 1. Try and retrieve Tasklist directly using provided taskListId (if provided). This indicates the user has
@@ -2486,8 +2541,10 @@ TaskListModel _getAddTaskDialogPreselectedTaskList(
   // Nothing? Try FavirouteTaskListId.
   if (state.favirouteTaskListIds.containsKey(projectId)) {
     var favirouteTaskListId = state.favirouteTaskListIds[projectId];
-    var faviorouteTaskList = taskLists.firstWhere((item) => item.uid == favirouteTaskListId, orElse: () => null);
-    
+    var faviorouteTaskList = taskLists.firstWhere(
+        (item) => item.uid == favirouteTaskListId,
+        orElse: () => null);
+
     if (faviorouteTaskList != null) {
       return faviorouteTaskList;
     }
@@ -2946,7 +3003,9 @@ void _addProjectSubscription(String projectId, Store<AppState> store) {
           project: _subscribeToProject(projectId, store),
           members: _subscribeToMembers(projectId, store),
           taskLists: _subscribeToTaskLists(projectId, store),
-          incompletedTasks: _subscribeToIncompletedTasks(projectId, store));
+          incompletedTasks: _subscribeToIncompletedTasks(projectId, store),
+          projectEvents:
+              _subscribeToActivityFeed(projectId, store));
 }
 
 void _removeProjectSubscription(String projectId, Store<AppState> store) async {
@@ -2957,6 +3016,27 @@ void _removeProjectSubscription(String projectId, Store<AppState> store) async {
 
     store.dispatch(RemoveProjectEntities(projectId: projectId));
   }
+}
+
+StreamSubscription<QuerySnapshot> _subscribeToActivityFeed(
+    String projectId, Store<AppState> store) {
+  return Firestore.instance
+      .collection('projects')
+      .document(projectId)
+      .collection('activityFeed')
+      .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime.now().subtract(Duration(days: 7))))
+      .snapshots()
+      .listen((snapshot) {
+    List<ActivityFeedEventModel> events = [];
+
+    snapshot.documents
+        .forEach((doc) => events.add(ActivityFeedEventModel.fromDoc(doc)));
+
+    store.dispatch(ReceiveActivityFeed(
+      projectId: projectId,
+      activityFeed: events,
+    ));
+  });
 }
 
 StreamSubscription<QuerySnapshot> _subscribeToMembers(
@@ -3103,6 +3183,13 @@ CollectionReference _getMembersCollectionRef(
       .collection('projects')
       .document(projectId)
       .collection('members');
+}
+
+CollectionReference _getActivityFeedCollectionRef(String projectId) {
+  return Firestore.instance
+      .collection('projects')
+      .document(projectId)
+      .collection('activityFeed');
 }
 
 CollectionReference _getTasksCollectionRef(String projectId) {
@@ -3330,4 +3417,26 @@ TaskMetadata _getUpdatedTaskMetadata(
     default:
       return metadata.copyWith();
   }
+}
+
+String _getProjectName(List<ProjectModel> projects, String projectId) {
+  var project =
+      projects.firstWhere((item) => item.uid == projectId, orElse: () => null);
+
+  if (project == null) {
+    return '';
+  }
+
+  return project.projectName;
+}
+
+String _getTaskListName(List<TaskListModel> taskLists, String taskListId) {
+  var taskList = taskLists.firstWhere((item) => item.uid == taskListId,
+      orElse: () => null);
+
+  if (taskList == null) {
+    return '';
+  }
+
+  return taskList.taskListName;
 }

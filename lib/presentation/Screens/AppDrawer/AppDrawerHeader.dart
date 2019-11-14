@@ -5,12 +5,14 @@ class AppDrawerHeader extends StatelessWidget {
   final String displayName;
   final dynamic onSettingsButtonPressed;
   final dynamic onCreateProjectButtonPressed;
+  final dynamic onActivityFeedButtonPressed;
 
   AppDrawerHeader({
     this.email,
     this.displayName,
     this.onCreateProjectButtonPressed,
     this.onSettingsButtonPressed,
+    this.onActivityFeedButtonPressed,
   });
 
   @override
@@ -31,23 +33,38 @@ class AppDrawerHeader extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text(displayName ?? '', style: Theme.of(context).textTheme.body2),
-                      Text(email ?? '', style: Theme.of(context).textTheme.body1),
+                      Text(displayName ?? '',
+                          style: Theme.of(context).textTheme.body2),
+                      Text(email ?? '',
+                          style: Theme.of(context).textTheme.body1),
                     ],
                   ),
                   IconButton(
                     icon: Icon(Icons.settings),
                     onPressed: onSettingsButtonPressed,
-                  )
+                  ),
                 ],
               ),
-              FlatButton(
-                textColor: Theme.of(context).buttonTheme.colorScheme.onPrimary,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: <Widget>[Icon(Icons.add), Text('Create Project')],
-                ),
-                onPressed: onCreateProjectButtonPressed,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  FlatButton(
+                    textColor:
+                        Theme.of(context).buttonTheme.colorScheme.onPrimary,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: <Widget>[
+                        Icon(Icons.add),
+                        Text('Create Project')
+                      ],
+                    ),
+                    onPressed: onCreateProjectButtonPressed,
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.history),
+                    onPressed: onActivityFeedButtonPressed,
+                  )
+                ],
               )
             ],
           ),

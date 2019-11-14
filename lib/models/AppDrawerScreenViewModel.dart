@@ -8,6 +8,7 @@ class AppDrawerScreenViewModel {
   final String displayName;
   final dynamic onAddNewProjectButtonPress;
   final dynamic onAppSettingsOpen;
+  final dynamic onActivityFeedButtonPressed;
 
   AppDrawerScreenViewModel({
     this.projectViewModels,
@@ -16,5 +17,6 @@ class AppDrawerScreenViewModel {
     this.displayName = '',
     this.onAddNewProjectButtonPress,
     this.onAppSettingsOpen,
+    this.onActivityFeedButtonPressed,
     });
 }

@@ -1,5 +1,6 @@
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/AccountConfig.dart';
+import 'package:handball_flutter/models/ActivityFeedEventModel.dart';
 import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/EnableState.dart';
 import 'package:handball_flutter/models/IndicatorGroup.dart';
@@ -18,6 +19,7 @@ import 'package:quiver/core.dart';
 class AppState {
   final List<ProjectIdModel> projectIds;
   final List<ProjectModel> projects;
+  final Map<String, List<ActivityFeedEventModel>> activityFeed;
   final String selectedProjectId;
   final ProjectModel projectShareMenuEntity;
   final InflatedProjectModel inflatedProject;
@@ -60,6 +62,7 @@ class AppState {
 
   AppState({
     this.projectIds,
+    this.activityFeed,
     this.projects,
     this.selectedProjectId,
     this.projectShareMenuEntity,
@@ -105,6 +108,7 @@ class AppState {
     List<ProjectIdModel> projectIds,
     List<ProjectModel> projects,
     Map<String, ProjectType> projectTypeLookup,
+    Map<String, List<ActivityFeedEventModel>> activityFeed,
     String selectedProjectId,
     Optional<ProjectModel> projectShareMenuEntity,
     Optional<TaskModel> selectedTaskEntity,
@@ -147,6 +151,7 @@ class AppState {
     return AppState(
       projectIds: projectIds ?? this.projectIds,
       projects: projects ?? this.projects,
+      activityFeed: activityFeed ?? this.activityFeed,
       selectedProjectId: selectedProjectId ?? this.selectedProjectId,
       projectShareMenuEntity: projectShareMenuEntity == null ? this.projectShareMenuEntity : projectShareMenuEntity.orNull,
       selectedTaskEntity: selectedTaskEntity == null ? this.selectedTaskEntity : selectedTaskEntity.orNull,
