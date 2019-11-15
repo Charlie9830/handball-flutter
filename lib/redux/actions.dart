@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -67,6 +66,7 @@ import 'package:handball_flutter/utilities/extractProject.dart';
 import 'package:handball_flutter/utilities/isSameTime.dart';
 import 'package:handball_flutter/utilities/listSortingHelpers.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
+import 'package:handball_flutter/utilities/parseActivityFeedQueryLength.dart';
 import 'package:handball_flutter/utilities/truncateString.dart';
 import 'package:handball_flutter/utilities/ReminderNotificationSync/syncRemindersToDeviceNotifications.dart';
 import 'package:redux/redux.dart';
@@ -97,6 +97,14 @@ class ReceiveAccountConfig {
 
   ReceiveAccountConfig({
     this.accountConfig,
+  });
+}
+
+class SetActivityFeedQueryLength {
+  final ActivityFeedQueryLength length;
+
+  SetActivityFeedQueryLength({
+    this.length,
   });
 }
 
@@ -287,6 +295,14 @@ class OpenShareProjectScreen {
   final String projectId;
 
   OpenShareProjectScreen({this.projectId});
+}
+
+class SetIsChangingActivityFeedLength {
+  final bool isChangingLength;
+
+  SetIsChangingActivityFeedLength({
+    this.isChangingLength,
+  });
 }
 
 class ReceiveIncompletedTasks {
@@ -688,6 +704,25 @@ StreamSubscription<QuerySnapshot> _subscribeToProjectInvites(
 
     store.dispatch(ReceiveProjectInvites(invites: invites));
   });
+}
+
+ThunkAction<AppState> setActivityFeedQueryLengthAsync(
+    ActivityFeedQueryLength currentLength, ActivityFeedQueryLength newLength) {
+  return (Store<AppState> store) async {
+    if (currentLength == newLength) {
+      return;
+    }
+
+    store.dispatch(SetIsChangingActivityFeedLength(isChangingLength: true));
+    store.dispatch(SetActivityFeedQueryLength(length: newLength));
+
+    await _firestoreStreams.cancelActivityFeeds();
+    for (var projectId in _firestoreStreams.projectSubscriptions.keys) {
+      _firestoreStreams.projectSubscriptions[projectId].activityFeed = _subscribeToActivityFeed(projectId, newLength, store);
+    }
+
+    store.dispatch(SetIsChangingActivityFeedLength(isChangingLength: false));
+  };
 }
 
 ThunkAction<AppState> acceptProjectInvite(String projectId) {
@@ -2406,8 +2441,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
 
         // Activity Feed.
         var activityFeedRef =
-            _getActivityFeedCollectionRef(projectId)
-                .document();
+            _getActivityFeedCollectionRef(projectId).document();
         batch.setData(
             activityFeedRef,
             ActivityFeedEventModel(
@@ -2466,8 +2500,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
 
         // Activity Feed.
         var activityFeedRef =
-            _getActivityFeedCollectionRef(projectId)
-                .document();
+            _getActivityFeedCollectionRef(projectId).document();
         batch.setData(
             activityFeedRef,
             ActivityFeedEventModel(
@@ -3004,8 +3037,7 @@ void _addProjectSubscription(String projectId, Store<AppState> store) {
           members: _subscribeToMembers(projectId, store),
           taskLists: _subscribeToTaskLists(projectId, store),
           incompletedTasks: _subscribeToIncompletedTasks(projectId, store),
-          projectEvents:
-              _subscribeToActivityFeed(projectId, store));
+          activityFeed: _subscribeToActivityFeed(projectId, store.state.activityFeedQueryLength, store));
 }
 
 void _removeProjectSubscription(String projectId, Store<AppState> store) async {
@@ -3019,12 +3051,14 @@ void _removeProjectSubscription(String projectId, Store<AppState> store) async {
 }
 
 StreamSubscription<QuerySnapshot> _subscribeToActivityFeed(
-    String projectId, Store<AppState> store) {
+    String projectId, ActivityFeedQueryLength queryLength, Store<AppState> store) {
   return Firestore.instance
       .collection('projects')
       .document(projectId)
       .collection('activityFeed')
-      .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime.now().subtract(Duration(days: 7))))
+      .where('timestamp',
+          isGreaterThanOrEqualTo:
+              Timestamp.fromDate(DateTime.now().subtract(parseActivityFeedQueryLength(queryLength))))
       .snapshots()
       .listen((snapshot) {
     List<ActivityFeedEventModel> events = [];

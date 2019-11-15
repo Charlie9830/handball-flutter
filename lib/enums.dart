@@ -22,5 +22,7 @@ enum TasksSnapshotType { completed, incompleted }
 
 enum MaterialColorPickerType { primary, accent }
 
+enum ActivityFeedQueryLength { week, twoWeek, month, threeMonth, sixMonth, year }
+
 // You serialize these by index, don't screw around with the order.
 enum UndoActionType { deleteProject, deleteTaskList, deleteTask, completeTask, multiCompleteTasks, multiDeleteTasks, }

@@ -25,6 +25,14 @@ class FirestoreStreamsContainer {
 
     return Future.wait(requests.where((item) => item != null));
   }
+
+  Future<void> cancelActivityFeeds() {
+    List<Future<void>> requests = [];
+
+    requests.addAll(this.projectSubscriptions.values.map((sub) => sub.activityFeed.cancel()));
+
+    return Future.wait(requests.where((item) => item != null));
+  }
 }
 
 class ProjectSubscriptionContainer {
@@ -35,7 +43,7 @@ class ProjectSubscriptionContainer {
   StreamSubscription<QuerySnapshot> incompletedTasks;
   StreamSubscription<QuerySnapshot> completedTasks;
   StreamSubscription<QuerySnapshot> members;
-  StreamSubscription<QuerySnapshot> projectEvents;
+  StreamSubscription<QuerySnapshot> activityFeed;
 
   ProjectSubscriptionContainer({
     @required this.uid,
@@ -44,7 +52,7 @@ class ProjectSubscriptionContainer {
     this.incompletedTasks,
     this.completedTasks,
     this.members,
-    @required this.projectEvents,
+    this.activityFeed,
   });
 
   Future<void> cancelAll() {
@@ -55,9 +63,8 @@ class ProjectSubscriptionContainer {
     requests.add(this.incompletedTasks?.cancel());
     requests.add(this.completedTasks?.cancel());
     requests.add(this.members?.cancel());
-    requests.add(this.projectEvents?.cancel());
+    requests.add(this.activityFeed?.cancel());
 
     return Future.wait(requests.where((item) => item != null));
   }
-
 }

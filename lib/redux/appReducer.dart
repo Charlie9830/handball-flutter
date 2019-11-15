@@ -440,6 +440,18 @@ AppState appReducer(AppState state, dynamic action) {
     );
   }
 
+  if (action is SetActivityFeedQueryLength) {
+    return state.copyWith(
+      activityFeedQueryLength: action.length,
+    );
+  }
+
+  if (action is SetIsChangingActivityFeedLength) {
+    return state.copyWith(
+      isChangingActivityFeedQueryLength: action.isChangingLength,
+    );
+  }
+
   if (action is ReceiveMembers) {
     var members =
         _updateMembers(state.members, action.projectId, action.membersList);

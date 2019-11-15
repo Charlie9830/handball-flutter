@@ -70,6 +70,8 @@ final initialAppState = AppState(
   tasksById: <String, TaskModel>{},
   deletedTaskLists: <String, TaskListModel>{},
   favirouteTaskListIds: <String, String>{},
+  activityFeedQueryLength: ActivityFeedQueryLength.week,
+  isChangingActivityFeedQueryLength: false,
 );
 
 final appStore = new Store<AppState> (

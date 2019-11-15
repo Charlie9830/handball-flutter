@@ -3,6 +3,7 @@ import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/models/ActivityFeedEventModel.dart';
 import 'package:handball_flutter/models/ActivityFeedViewModel.dart';
 import 'package:handball_flutter/presentation/Screens/ActivityFeed/ActivityFeed.dart';
+import 'package:handball_flutter/redux/actions.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:redux/redux.dart';
 
@@ -21,6 +22,9 @@ class ActivityFeedContainer extends StatelessWidget {
   _converter(Store<AppState> store, BuildContext context) {
     return new ActivityFeedViewModel(
       activityFeed: store.state.activityFeed.values.expand((i) => i).toList()..sort(_activityFeedEventComparator),
+      isChangingActivityFeedLength: store.state.isChangingActivityFeedQueryLength,
+      activityFeedQueryLength: store.state.activityFeedQueryLength,
+      onActivityFeedQueryLengthSelect: (newValue) => store.dispatch(setActivityFeedQueryLengthAsync(store.state.activityFeedQueryLength, newValue)),
     );
   }
 

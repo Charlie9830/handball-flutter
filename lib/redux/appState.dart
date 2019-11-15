@@ -57,6 +57,8 @@ class AppState {
   final EnableStateModel enableState;
   final UndoActionModel lastUndoAction;
   final Map<String, String> favirouteTaskListIds;
+  final ActivityFeedQueryLength activityFeedQueryLength;
+  final bool isChangingActivityFeedQueryLength;
 
   final TextInputDialogModel textInputDialog;
 
@@ -102,6 +104,8 @@ class AppState {
     this.tasksById,
     this.deletedTaskLists,
     this.favirouteTaskListIds,
+    this.activityFeedQueryLength,
+    this.isChangingActivityFeedQueryLength,
   });
 
   AppState copyWith({
@@ -147,6 +151,8 @@ class AppState {
     Map<String, TaskModel> tasksById,
     Map<String, TaskListModel> deletedTaskLists,
     Map<String, String> favirouteTaskListIds,
+    ActivityFeedQueryLength activityFeedQueryLength,
+    bool isChangingActivityFeedQueryLength,
   }) {
     return AppState(
       projectIds: projectIds ?? this.projectIds,
@@ -197,6 +203,8 @@ class AppState {
       tasksById: tasksById ?? this.tasksById,
       deletedTaskLists: deletedTaskLists ?? this.deletedTaskLists,
       favirouteTaskListIds: favirouteTaskListIds ?? this.favirouteTaskListIds,
+      activityFeedQueryLength: activityFeedQueryLength ?? this.activityFeedQueryLength,
+      isChangingActivityFeedQueryLength: isChangingActivityFeedQueryLength ?? this.isChangingActivityFeedQueryLength,
     );
   }
 }
