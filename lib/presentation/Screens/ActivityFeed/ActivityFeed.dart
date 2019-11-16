@@ -73,7 +73,7 @@ class ActivityFeed extends StatelessWidget {
                       return ProjectEventListTile(
                         key: Key(event.uid),
                         projectName: event.projectName,
-                        title: event.description,
+                        title: event.title,
                         details: event.details,
                         timestamp: event.timestamp,
                       );

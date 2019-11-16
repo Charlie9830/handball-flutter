@@ -567,25 +567,29 @@ ThunkAction<AppState> initializeApp() {
 
 ThunkAction<AppState> debugButtonPressed() {
   return (Store<AppState> store) async {
-    
     var dateFormater = new DateFormat('EEEE MMMM d');
-    var projectName = store.state.projects.firstWhere((item) => item.uid == store.state.selectedProjectId).projectName;
+    var projectName = store.state.projects
+        .firstWhere((item) => item.uid == store.state.selectedProjectId)
+        .projectName;
 
     List<ActivityFeedEventModel> events = List.generate(10, (index) {
       return ActivityFeedEventModel(
-        description: '$index',
-        details: '${dateFormater.format(DateTime.now().subtract(Duration(days: index * 4)))}',
+        title: '$index',
+        details:
+            '${dateFormater.format(DateTime.now().subtract(Duration(days: index * 4)))}',
         originUserId: 'userUID',
         projectId: store.state.selectedProjectId,
         projectName: projectName,
-        selfDescription: 'Self Description',
+        selfTitle: 'Self Description',
         uid: '$index',
-        timestamp: DateTime.now().subtract(Duration(days: index * (projectName.length / 4).round() )),
+        timestamp: DateTime.now()
+            .subtract(Duration(days: index * (projectName.length / 4).round())),
       );
     });
 
     var batch = Firestore.instance.batch();
-    var collectionRef = _getActivityFeedCollectionRef(store.state.selectedProjectId);
+    var collectionRef =
+        _getActivityFeedCollectionRef(store.state.selectedProjectId);
 
     for (var event in events) {
       batch.setData(collectionRef.document(event.uid), event.toMap());
@@ -2485,9 +2489,9 @@ ThunkAction<AppState> addNewTaskWithDialog(
               projectId: projectId,
               projectName: _getProjectName(store.state.projects, projectId),
               timestamp: DateTime.now(),
-              description:
+              title:
                   '${store.state.user.displayName} created the List ${newTaskList.taskListName} and added a task to it',
-              selfDescription:
+              selfTitle:
                   'You created the List ${newTaskList.taskListName} and added a task to it',
               details: task.taskName,
             ).toMap());
@@ -2544,9 +2548,9 @@ ThunkAction<AppState> addNewTaskWithDialog(
               projectId: projectId,
               projectName: _getProjectName(store.state.projects, projectId),
               timestamp: DateTime.now(),
-              description:
+              title:
                   '${store.state.user.displayName} created a new Task in ${_getTaskListName(store.state.taskLists, targetTaskListId)}',
-              selfDescription:
+              selfTitle:
                   'You created a new Task in ${_getTaskListName(store.state.taskLists, targetTaskListId)}',
               details: task.taskName,
             ).toMap());
@@ -3510,3 +3514,25 @@ String _getTaskListName(List<TaskListModel> taskLists, String taskListId) {
 
   return taskList.taskListName;
 }
+
+Future<void> _updateActivityFeed(
+    {@required String projectId,
+    @required UserModel user,
+    @required projectName,
+    @required ActivityFeedEventType type,
+    @required String title,
+    @required String details}) async {
+      var ref = _getActivityFeedCollectionRef(projectId).document();
+      var event = ActivityFeedEventModel(
+        uid: ref.documentID,
+        originUserId: user.userId,
+        projectId: projectId,
+        projectName: projectName,
+        title: '${user.displayName} $title ',
+        selfTitle: 'You $title',
+        details: details,
+        timestamp: DateTime.now(),
+      );
+
+      await ref.setData(event.toMap());
+    }
