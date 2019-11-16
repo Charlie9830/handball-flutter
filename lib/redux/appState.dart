@@ -59,6 +59,7 @@ class AppState {
   final Map<String, String> favirouteTaskListIds;
   final ActivityFeedQueryLength activityFeedQueryLength;
   final bool isChangingActivityFeedQueryLength;
+  final String selectedActivityFeedProjectId;
 
   final TextInputDialogModel textInputDialog;
 
@@ -106,6 +107,7 @@ class AppState {
     this.favirouteTaskListIds,
     this.activityFeedQueryLength,
     this.isChangingActivityFeedQueryLength,
+    this.selectedActivityFeedProjectId,
   });
 
   AppState copyWith({
@@ -153,6 +155,7 @@ class AppState {
     Map<String, String> favirouteTaskListIds,
     ActivityFeedQueryLength activityFeedQueryLength,
     bool isChangingActivityFeedQueryLength,
+    String selectedActivityFeedProjectId,
   }) {
     return AppState(
       projectIds: projectIds ?? this.projectIds,
@@ -205,6 +208,7 @@ class AppState {
       favirouteTaskListIds: favirouteTaskListIds ?? this.favirouteTaskListIds,
       activityFeedQueryLength: activityFeedQueryLength ?? this.activityFeedQueryLength,
       isChangingActivityFeedQueryLength: isChangingActivityFeedQueryLength ?? this.isChangingActivityFeedQueryLength,
+      selectedActivityFeedProjectId: selectedActivityFeedProjectId ?? this.selectedActivityFeedProjectId,
     );
   }
 }

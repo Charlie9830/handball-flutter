@@ -69,6 +69,7 @@ import 'package:handball_flutter/utilities/normalizeDate.dart';
 import 'package:handball_flutter/utilities/parseActivityFeedQueryLength.dart';
 import 'package:handball_flutter/utilities/truncateString.dart';
 import 'package:handball_flutter/utilities/ReminderNotificationSync/syncRemindersToDeviceNotifications.dart';
+import 'package:intl/intl.dart';
 import 'package:redux/redux.dart';
 import 'package:redux_thunk/redux_thunk.dart';
 import 'package:handball_flutter/utilities/CloudFunctionLayer.dart';
@@ -272,6 +273,14 @@ class ReceiveActivityFeed {
   ReceiveActivityFeed({
     @required this.projectId,
     this.activityFeed,
+  });
+}
+
+class SetSelectedActivityFeedProjectId {
+  final String projectId;
+
+  SetSelectedActivityFeedProjectId({
+    this.projectId,
   });
 }
 
@@ -558,7 +567,32 @@ ThunkAction<AppState> initializeApp() {
 
 ThunkAction<AppState> debugButtonPressed() {
   return (Store<AppState> store) async {
-    _printPendingNotifications();
+    
+    var dateFormater = new DateFormat('EEEE MMMM d');
+    var projectName = store.state.projects.firstWhere((item) => item.uid == store.state.selectedProjectId).projectName;
+
+    List<ActivityFeedEventModel> events = List.generate(10, (index) {
+      return ActivityFeedEventModel(
+        description: '$index',
+        details: '${dateFormater.format(DateTime.now().subtract(Duration(days: index * 4)))}',
+        originUserId: 'userUID',
+        projectId: store.state.selectedProjectId,
+        projectName: projectName,
+        selfDescription: 'Self Description',
+        uid: '$index',
+        timestamp: DateTime.now().subtract(Duration(days: index * (projectName.length / 4).round() )),
+      );
+    });
+
+    var batch = Firestore.instance.batch();
+    var collectionRef = _getActivityFeedCollectionRef(store.state.selectedProjectId);
+
+    for (var event in events) {
+      batch.setData(collectionRef.document(event.uid), event.toMap());
+    }
+
+    await batch.commit();
+    print('Batch Committed');
   };
 }
 
@@ -718,7 +752,8 @@ ThunkAction<AppState> setActivityFeedQueryLengthAsync(
 
     await _firestoreStreams.cancelActivityFeeds();
     for (var projectId in _firestoreStreams.projectSubscriptions.keys) {
-      _firestoreStreams.projectSubscriptions[projectId].activityFeed = _subscribeToActivityFeed(projectId, newLength, store);
+      _firestoreStreams.projectSubscriptions[projectId].activityFeed =
+          _subscribeToActivityFeed(projectId, newLength, store);
     }
 
     store.dispatch(SetIsChangingActivityFeedLength(isChangingLength: false));
@@ -3037,7 +3072,8 @@ void _addProjectSubscription(String projectId, Store<AppState> store) {
           members: _subscribeToMembers(projectId, store),
           taskLists: _subscribeToTaskLists(projectId, store),
           incompletedTasks: _subscribeToIncompletedTasks(projectId, store),
-          activityFeed: _subscribeToActivityFeed(projectId, store.state.activityFeedQueryLength, store));
+          activityFeed: _subscribeToActivityFeed(
+              projectId, store.state.activityFeedQueryLength, store));
 }
 
 void _removeProjectSubscription(String projectId, Store<AppState> store) async {
@@ -3050,15 +3086,15 @@ void _removeProjectSubscription(String projectId, Store<AppState> store) async {
   }
 }
 
-StreamSubscription<QuerySnapshot> _subscribeToActivityFeed(
-    String projectId, ActivityFeedQueryLength queryLength, Store<AppState> store) {
+StreamSubscription<QuerySnapshot> _subscribeToActivityFeed(String projectId,
+    ActivityFeedQueryLength queryLength, Store<AppState> store) {
   return Firestore.instance
       .collection('projects')
       .document(projectId)
       .collection('activityFeed')
       .where('timestamp',
-          isGreaterThanOrEqualTo:
-              Timestamp.fromDate(DateTime.now().subtract(parseActivityFeedQueryLength(queryLength))))
+          isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime.now()
+              .subtract(parseActivityFeedQueryLength(queryLength))))
       .snapshots()
       .listen((snapshot) {
     List<ActivityFeedEventModel> events = [];

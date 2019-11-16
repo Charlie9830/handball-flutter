@@ -9,9 +9,9 @@ import 'package:redux/redux.dart';
 
 class ActivityFeedContainer extends StatelessWidget {
   Widget build(BuildContext context) {
-    return new StoreConnector<AppState, ActivityFeedViewModel> (
+    return new StoreConnector<AppState, ActivityFeedViewModel>(
       converter: (Store<AppState> store) => _converter(store, context),
-      builder: ( context, viewModel) {
+      builder: (context, viewModel) {
         return new ActivityFeed(
           viewModel: viewModel,
         );
@@ -21,14 +21,29 @@ class ActivityFeedContainer extends StatelessWidget {
 
   _converter(Store<AppState> store, BuildContext context) {
     return new ActivityFeedViewModel(
-      activityFeed: store.state.activityFeed.values.expand((i) => i).toList()..sort(_activityFeedEventComparator),
-      isChangingActivityFeedLength: store.state.isChangingActivityFeedQueryLength,
+      activityFeed: _extractActivityFeedList(
+          store.state.activityFeed, store.state.selectedActivityFeedProjectId),
+      selectedActivityFeedProjectId: store.state.selectedActivityFeedProjectId,
+      projects: store.state.projects,
+      isChangingActivityFeedLength:
+          store.state.isChangingActivityFeedQueryLength,
       activityFeedQueryLength: store.state.activityFeedQueryLength,
-      onActivityFeedQueryLengthSelect: (newValue) => store.dispatch(setActivityFeedQueryLengthAsync(store.state.activityFeedQueryLength, newValue)),
+      onActivityFeedQueryLengthSelect: (newValue) => store.dispatch(
+          setActivityFeedQueryLengthAsync(
+              store.state.activityFeedQueryLength, newValue)),
+      onActivityFeedProjectSelect: (newValue) => store.dispatch(SetSelectedActivityFeedProjectId(projectId: newValue)) 
     );
   }
 
-  int _activityFeedEventComparator(ActivityFeedEventModel a, ActivityFeedEventModel b) {
-    return a.timestamp.millisecondsSinceEpoch - b.timestamp.millisecondsSinceEpoch;
+  List<ActivityFeedEventModel> _extractActivityFeedList(
+      Map<String, List<ActivityFeedEventModel>> activityFeed,
+      String selectedActivityFeedProjectId) {
+    if (selectedActivityFeedProjectId == null ||
+        selectedActivityFeedProjectId == '-1') {
+      return activityFeed.values.expand((i) => i).toList();
+    } else {
+      return activityFeed[selectedActivityFeedProjectId] ??
+          <ActivityFeedEventModel>[];
+    }
   }
 }

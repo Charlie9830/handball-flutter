@@ -35,6 +35,8 @@ class ActivityFeed extends StatelessWidget {
                     isChangingQueryLength:
                         viewModel.isChangingActivityFeedLength,
                     text: _getRangeHintText(viewModel.activityFeedQueryLength),
+                    showProjectName: viewModel.selectedActivityFeedProjectId != '-1',
+                    projectName: _getSelectedProjectName(),
                   ),
                 ),
               )),
@@ -42,6 +44,10 @@ class ActivityFeed extends StatelessWidget {
             IconButton(
               icon: Icon(Icons.date_range),
               onPressed: () => _handleActivityFeedLengthButtonPressed(context),
+            ),
+            IconButton(
+              icon: Icon(Icons.filter_list),
+              onPressed: () => _handleFilterButtonPressed(context),
             )
           ],
         ),
@@ -105,6 +111,56 @@ class ActivityFeed extends StatelessWidget {
     }
   }
 
+  String _getSelectedProjectName() {
+    var project = viewModel.projects.firstWhere((item) => item.uid == viewModel.selectedActivityFeedProjectId, orElse: () => null);
+
+    if (project == null) {
+      return '';
+    }
+
+    return project.projectName;
+  }
+
+  void _handleFilterButtonPressed(BuildContext context) async {
+    var result = await showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return Column(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text('Only show events from project'),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  FlatButton(
+                    child: Text('Show All'),
+                    textColor: Theme.of(context).colorScheme.secondaryVariant,
+                    onPressed: () => Navigator.of(context).pop('-1'),
+                  )
+                ],
+              ),
+              Expanded(
+                  child: ListView(
+                children: viewModel.projects
+                    .map((item) => ListTile(
+                        key: Key(item.uid),
+                        title: Text(item.projectName),
+                        onTap: () => Navigator.of(context).pop(item.uid)))
+                    .toList(),
+              ))
+            ],
+          );
+        });
+
+    if (result == null || result.runtimeType != String) {
+      return;
+    }
+
+    viewModel.onActivityFeedProjectSelect(result as String);
+  }
+
   void _handleActivityFeedLengthButtonPressed(BuildContext context) async {
     var result = await showModalBottomSheet(
         context: context,
@@ -113,7 +169,7 @@ class ActivityFeed extends StatelessWidget {
             children: <Widget>[
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Text('Show events from'),
+                child: Text('Show events dating back from'),
               ),
               ListView(
                 shrinkWrap: true,
@@ -165,7 +221,7 @@ class ActivityFeed extends StatelessWidget {
 
     // The collection:groupBy functions used above leaves us with a Map. Keys being the days since epoch, values being Lists of
     // matching events. Sort the Keys so we will access the map in the correct order.
-    var sortedKeys = groupedEvents.keys.toList()..sort();
+    var sortedKeys = groupedEvents.keys.toList()..sort((a, b) => b - a);
     List<dynamic> eventsAndHeaders = [];
 
     for (var key in sortedKeys) {
@@ -178,6 +234,6 @@ class ActivityFeed extends StatelessWidget {
 
   int _projectEventComparer(
       ActivityFeedEventModel a, ActivityFeedEventModel b) {
-    return a.timestamp.second - b.timestamp.second;
+    return b.timestamp.second - a.timestamp.second;
   }
 }

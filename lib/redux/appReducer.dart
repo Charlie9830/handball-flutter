@@ -446,6 +446,12 @@ AppState appReducer(AppState state, dynamic action) {
     );
   }
 
+  if (action is SetSelectedActivityFeedProjectId) {
+    return state.copyWith(
+      selectedActivityFeedProjectId: action.projectId
+    );
+  }
+
   if (action is SetIsChangingActivityFeedLength) {
     return state.copyWith(
       isChangingActivityFeedQueryLength: action.isChangingLength,

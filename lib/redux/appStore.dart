@@ -72,6 +72,7 @@ final initialAppState = AppState(
   favirouteTaskListIds: <String, String>{},
   activityFeedQueryLength: ActivityFeedQueryLength.week,
   isChangingActivityFeedQueryLength: false,
+  selectedActivityFeedProjectId: '-1',
 );
 
 final appStore = new Store<AppState> (
