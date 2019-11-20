@@ -42,12 +42,12 @@ IconData getActivityFeedEventIcon(ActivityFeedEventType type) {
     case ActivityFeedEventType.deleteList:
       return Icons.delete;
 
-    case ActivityFeedEventType.updateList:
+    case ActivityFeedEventType.renameList:
       return Icons.edit;
 
     case ActivityFeedEventType.addMember:
       return Icons.person_add;
-      
+
     case ActivityFeedEventType.removeMember:
       return Icons.clear;
 
@@ -56,5 +56,17 @@ IconData getActivityFeedEventIcon(ActivityFeedEventType type) {
 
     case ActivityFeedEventType.renewChecklist:
       return Icons.playlist_add_check;
+
+    case ActivityFeedEventType.assignmentUpdate:
+      return Icons.assignment;
+
+    case ActivityFeedEventType.moveList:
+      return Icons.archive;
+
+    case ActivityFeedEventType.addProject:
+      return Icons.add;
+
+    case ActivityFeedEventType.reColorList:
+      return Icons.color_lens;
   }
 }

@@ -500,6 +500,16 @@ ThunkAction<AppState> updateProjectName(
 
       var ref = _getProjectsCollectionRef(store).document(projectId);
 
+      // Activity Feed.
+      _updateActivityFeed(
+        user: store.state.user,
+        projectId: projectId,
+        projectName: existingName,
+        type: ActivityFeedEventType.renameProject,
+        title: 'renamed the project $existingName to $newName.',
+        details: '',
+      );
+
       try {
         await ref.updateData({'projectName': newName.trim()});
       } catch (error) {
@@ -567,36 +577,36 @@ ThunkAction<AppState> initializeApp() {
 
 ThunkAction<AppState> debugButtonPressed() {
   return (Store<AppState> store) async {
-    var dateFormater = new DateFormat('EEEE MMMM d');
-    var projectName = store.state.projects
-        .firstWhere((item) => item.uid == store.state.selectedProjectId)
-        .projectName;
+    // var dateFormater = new DateFormat('EEEE MMMM d');
+    // var projectName = store.state.projects
+    //     .firstWhere((item) => item.uid == store.state.selectedProjectId)
+    //     .projectName;
 
-    List<ActivityFeedEventModel> events = List.generate(10, (index) {
-      return ActivityFeedEventModel(
-        title: '$index',
-        details:
-            '${dateFormater.format(DateTime.now().subtract(Duration(days: index * 4)))}',
-        originUserId: 'userUID',
-        projectId: store.state.selectedProjectId,
-        projectName: projectName,
-        selfTitle: 'Self Description',
-        uid: '$index',
-        timestamp: DateTime.now()
-            .subtract(Duration(days: index * (projectName.length / 4).round())),
-      );
-    });
+    // List<ActivityFeedEventModel> events = List.generate(10, (index) {
+    //   return ActivityFeedEventModel(
+    //     title: '$index',
+    //     details:
+    //         '${dateFormater.format(DateTime.now().subtract(Duration(days: index * 4)))}',
+    //     originUserId: 'userUID',
+    //     projectId: store.state.selectedProjectId,
+    //     projectName: projectName,
+    //     selfTitle: 'Self Description',
+    //     uid: '$index',
+    //     timestamp: DateTime.now()
+    //         .subtract(Duration(days: index * (projectName.length / 4).round())),
+    //   );
+    // });
 
-    var batch = Firestore.instance.batch();
-    var collectionRef =
-        _getActivityFeedCollectionRef(store.state.selectedProjectId);
+    // var batch = Firestore.instance.batch();
+    // var collectionRef =
+    //     _getActivityFeedCollectionRef(store.state.selectedProjectId);
 
-    for (var event in events) {
-      batch.setData(collectionRef.document(event.uid), event.toMap());
-    }
+    // for (var event in events) {
+    //   batch.setData(collectionRef.document(event.uid), event.toMap());
+    // }
 
-    await batch.commit();
-    print('Batch Committed');
+    // await batch.commit();
+    // print('Batch Committed');
   };
 }
 
@@ -942,7 +952,7 @@ ThunkAction<AppState> moveTasksToListWithDialog(
 
       try {
         moveTasks(actuallyMovingTasks, destinationTaskListId, projectId, batch,
-            store.state.user.displayName);
+            store.state.user.displayName, store.state);
       } catch (error) {
         throw error;
       }
@@ -951,7 +961,11 @@ ThunkAction<AppState> moveTasksToListWithDialog(
 }
 
 Future<void> moveTasks(List<TaskModel> tasks, String destinationTaskListId,
-    String projectId, WriteBatch batch, String displayName) {
+    String projectId, WriteBatch batch, String displayName, AppState state) {
+  var projectName = _getProjectName(state.projects, projectId);
+  var destinationTaskListName = _getTaskListName(
+      state.taskListsByProject[projectId], destinationTaskListId);
+
   for (var task in tasks) {
     var ref = _getTasksCollectionRef(projectId).document(task.uid);
     batch.updateData(ref, {'taskList': destinationTaskListId});
@@ -960,6 +974,16 @@ Future<void> moveTasks(List<TaskModel> tasks, String destinationTaskListId,
               task.metadata, TaskMetadataUpdateType.updated, displayName)
           .toMap(),
     });
+
+    // Activity Feed
+    _updateActivityFeedToBatch(
+        batch: batch,
+        projectId: projectId,
+        user: state.user,
+        projectName: projectName,
+        type: ActivityFeedEventType.moveTask,
+        title: 'moved a task into $destinationTaskListName.',
+        details: task.taskName);
   }
 
   return batch.commit();
@@ -1107,9 +1131,26 @@ ThunkAction<AppState> changeAccount(
 }
 
 ThunkAction<AppState> updateTaskPriority(bool newValue, String taskId,
-    String projectId, TaskMetadata existingMetadata) {
+    String projectId, String taskName, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     var ref = _getTasksCollectionRef(projectId).document(taskId);
+
+    // Activity Feed.
+    final String truncatedTaskName =
+        truncateString(taskName, activityFeedTitleTruncationCount);
+
+    _updateActivityFeed(
+      projectId: projectId,
+      user: store.state.user,
+      projectName: _getProjectName(store.state.projects, projectId),
+      type: newValue == true
+          ? ActivityFeedEventType.prioritizeTask
+          : ActivityFeedEventType.unPrioritizeTask,
+      title: newValue == true
+          ? 'flagged the task $truncatedTaskName as high priority.'
+          : 'removed the high priorty flag from the task $truncatedTaskName.',
+      details: '',
+    );
 
     try {
       await ref.updateData({'isHighPriority': newValue});
@@ -1124,8 +1165,13 @@ ThunkAction<AppState> updateTaskPriority(bool newValue, String taskId,
   };
 }
 
-ThunkAction<AppState> updateTaskNote(String newValue, String oldValue,
-    String taskId, String projectId, TaskMetadata existingMetadata) {
+ThunkAction<AppState> updateTaskNote(
+    String newValue,
+    String oldValue,
+    String taskId,
+    String projectId,
+    String taskName,
+    TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     if (newValue?.trim() == oldValue?.trim()) {
       return;
@@ -1133,6 +1179,17 @@ ThunkAction<AppState> updateTaskNote(String newValue, String oldValue,
 
     var ref = _getTasksCollectionRef(projectId).document(taskId);
     var coercedValue = newValue ?? '';
+
+    // Activity Feed.
+    _updateActivityFeed(
+      projectId: projectId,
+      user: store.state.user,
+      projectName: _getProjectName(store.state.projects, projectId),
+      type: ActivityFeedEventType.editTask,
+      title:
+          'updated the details of the task ${truncateString(taskName, activityFeedTitleTruncationCount)}',
+      details: '',
+    );
 
     try {
       await ref.updateData({'note': coercedValue});
@@ -1152,6 +1209,7 @@ ThunkAction<AppState> updateTaskAssignments(
     List<String> oldAssignments,
     String taskId,
     String projectId,
+    String taskName,
     TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     var batch = Firestore.instance.batch();
@@ -1164,6 +1222,52 @@ ThunkAction<AppState> updateTaskAssignments(
           .toMap()
     });
 
+    // Activity Feed.
+    final String truncatedTaskName =
+        truncateString(taskName, activityFeedTitleTruncationCount);
+
+    if (newAssignments.length == 1) {
+      if (newAssignments.first == store.state.user.userId)
+        // User has assigned this task to themselves.
+        _updateActivityFeedToBatch(
+          batch: batch,
+          projectId: projectId,
+          projectName: _getProjectName(store.state.projects, projectId),
+          type: ActivityFeedEventType.assignmentUpdate,
+          user: store.state.user,
+          title: 'assigned the task $truncatedTaskName to themselves.',
+          details: '',
+        );
+      else {
+        // User has assigned this task to someone other then themselves.
+        _updateActivityFeedToBatch(
+          batch: batch,
+          projectId: projectId,
+          projectName: _getProjectName(store.state.projects, projectId),
+          type: ActivityFeedEventType.assignmentUpdate,
+          user: store.state.user,
+          title:
+              'assigned the task $truncatedTaskName to ${store.state.memberLookup[newAssignments.first]?.displayName ?? ''}.',
+          details: '',
+        );
+      }
+
+      if (newAssignments.length > 1) {
+        // User has assigned this task to multiple contributors.
+        _updateActivityFeedToBatch(
+          batch: batch,
+          projectId: projectId,
+          projectName: _getProjectName(store.state.projects, projectId),
+          type: ActivityFeedEventType.assignmentUpdate,
+          user: store.state.user,
+          title:
+              'assigned the task $truncatedTaskName to multiple contributors.',
+          details:
+              _concatAssignmentsToDisplayNames(newAssignments, store.state),
+        );
+      }
+    }
+
     try {
       await batch.commit();
     } catch (error) {
@@ -1172,8 +1276,13 @@ ThunkAction<AppState> updateTaskAssignments(
   };
 }
 
-ThunkAction<AppState> updateTaskDueDate(String taskId, DateTime newValue,
-    DateTime oldValue, TaskMetadata existingMetadata) {
+ThunkAction<AppState> updateTaskDueDate(
+    String taskId,
+    String projectId,
+    DateTime newValue,
+    DateTime oldValue,
+    String taskName,
+    TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     if (newValue == oldValue) {
       return;
@@ -1182,6 +1291,35 @@ ThunkAction<AppState> updateTaskDueDate(String taskId, DateTime newValue,
     var ref =
         _getTasksCollectionRef(store.state.selectedProjectId).document(taskId);
     String coercedValue = newValue == null ? '' : newValue.toIso8601String();
+
+    // Activity Feed.
+    if (newValue == null) {
+      _updateActivityFeed(
+        projectId: projectId,
+        projectName: _getProjectName(store.state.projects, projectId),
+        user: store.state.user,
+        type: ActivityFeedEventType.changeDueDate,
+        title:
+            'cleared the due date from the task ${truncateString(taskName, activityFeedTitleTruncationCount)}',
+        details: '',
+      );
+    } else {
+      final formatter = DateFormat('MMMMEEEEd');
+      final formattedDate = formatter.format(newValue);
+      final truncatedTaskName =
+          truncateString(taskName, activityFeedTitleTruncationCount);
+
+      _updateActivityFeed(
+        projectId: projectId,
+        projectName: _getProjectName(store.state.projects, projectId),
+        user: store.state.user,
+        type: ActivityFeedEventType.changeDueDate,
+        title: oldValue == null
+            ? 'added a due date of $formattedDate to $truncatedTaskName '
+            : 'changed the due date of $truncatedTaskName to $formattedDate',
+        details: '',
+      );
+    }
 
     try {
       await ref.updateData({'dueDate': coercedValue});
@@ -1490,6 +1628,17 @@ ThunkAction<AppState> postTaskComment(
       'unseenTaskCommentMembers':
           _buildUnseenTaskCommentMembers(members, userId)
     });
+
+    // // Activity Feed.
+    // _updateActivityFeedToBatch(
+    //   batch: batch,
+    //   projectId: projectId,
+    //   projectName: _getProjectName(store.state.projects, projectId),
+    //   type: ActivityFeedEventType.commentOnTask,
+    //   user: store.state.user,
+    //   title: 'commented on the task ${truncateString(selectedTaskEntity.taskName, activityFeedTitleTruncationCount)}',
+    //   details: text,
+    // );
 
     // Update State directly. We only use single Fire queries to get Task Comments so we aren't subscribed to Changes,
     // therefore we have to update State directly.
@@ -1848,8 +1997,8 @@ ThunkAction<AppState> undo() {
   };
 }
 
-ThunkAction<AppState> renameTaskListWithDialog(
-    String taskListId, String taskListName, BuildContext context) {
+ThunkAction<AppState> renameTaskListWithDialog(String taskListId,
+    String projectId, String taskListName, BuildContext context) {
   return (Store<AppState> store) async {
     var userId = store.state.user.userId;
     var dialogResult =
@@ -1859,6 +2008,16 @@ ThunkAction<AppState> renameTaskListWithDialog(
         taskListName?.trim() == dialogResult.value.trim()) {
       return;
     }
+
+    // Activity Feed.
+    _updateActivityFeed(
+      projectId: projectId,
+      projectName: _getProjectName(store.state.projects, projectId),
+      user: store.state.user,
+      type: ActivityFeedEventType.renameList,
+      title: 'renamed the list $taskListName to ${dialogResult.value}',
+      details: '',
+    );
 
     try {
       await _getTaskListsCollectionRef(store.state.selectedProjectId)
@@ -1870,8 +2029,8 @@ ThunkAction<AppState> renameTaskListWithDialog(
   };
 }
 
-ThunkAction<AppState> deleteTaskListWithDialog(
-    String taskListId, String taskListName, BuildContext context) {
+ThunkAction<AppState> deleteTaskListWithDialog(String taskListId,
+    String projectId, String taskListName, BuildContext context) {
   return (Store<AppState> store) async {
     var userId = store.state.user.userId;
     var dialogResult = await postConfirmationDialog('Delete List',
@@ -1891,6 +2050,16 @@ ThunkAction<AppState> deleteTaskListWithDialog(
             undoLastAction(store);
           }
         });
+
+    // Activity Feed.
+    _updateActivityFeed(
+      projectId: projectId,
+      projectName: _getProjectName(store.state.projects, projectId),
+      user: store.state.user,
+      type: ActivityFeedEventType.renameList,
+      title: 'deleted the list $taskListName',
+      details: '',
+    );
 
     try {
       await _deleteTaskList(taskListId, store, userId);
@@ -1969,6 +2138,17 @@ ThunkAction<AppState> deleteTask(
             undoLastAction(store);
           }
         });
+
+    // Activity Feed.
+    _updateActivityFeed(
+      projectId: projectId,
+      projectName: _getProjectName(store.state.projects, projectId),
+      user: store.state.user,
+      type: ActivityFeedEventType.renameList,
+      title:
+          'deleted the task ${truncateString(taskName, activityFeedTitleTruncationCount)}',
+      details: '',
+    );
 
     try {
       var batch = Firestore.instance.batch();
@@ -2051,6 +2231,17 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
       batch.setData(projectIdRef, projectId.toMap());
       batch.setData(memberRef, member.toMap());
       batch.setData(taskListRef, taskList.toMap());
+
+      // Activity Feed.
+      _updateActivityFeedToBatch(
+        batch: batch,
+        projectId: projectRef.documentID,
+        type: ActivityFeedEventType.addProject,
+        projectName: project.projectName,
+        user: store.state.user,
+        title: 'created the project ${project.projectName}',
+        details: '',
+      );
 
       try {
         await batch.commit();
@@ -2145,6 +2336,16 @@ ThunkAction<AppState> addNewTaskListWithDialog(
         dateAdded: DateTime.now(),
       );
 
+      // Activity Feed.
+      _updateActivityFeed(
+        projectId: projectId,
+        type: ActivityFeedEventType.addList,
+        projectName: _getProjectName(store.state.projects, projectId),
+        user: store.state.user,
+        title: 'created the list ${taskList.taskListName}',
+        details: '',
+      );
+
       try {
         await ref.setData(taskList.toMap());
       } catch (error) {
@@ -2235,6 +2436,17 @@ ThunkAction<AppState> moveTaskListToProjectWithDialog(String taskListId,
     }
 
     moveTaskList(taskListId, projectId, targetProjectId, store.state);
+
+    // Activity Feed.
+    _updateActivityFeed(
+      projectId: projectId,
+      type: ActivityFeedEventType.moveList,
+      projectName: _getProjectName(store.state.projects, projectId),
+      user: store.state.user,
+      title:
+          'Moved the list $listName into ${_getProjectName(store.state.projects, targetProjectId)}',
+      details: '',
+    );
 
     var targetProjectName = store.state.projects
             .firstWhere((item) => item.uid == targetProjectId,
@@ -2390,6 +2602,16 @@ ThunkAction<AppState> updateTaskListColorWithDialog(
     if (result is int) {
       var ref = _getTaskListsCollectionRef(projectId).document(taskListId);
 
+      // Activity Feed.
+      _updateActivityFeed(
+        projectId: projectId,
+        projectName: _getProjectName(store.state.projects, projectId),
+        user: store.state.user,
+        type: ActivityFeedEventType.reColorList,
+        title: 'changed the colour of the list $taskListName',
+        details: '',
+      );
+
       try {
         await ref.updateData(
             {'hasCustomColor': result != -1, 'customColorIndex': result});
@@ -2479,22 +2701,16 @@ ThunkAction<AppState> addNewTaskWithDialog(
         batch.setData(taskListRef, newTaskList.toMap());
 
         // Activity Feed.
-        var activityFeedRef =
-            _getActivityFeedCollectionRef(projectId).document();
-        batch.setData(
-            activityFeedRef,
-            ActivityFeedEventModel(
-              uid: activityFeedRef.documentID,
-              originUserId: store.state.user.userId,
-              projectId: projectId,
-              projectName: _getProjectName(store.state.projects, projectId),
-              timestamp: DateTime.now(),
-              title:
-                  '${store.state.user.displayName} created the List ${newTaskList.taskListName} and added a task to it',
-              selfTitle:
-                  'You created the List ${newTaskList.taskListName} and added a task to it',
-              details: task.taskName,
-            ).toMap());
+        _updateActivityFeedToBatch(
+          batch: batch,
+          projectId: projectId,
+          projectName: _getProjectName(store.state.projects, projectId),
+          type: ActivityFeedEventType.addTask,
+          user: store.state.user,
+          title:
+              'created the list ${newTaskList.taskListName} and added the task ${truncateString(task.taskName, activityFeedTitleTruncationCount)}',
+          details: '',
+        );
 
         // Push the new value to lastUsedTaskLists
         store.dispatch(PushLastUsedTaskList(
@@ -2538,22 +2754,16 @@ ThunkAction<AppState> addNewTaskWithDialog(
         batch.setData(taskRef, task.toMap());
 
         // Activity Feed.
-        var activityFeedRef =
-            _getActivityFeedCollectionRef(projectId).document();
-        batch.setData(
-            activityFeedRef,
-            ActivityFeedEventModel(
-              uid: activityFeedRef.documentID,
-              originUserId: store.state.user.userId,
-              projectId: projectId,
-              projectName: _getProjectName(store.state.projects, projectId),
-              timestamp: DateTime.now(),
-              title:
-                  '${store.state.user.displayName} created a new Task in ${_getTaskListName(store.state.taskLists, targetTaskListId)}',
-              selfTitle:
-                  'You created a new Task in ${_getTaskListName(store.state.taskLists, targetTaskListId)}',
-              details: task.taskName,
-            ).toMap());
+        _updateActivityFeedToBatch(
+          batch: batch,
+          projectId: projectId,
+          projectName: _getProjectName(store.state.projects, projectId),
+          type: ActivityFeedEventType.addTask,
+          user: store.state.user,
+          title:
+              'created the task ${truncateString(task.taskName, activityFeedTitleTruncationCount)}',
+          details: '',
+        );
 
         // Push the new value to lastUsedTaskLists
         store.dispatch(PushLastUsedTaskList(
@@ -2703,11 +2913,23 @@ ThunkAction<AppState> multiDeleteTasks(
           }
         });
 
-    var batch = Firestore.instance.batch();
+    final batch = Firestore.instance.batch();
+    final String projectName = _getProjectName(store.state.projects, projectId);
 
     for (var task in tasks) {
       batch.updateData(_getTasksCollectionRef(projectId).document(task.uid),
           {'isDeleted': true});
+
+      _updateActivityFeedToBatch(
+        batch: batch,
+        projectId: projectId,
+        projectName: projectName,
+        type: ActivityFeedEventType.deleteTask,
+        user: store.state.user,
+        title:
+            'deleted the task ${truncateString(task.taskName, activityFeedTitleTruncationCount)}',
+        details: '',
+      );
     }
 
     store.dispatch(SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: false));
@@ -2749,7 +2971,8 @@ ThunkAction<AppState> multiCompleteTasks(
           }
         });
 
-    var batch = Firestore.instance.batch();
+    final batch = Firestore.instance.batch();
+    final projectName = _getProjectName(store.state.projects, projectId);
 
     for (var task in tasks) {
       batch.updateData(_getTasksCollectionRef(projectId).document(task.uid),
@@ -2759,6 +2982,18 @@ ThunkAction<AppState> multiCompleteTasks(
                 TaskMetadataUpdateType.completed, store.state.user.displayName)
             .toMap(),
       });
+
+      // Activity Feed.
+      _updateActivityFeedToBatch(
+        batch: batch,
+        projectId: projectId,
+        projectName: projectName,
+        type: ActivityFeedEventType.completeTask,
+        user: store.state.user,
+        title:
+            'completed the task ${truncateString(task.taskName, activityFeedTitleTruncationCount)}',
+        details: '',
+      );
     }
 
     store.dispatch(SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: false));
@@ -2771,8 +3006,8 @@ ThunkAction<AppState> multiCompleteTasks(
   };
 }
 
-ThunkAction<AppState> updateTaskComplete(
-    String taskId, bool newValue, TaskMetadata existingMetadata) {
+ThunkAction<AppState> updateTaskComplete(String taskId, String projectId,
+    String taskName, bool newValue, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     var ref =
         _getTasksCollectionRef(store.state.selectedProjectId).document(taskId);
@@ -2785,6 +3020,17 @@ ThunkAction<AppState> updateTaskComplete(
           ),
           store);
     }
+
+    // Activity Feed
+    _updateActivityFeed(
+      projectId: projectId,
+      projectName: _getProjectName(store.state.projects, projectId),
+      type: ActivityFeedEventType.completeTask,
+      user: store.state.user,
+      title:
+          'completed the task ${truncateString(taskName, activityFeedTitleTruncationCount)}',
+      details: '',
+    );
 
     try {
       await ref.updateData({'isComplete': newValue});
@@ -2869,6 +3115,19 @@ void renewChecklist(TaskListModel checklist, Store<AppState> store,
 
   snapshot.documents
       .forEach((doc) => batch.updateData(doc.reference, {'isComplete': false}));
+
+  // Activity Feed.
+  if (isManuallyInitiated == true) {
+    _updateActivityFeedToBatch(
+      batch: batch,
+      projectId: checklist.project,
+      projectName: _getProjectName(store.state.projects, checklist.project),
+      user: store.state.user,
+      type: ActivityFeedEventType.renewChecklist,
+      title: 'manually renewed the checklist ${checklist.taskListName}',
+      details: '',
+    );
+  }
 
   try {
     batch.commit();
@@ -3522,17 +3781,59 @@ Future<void> _updateActivityFeed(
     @required ActivityFeedEventType type,
     @required String title,
     @required String details}) async {
-      var ref = _getActivityFeedCollectionRef(projectId).document();
-      var event = ActivityFeedEventModel(
-        uid: ref.documentID,
-        originUserId: user.userId,
-        projectId: projectId,
-        projectName: projectName,
-        title: '${user.displayName} $title ',
-        selfTitle: 'You $title',
-        details: details,
-        timestamp: DateTime.now(),
-      );
+  var ref = _getActivityFeedCollectionRef(projectId).document();
+  var event = ActivityFeedEventModel(
+    uid: ref.documentID,
+    originUserId: user.userId,
+    projectId: projectId,
+    projectName: projectName,
+    title: '${user.displayName} $title ',
+    selfTitle: 'You $title',
+    details: details ?? '',
+    timestamp: DateTime.now(),
+  );
 
-      await ref.setData(event.toMap());
+  await ref.setData(event.toMap());
+}
+
+void _updateActivityFeedToBatch(
+    {@required String projectId,
+    @required UserModel user,
+    @required projectName,
+    @required ActivityFeedEventType type,
+    @required String title,
+    @required String details,
+    @required WriteBatch batch}) {
+  var ref = _getActivityFeedCollectionRef(projectId).document();
+  var event = ActivityFeedEventModel(
+    uid: ref.documentID,
+    originUserId: user.userId,
+    projectId: projectId,
+    projectName: projectName,
+    title: '${user.displayName} $title ',
+    selfTitle: 'You $title',
+    details: details,
+    timestamp: DateTime.now(),
+  );
+
+  batch.setData(ref, event.toMap());
+  return;
+}
+
+String _concatAssignmentsToDisplayNames(
+    List<String> assignments, AppState state) {
+  if (assignments.length == 2) {
+    return ' ${state.memberLookup[assignments[0]]?.displayName ?? ''} and ${state.memberLookup[assignments[1]]?.displayName ?? ''}.';
+  } else {
+    var string = '';
+    for (var id in assignments) {
+      if (id != assignments.last) {
+        string = string + '${state.memberLookup[id]?.displayName ?? ''}, ';
+      } else {
+        string = string + 'and ${state.memberLookup[id]?.displayName ?? ''}.';
+      }
     }
+
+    return string;
+  }
+}

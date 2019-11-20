@@ -105,7 +105,7 @@ class HomeScreenContainer extends StatelessWidget {
         isAssigned: task.isAssigned,
         assignments: task.getAssignments(store.state.memberLookup),
         onCheckboxChanged: (newValue) => store
-            .dispatch(updateTaskComplete(task.uid, newValue, task.metadata)),
+            .dispatch(updateTaskComplete(task.uid, task.project, task.taskName, newValue, task.metadata)),
         onDelete: () => store.dispatch(
             deleteTask(task.uid, task.project, task.taskName, context)),
         onMove: () => store.dispatch(moveTasksToListWithDialog(
@@ -151,9 +151,9 @@ class HomeScreenContainer extends StatelessWidget {
           onTaskListFocus: () => store
               .dispatch(SetFocusedTaskListId(taskListId: taskList.data.uid)),
           onDelete: () => store.dispatch(deleteTaskListWithDialog(
-              taskList.data.uid, taskList.data.taskListName, context)),
+              taskList.data.uid, taskList.data.project, taskList.data.taskListName, context)),
           onRename: () => store.dispatch(renameTaskListWithDialog(
-              taskList.data.uid, taskList.data.taskListName, context)),
+              taskList.data.uid, taskList.data.project, taskList.data.taskListName, context)),
           onAddNewTaskButtonPressed: store.state.isInMultiSelectTaskMode == true
               ? null
               : () => store.dispatch(addNewTaskWithDialog(taskList.data.project, context,

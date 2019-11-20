@@ -36,14 +36,17 @@ class TaskInspectorScreenContainer extends StatelessWidget {
             store.state.members[selectedTaskEntity.project]),
         onDueDateChange: (newValue) => store.dispatch(updateTaskDueDate(
             selectedTaskEntity.uid,
+            selectedTaskEntity.project,
             newValue,
             selectedTaskEntity.dueDate,
+            selectedTaskEntity.taskName,
             selectedTaskEntity.metadata)),
         onNoteChange: (newValue) => store.dispatch(updateTaskNote(
             newValue,
             selectedTaskEntity.note,
             selectedTaskEntity.uid,
             selectedTaskEntity.project,
+            selectedTaskEntity.taskName,
             selectedTaskEntity.metadata)),
         onTaskNameChange: (newValue) => store.dispatch(updateTaskName(
             newValue,
@@ -55,11 +58,12 @@ class TaskInspectorScreenContainer extends StatelessWidget {
             !selectedTaskEntity.isHighPriority,
             selectedTaskEntity.uid,
             selectedTaskEntity.project,
+            selectedTaskEntity.taskName,
             selectedTaskEntity.metadata)),
         onOpenTaskCommentScreen: () => store
             .dispatch(openTaskCommentsScreen(selectedTaskEntity.project, selectedTaskEntity.uid)),
         commentPreviewViewModels: _buildCommentPreviewViewModels(selectedTaskEntity?.commentPreview, store.state.user.userId),
-        onAssignmentsChange: (newAssignmentIds) => store.dispatch(updateTaskAssignments(newAssignmentIds, selectedTaskEntity.assignedTo, selectedTaskEntity.uid, selectedTaskEntity.project, selectedTaskEntity.metadata)),
+        onAssignmentsChange: (newAssignmentIds) => store.dispatch(updateTaskAssignments(newAssignmentIds, selectedTaskEntity.assignedTo, selectedTaskEntity.uid, selectedTaskEntity.project, selectedTaskEntity.taskName, selectedTaskEntity.metadata)),
         onReminderChange: (newValue) => store.dispatch(updateTaskReminder(newValue, selectedTaskEntity.ownReminder?.time, selectedTaskEntity.uid, selectedTaskEntity.taskName, selectedTaskEntity.project)));
   }
 
