@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
+import 'package:handball_flutter/models/ActivityFeedEventGroupModel.dart';
 import 'package:handball_flutter/models/ActivityFeedEventModel.dart';
 import 'package:handball_flutter/models/ActivityFeedViewModel.dart';
-import 'package:handball_flutter/models/ProjectEventGroupModel.dart';
 import 'package:handball_flutter/presentation/Nothing.dart';
+import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/Screens/ActivityFeed/ActivityFeedDateRangeStatus.dart';
-import 'package:handball_flutter/presentation/Screens/ActivityFeed/ProjectEventListTile.dart';
+import 'package:handball_flutter/presentation/Screens/ActivityFeed/ActivityFeedEventListTile.dart';
 import "package:collection/collection.dart";
 import 'package:intl/intl.dart';
 
@@ -35,7 +36,8 @@ class ActivityFeed extends StatelessWidget {
                     isChangingQueryLength:
                         viewModel.isChangingActivityFeedLength,
                     text: _getRangeHintText(viewModel.activityFeedQueryLength),
-                    showProjectName: viewModel.selectedActivityFeedProjectId != '-1',
+                    showProjectName:
+                        viewModel.selectedActivityFeedProjectId != '-1',
                     projectName: _getSelectedProjectName(),
                   ),
                 ),
@@ -52,35 +54,46 @@ class ActivityFeed extends StatelessWidget {
           ],
         ),
         body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Expanded(
-              child: ListView.builder(
-                  itemCount: viewModel.activityFeed.length,
-                  itemBuilder: (context, index) {
-                    var event = projectEventsAndHeaders[index];
+            PredicateBuilder(
+              predicate: () => viewModel.activityFeed.length == 0,
+              childIfTrue: Container(
+                alignment: Alignment.center,
+                child: Text("No events", style: Theme.of(context).textTheme.caption),
+              ),
+              childIfFalse: Expanded(
+                child: ListView.builder(
+                    itemCount: viewModel.activityFeed.length,
+                    itemBuilder: (context, index) {
+                      var event = projectEventsAndHeaders[index];
 
-                    if (event is ProjectEventGroupModel) {
-                      return Container(
-                          padding: EdgeInsets.symmetric(vertical: 8.0),
-                          alignment: Alignment.center,
-                          child: Text(
-                              DateFormat('MMMMEEEEd').format(event.timestamp),
-                              style:
-                                  Theme.of(context).accentTextTheme.subtitle));
-                    }
+                      if (event is ActivityFeedEventGroupModel) {
+                        return Container(
+                            padding: EdgeInsets.symmetric(vertical: 8.0),
+                            alignment: Alignment.center,
+                            child: Text(
+                                DateFormat('MMMMEEEEd').format(event.timestamp),
+                                style: Theme.of(context)
+                                    .accentTextTheme
+                                    .subtitle));
+                      }
 
-                    if (event is ActivityFeedEventModel) {
-                      return ProjectEventListTile(
-                        key: Key(event.uid),
-                        projectName: event.projectName,
-                        title: event.title,
-                        details: event.details,
-                        timestamp: event.timestamp,
-                      );
-                    }
+                      if (event is ActivityFeedEventModel) {
+                        return ActivityFeedEventListTile(
+                          key: Key(event.uid),
+                          type: event.type,
+                          important: event.isAssignedToSelf,
+                          projectName: event.projectName,
+                          title: event.title,
+                          details: event.details,
+                          timestamp: event.timestamp,
+                        );
+                      }
 
-                    return Nothing();
-                  }),
+                      return Nothing();
+                    }),
+              ),
             ),
           ],
         ));
@@ -88,6 +101,9 @@ class ActivityFeed extends StatelessWidget {
 
   String _getRangeHintText(ActivityFeedQueryLength queryLength) {
     switch (queryLength) {
+      case ActivityFeedQueryLength.day:
+        return 'Showing the last 24 hours';
+
       case ActivityFeedQueryLength.week:
         return 'Showing the last 7 days';
 
@@ -112,7 +128,9 @@ class ActivityFeed extends StatelessWidget {
   }
 
   String _getSelectedProjectName() {
-    var project = viewModel.projects.firstWhere((item) => item.uid == viewModel.selectedActivityFeedProjectId, orElse: () => null);
+    var project = viewModel.projects.firstWhere(
+        (item) => item.uid == viewModel.selectedActivityFeedProjectId,
+        orElse: () => null);
 
     if (project == null) {
       return '';
@@ -175,6 +193,11 @@ class ActivityFeed extends StatelessWidget {
                 shrinkWrap: true,
                 children: <Widget>[
                   ListTile(
+                    title: Text('Last 24 hours'),
+                    onTap: () =>
+                        Navigator.of(context).pop(ActivityFeedQueryLength.day),
+                  ),
+                  ListTile(
                     title: Text('Last 7 days'),
                     onTap: () =>
                         Navigator.of(context).pop(ActivityFeedQueryLength.week),
@@ -225,7 +248,7 @@ class ActivityFeed extends StatelessWidget {
     List<dynamic> eventsAndHeaders = [];
 
     for (var key in sortedKeys) {
-      eventsAndHeaders.add(ProjectEventGroupModel(key));
+      eventsAndHeaders.add(ActivityFeedEventGroupModel(key));
       eventsAndHeaders.addAll(groupedEvents[key]..sort(_projectEventComparer));
     }
 
@@ -234,6 +257,7 @@ class ActivityFeed extends StatelessWidget {
 
   int _projectEventComparer(
       ActivityFeedEventModel a, ActivityFeedEventModel b) {
-    return b.timestamp.second - a.timestamp.second;
+    return b.timestamp.millisecondsSinceEpoch -
+        a.timestamp.millisecondsSinceEpoch;
   }
 }

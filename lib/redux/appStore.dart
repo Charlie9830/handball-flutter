@@ -70,7 +70,7 @@ final initialAppState = AppState(
   tasksById: <String, TaskModel>{},
   deletedTaskLists: <String, TaskListModel>{},
   favirouteTaskListIds: <String, String>{},
-  activityFeedQueryLength: ActivityFeedQueryLength.week,
+  activityFeedQueryLength: ActivityFeedQueryLength.day,
   isChangingActivityFeedQueryLength: false,
   selectedActivityFeedProjectId: '-1',
 );

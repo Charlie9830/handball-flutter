@@ -1237,6 +1237,10 @@ ThunkAction<AppState> updateTaskAssignments(
           user: store.state.user,
           title: 'assigned the task $truncatedTaskName to themselves.',
           details: '',
+          assignments: newAssignments
+              .map((id) =>
+                  Assignment.fromMemberModel(store.state.memberLookup[id]))
+              .toList(),
         );
       else {
         // User has assigned this task to someone other then themselves.
@@ -1249,6 +1253,10 @@ ThunkAction<AppState> updateTaskAssignments(
           title:
               'assigned the task $truncatedTaskName to ${store.state.memberLookup[newAssignments.first]?.displayName ?? ''}.',
           details: '',
+          assignments: newAssignments
+              .map((id) =>
+                  Assignment.fromMemberModel(store.state.memberLookup[id]))
+              .toList(),
         );
       }
 
@@ -1264,6 +1272,10 @@ ThunkAction<AppState> updateTaskAssignments(
               'assigned the task $truncatedTaskName to multiple contributors.',
           details:
               _concatAssignmentsToDisplayNames(newAssignments, store.state),
+          assignments: newAssignments
+              .map((id) =>
+                  Assignment.fromMemberModel(store.state.memberLookup[id]))
+              .toList(),
         );
       }
     }
@@ -3362,8 +3374,8 @@ StreamSubscription<QuerySnapshot> _subscribeToActivityFeed(String projectId,
       .listen((snapshot) {
     List<ActivityFeedEventModel> events = [];
 
-    snapshot.documents
-        .forEach((doc) => events.add(ActivityFeedEventModel.fromDoc(doc)));
+    snapshot.documents.forEach((doc) => events
+        .add(ActivityFeedEventModel.fromDoc(doc, store.state.user.userId)));
 
     store.dispatch(ReceiveActivityFeed(
       projectId: projectId,
@@ -3780,17 +3792,20 @@ Future<void> _updateActivityFeed(
     @required projectName,
     @required ActivityFeedEventType type,
     @required String title,
-    @required String details}) async {
+    @required String details,
+    List<Assignment> assignments}) async {
   var ref = _getActivityFeedCollectionRef(projectId).document();
   var event = ActivityFeedEventModel(
     uid: ref.documentID,
     originUserId: user.userId,
+    type: type,
     projectId: projectId,
     projectName: projectName,
     title: '${user.displayName} $title ',
     selfTitle: 'You $title',
     details: details ?? '',
     timestamp: DateTime.now(),
+    assignments: assignments,
   );
 
   await ref.setData(event.toMap());
@@ -3803,17 +3818,20 @@ void _updateActivityFeedToBatch(
     @required ActivityFeedEventType type,
     @required String title,
     @required String details,
-    @required WriteBatch batch}) {
+    @required WriteBatch batch,
+    List<Assignment> assignments}) {
   var ref = _getActivityFeedCollectionRef(projectId).document();
   var event = ActivityFeedEventModel(
     uid: ref.documentID,
     originUserId: user.userId,
+    type: type,
     projectId: projectId,
     projectName: projectName,
     title: '${user.displayName} $title ',
     selfTitle: 'You $title',
     details: details,
     timestamp: DateTime.now(),
+    assignments: assignments,
   );
 
   batch.setData(ref, event.toMap());

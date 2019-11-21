@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:handball_flutter/models/Member.dart';
 
 class Assignment {
   String userId;
@@ -9,9 +10,14 @@ class Assignment {
     this.displayName = '',
   });
 
-  Assignment.fromMap(Map<String, dynamic> map) {
+  Assignment.fromMap(Map<dynamic, dynamic> map) {
     this.userId = map['userId'];
     this.displayName = map['displayName'];
+  }
+
+  Assignment.fromMemberModel(MemberModel member) {
+    this.userId = member.userId;
+    this.displayName = member.displayName;
   }
 
   Map<String, dynamic> toMap() {

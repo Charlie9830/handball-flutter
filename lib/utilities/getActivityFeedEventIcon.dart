@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
 
 IconData getActivityFeedEventIcon(ActivityFeedEventType type) {
+
   switch (type) {
     case ActivityFeedEventType.addTask:
       return Icons.add;
@@ -68,5 +69,8 @@ IconData getActivityFeedEventIcon(ActivityFeedEventType type) {
 
     case ActivityFeedEventType.reColorList:
       return Icons.color_lens;
+
+    default:
+      return Icons.notification_important;
   }
 }

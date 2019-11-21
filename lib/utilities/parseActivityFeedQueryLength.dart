@@ -2,6 +2,9 @@ import 'package:handball_flutter/enums.dart';
 
 Duration parseActivityFeedQueryLength(ActivityFeedQueryLength queryLength) {
   switch(queryLength) {
+    case ActivityFeedQueryLength.day:
+      return Duration(days: 1);
+
     case ActivityFeedQueryLength.week:
       return Duration(days: 7);
 
@@ -21,6 +24,6 @@ Duration parseActivityFeedQueryLength(ActivityFeedQueryLength queryLength) {
       return Duration(days: 365);
 
     default:
-      return Duration(days: 7);
+      return Duration(days: 1);
   }
 }

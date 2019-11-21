@@ -1,7 +1,7 @@
-class ProjectEventGroupModel {
+class ActivityFeedEventGroupModel {
   DateTime timestamp;
 
-  ProjectEventGroupModel(int daysSinceEpoch) {
+  ActivityFeedEventGroupModel(int daysSinceEpoch) {
     timestamp = DateTime.fromMicrosecondsSinceEpoch(0).add(Duration(days: daysSinceEpoch));
   }
 }

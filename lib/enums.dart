@@ -30,6 +30,7 @@ enum TasksSnapshotType { completed, incompleted }
 enum MaterialColorPickerType { primary, accent }
 
 enum ActivityFeedQueryLength {
+  day,
   week,
   twoWeek,
   month,

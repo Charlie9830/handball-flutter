@@ -16,6 +16,7 @@ class ActivityFeedEventModel {
   List<Assignment> assignments;
   ActivityFeedEventType type;
   DateTime timestamp;
+  bool isAssignedToSelf;
 
   ActivityFeedEventModel({
     @required this.uid,
@@ -30,16 +31,17 @@ class ActivityFeedEventModel {
     @required this.timestamp,
   });
 
-  ActivityFeedEventModel.fromDoc(DocumentSnapshot doc) {
+  ActivityFeedEventModel.fromDoc(DocumentSnapshot doc, String userId) {
     this.uid = doc['uid'];
     this.originUserId = doc['originUserId'];
     this.projectId = doc['projectId'];
     this.projectName = doc['projectName'];
-    this.title = doc['title'];
-    this.selfTitle = doc['selfDescription'];
-    this.details = doc['details'];
+    this.title = doc['title'] ?? '';
+    this.selfTitle = doc['selfDescription'] ?? '';
+    this.details = doc['details'] ?? '';
     this.assignments = _coerceAssignments(doc['assignments']);
-    this.type = ActivityFeedEventType.values[doc['type']];
+    this.isAssignedToSelf = this.assignments.any((item) => item.userId == userId);
+    this.type = ActivityFeedEventType.values[doc['type'] ?? 0];
     this.timestamp = coerceFirestoreTimestamp(doc['timestamp']);
   }
 
@@ -70,9 +72,5 @@ class ActivityFeedEventModel {
 
   int get daysSinceEpoch {
     return this.timestamp.difference(DateTime.fromMicrosecondsSinceEpoch(0)).inDays;
-  }
-
-  bool isAssignedToSelf(String userId) {
-    return this.assignments.any((item) => item.userId == userId);
   }
 }
