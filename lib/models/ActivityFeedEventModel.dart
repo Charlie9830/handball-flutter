@@ -17,6 +17,7 @@ class ActivityFeedEventModel {
   ActivityFeedEventType type;
   DateTime timestamp;
   bool isAssignedToSelf;
+  bool isCreatedBySelf;
 
   ActivityFeedEventModel({
     @required this.uid,
@@ -43,6 +44,7 @@ class ActivityFeedEventModel {
     this.isAssignedToSelf = this.assignments.any((item) => item.userId == userId);
     this.type = ActivityFeedEventType.values[doc['type'] ?? 0];
     this.timestamp = coerceFirestoreTimestamp(doc['timestamp']);
+    this.isCreatedBySelf = this.originUserId == userId;
   }
 
   Map<String, dynamic> toMap() {

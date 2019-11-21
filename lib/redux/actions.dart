@@ -2551,12 +2551,15 @@ ThunkAction<AppState> updateTaskName(String newValue, String oldValue,
     newValue = newValue.trim();
     var batch = Firestore.instance.batch();
     var ref = _getTasksCollectionRef(projectId).document(taskId);
+    ArgumentMap argMap;
+    bool hasArguments = TaskArgumentParser.hasArguments(newValue);
 
-    if (TaskArgumentParser.hasArguments(newValue) == true) {
+    if (hasArguments) {
       var parser =
           TaskArgumentParser(projectMembers: store.state.members[projectId]);
 
-      var argMap = await parser.parseTextForArguments(newValue);
+      argMap = await parser.parseTextForArguments(newValue);
+      
       if (argMap.assignmentIds != null) {
         batch.updateData(ref, {'assignedTo': argMap.assignmentIds});
       }
@@ -2583,12 +2586,50 @@ ThunkAction<AppState> updateTaskName(String newValue, String oldValue,
           .toMap()
     });
 
+    _updateActivityFeedToBatch(
+      batch: batch,
+      projectId: projectId,
+      projectName: _getProjectName(store.state.projects, projectId),
+      type: ActivityFeedEventType.editTask,
+      user: store.state.user,
+      title: _buildTaskUpdateActivityFeedTitle(oldValue, newValue, hasArguments),
+      details: hasArguments == true && argMap != null ? _buildActivityFeedEventTaskDetails(argMap.isHighPriority,
+          argMap.dueDate, argMap.assignmentIds, argMap.note, store.state) : '',
+      assignments: argMap == null || argMap.assignmentIds == null
+          ? <Assignment>[]
+          : argMap.assignmentIds
+              .map((id) =>
+                  Assignment.fromMemberModel(store.state.memberLookup[id]))
+              .toList(),
+    );
+
     try {
       await batch.commit();
     } catch (error) {
       throw error;
     }
   };
+}
+
+String _buildTaskUpdateActivityFeedTitle(String oldValue, String newValue, bool hasArguments) {
+  final prunedNewValue = TaskArgumentParser.trimArguments(newValue.trim());
+
+  if (hasArguments && oldValue.trim() != prunedNewValue) {
+    // Task has had Name and Properties changed.
+    return 'updated the properties and renamed the task $oldValue to ${TaskArgumentParser.trimArguments(newValue)}.'; 
+  }
+
+  if (hasArguments && oldValue.trim() == prunedNewValue) {
+    // User only updated Properties.
+    return 'updated the properties of the task ${truncateString(prunedNewValue, activityFeedTitleTruncationCount)}.';
+  }
+
+  if (hasArguments == false && oldValue.trim() != prunedNewValue) {
+    // User only updated the Task Name.
+    return 'renamed the task $oldValue to $prunedNewValue.';
+  }
+
+  return newValue;
 }
 
 ThunkAction<AppState> updateTaskListColorWithDialog(
@@ -2721,7 +2762,17 @@ ThunkAction<AppState> addNewTaskWithDialog(
           user: store.state.user,
           title:
               'created the list ${newTaskList.taskListName} and added the task ${truncateString(task.taskName, activityFeedTitleTruncationCount)}',
-          details: '',
+          details: _buildActivityFeedEventTaskDetails(
+            task.isHighPriority,
+            task.dueDate,
+            task.assignedTo,
+            task.note,
+            store.state,
+          ),
+          assignments: task.assignedTo
+              .map((item) =>
+                  Assignment.fromMemberModel(store.state.memberLookup[item]))
+              .toList(),
         );
 
         // Push the new value to lastUsedTaskLists
@@ -2774,7 +2825,17 @@ ThunkAction<AppState> addNewTaskWithDialog(
           user: store.state.user,
           title:
               'created the task ${truncateString(task.taskName, activityFeedTitleTruncationCount)}',
-          details: '',
+          details: _buildActivityFeedEventTaskDetails(
+            task.isHighPriority,
+            task.dueDate,
+            task.assignedTo,
+            task.note,
+            store.state,
+          ),
+          assignments: task.assignedTo
+              .map((item) =>
+                  Assignment.fromMemberModel(store.state.memberLookup[item]))
+              .toList(),
         );
 
         // Push the new value to lastUsedTaskLists
@@ -3840,6 +3901,10 @@ void _updateActivityFeedToBatch(
 
 String _concatAssignmentsToDisplayNames(
     List<String> assignments, AppState state) {
+  if (assignments.length == 1) {
+    return ' ${state.memberLookup[assignments[0]]?.displayName ?? ''}';
+  }
+
   if (assignments.length == 2) {
     return ' ${state.memberLookup[assignments[0]]?.displayName ?? ''} and ${state.memberLookup[assignments[1]]?.displayName ?? ''}.';
   } else {
@@ -3854,4 +3919,21 @@ String _concatAssignmentsToDisplayNames(
 
     return string;
   }
+}
+
+String _buildActivityFeedEventTaskDetails(bool isHighPriority, DateTime dueDate,
+    List<String> assignedTo, String note, AppState state) {
+  final DateFormat formatter = DateFormat.MMMEd();
+
+  final priorityString = isHighPriority == true ? 'Flagged as important. ' : '';
+  final dueDateString =
+      dueDate == null ? '' : 'Due on ${formatter.format(dueDate)}. ';
+  final assignmentsString = assignedTo == null || assignedTo.length == 0
+      ? ''
+      : 'Assigned to${_concatAssignmentsToDisplayNames(assignedTo, state)}';
+  final detailsString = note == null || note.length == 0
+      ? ''
+      : 'Details: ${truncateString(note, 32)}. ';
+
+  return priorityString + dueDateString + assignmentsString + detailsString;
 }

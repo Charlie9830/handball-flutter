@@ -64,12 +64,13 @@ class ActivityFeed extends StatelessWidget {
               ),
               childIfFalse: Expanded(
                 child: ListView.builder(
-                    itemCount: viewModel.activityFeed.length,
+                    itemCount: projectEventsAndHeaders.length,
                     itemBuilder: (context, index) {
                       var event = projectEventsAndHeaders[index];
 
                       if (event is ActivityFeedEventGroupModel) {
                         return Container(
+                            key: Key('day_${event.timestamp.millisecondsSinceEpoch}'),
                             padding: EdgeInsets.symmetric(vertical: 8.0),
                             alignment: Alignment.center,
                             child: Text(
@@ -85,7 +86,7 @@ class ActivityFeed extends StatelessWidget {
                           type: event.type,
                           important: event.isAssignedToSelf,
                           projectName: event.projectName,
-                          title: event.title,
+                          title: event.isCreatedBySelf == true ? event.selfTitle : event.title,
                           details: event.details,
                           timestamp: event.timestamp,
                         );

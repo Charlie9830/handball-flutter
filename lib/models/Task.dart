@@ -45,7 +45,7 @@ class TaskModel {
     this.isHighPriority = false,
     this.commentPreview,
     this.unseenTaskCommentMembers,
-    this.assignedTo,
+    this.assignedTo = const <String>[],
     this.isDeleted = false,
     this.reminders,
   });
