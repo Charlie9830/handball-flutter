@@ -18,7 +18,6 @@ void syncRemindersToDeviceNotifications(
 
   // Removed
   for (var reminder in changedReminders.removed) {
-    print(reminder.notificationId);
     if (currentNotificationsMap.containsKey(reminder.notificationId)) {
       requests.add(plugin.cancel(reminder.notificationId));
     }

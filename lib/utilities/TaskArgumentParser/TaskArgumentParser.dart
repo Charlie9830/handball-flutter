@@ -301,7 +301,6 @@ class TaskArgumentParser {
         return ArgumentType.note;
 
       case ' -note ':
-      print('Matched Note');
         return ArgumentType.note;
 
       case ' -details ':

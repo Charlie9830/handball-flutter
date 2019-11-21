@@ -48,7 +48,6 @@ class CloudFunctionsLayer {
       });
 
       if (response.data['status'] == 'complete') {
-        print('Success');
         return;
       }
 

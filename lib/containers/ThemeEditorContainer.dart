@@ -31,7 +31,6 @@ class ThemeEditorContainer extends StatelessWidget {
   }
 
   _converter(Store<AppState> store, BuildContext context) {
-    print('Store Converter Called');
     return new ThemeEditorViewModel(
       isEnabled: store.state.accountConfig != null,
       data: store.state.accountConfig?.appTheme ?? AppThemeModel(),

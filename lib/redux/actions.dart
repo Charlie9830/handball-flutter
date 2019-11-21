@@ -543,7 +543,7 @@ ThunkAction<AppState> initializeApp() {
     _notificationsPlugin.cancelAll();
 
     // Debugging.
-    _printPendingNotifications();
+    //_printPendingNotifications();
 
     // Firestore settings.
     // TODO: Is this even doing anything?
@@ -808,7 +808,7 @@ ThunkAction<AppState> updateAppTheme(AppThemeModel newAppTheme) {
       return;
     }
 
-    newAppTheme.debugPrint();
+    //newAppTheme.debugPrint();
 
     if (store.state.accountConfig == null) {
       // Account Config doesn't exist yet.
@@ -863,10 +863,6 @@ ThunkAction<AppState> setShowOnlySelfTasks(bool showOnlySelfTasks) {
     var hiddenTasks = store.state.tasksByProject[projectId]
         .where((task) => task.isAssignedToSelf == false)
         .toList();
-
-    for (var task in hiddenTasks) {
-      print(task.taskName);
-    }
 
     store.dispatch(SetInflatedProject(inflatedProject: inflatedProject));
     store.dispatch(SetShowOnlySelfTasks(showOnlySelfTasks: showOnlySelfTasks));
@@ -1580,7 +1576,6 @@ ThunkAction<AppState> paginateTaskComments(String projectId, String taskId) {
     store.dispatch(SetIsPaginatingTaskComments(isPaginatingTaskComments: true));
 
     var lastCommentDoc = store.state.taskComments.last.docSnapshot;
-    print(store.state.taskComments.last.text);
 
     var snapshot = await Firestore.instance
         .collection('projects')
@@ -1938,8 +1933,6 @@ Future<void> _deleteProject(
   var taskIds = _getProjectRelatedTaskIds(projectId, store.state.tasks);
   var taskListIds =
       _getProjectRelatedTaskListIds(projectId, store.state.taskListsByProject);
-
-  print(taskListIds);
 
   pushUndoAction(
       DeleteProjectUndoActionModel(
@@ -2363,8 +2356,6 @@ ThunkAction<AppState> addNewTaskListWithDialog(
       } catch (error) {
         throw error;
       }
-    } else {
-      print('Canceled');
     }
   };
 }
@@ -2559,7 +2550,7 @@ ThunkAction<AppState> updateTaskName(String newValue, String oldValue,
           TaskArgumentParser(projectMembers: store.state.members[projectId]);
 
       argMap = await parser.parseTextForArguments(newValue);
-      
+
       if (argMap.assignmentIds != null) {
         batch.updateData(ref, {'assignedTo': argMap.assignmentIds});
       }
@@ -2937,8 +2928,6 @@ ThunkAction<AppState> updateFavouriteTaskList(
       await memberRef.updateData({
         'favouriteTaskListId': isFavourite == true ? taskListId : '-1',
       });
-
-      print('Updated');
     } catch (error) {
       throw error;
     }

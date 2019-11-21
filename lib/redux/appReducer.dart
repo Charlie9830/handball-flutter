@@ -647,10 +647,8 @@ List<TaskModel> _smooshAndMergeTasks(
   tasksByProject.forEach((key, value) {
     // If projectId matches originProjectId, use newTasks otherwise use the existing tasks.
     if (key == originProjectId) {
-      print('Using new Tasks');
       list.addAll(newTasks);
     } else {
-      print('Using Existing Tasks');
       list.addAll(tasksByProject[key]);
     }
 

@@ -140,7 +140,6 @@ class HomeScreenContainer extends StatelessWidget {
     
 
     return store.state.inflatedProject.inflatedTaskLists.map((taskList) {
-      print(store.state.favirouteTaskListIds);
       return TaskListViewModel(
           data: taskList.data,
           isFaviroute: _getIsFavirouteTaskList(taskList, store.state),
