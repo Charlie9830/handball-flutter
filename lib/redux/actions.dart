@@ -2057,7 +2057,7 @@ ThunkAction<AppState> deleteTaskListWithDialog(String taskListId,
         });
 
     // Activity Feed.
-    _updateActivityFeed(
+    final activityFeedReference = _updateActivityFeed(
       projectId: projectId,
       projectName: _getProjectName(store.state.projects, projectId),
       user: store.state.user,
@@ -2067,15 +2067,15 @@ ThunkAction<AppState> deleteTaskListWithDialog(String taskListId,
     );
 
     try {
-      await _deleteTaskList(taskListId, store, userId);
+      await _deleteTaskList(taskListId, store, userId, activityFeedReference);
     } catch (error) {
       throw error;
     }
   };
 }
 
-Future _deleteTaskList(
-    String taskListId, Store<AppState> store, String userId) async {
+Future _deleteTaskList(String taskListId, Store<AppState> store, String userId,
+    DocumentReference activityFeedReference) async {
   var taskIds = _getListRelatedTaskIds(taskListId, store.state.tasks);
   var taskListRef = _getTaskListsCollectionRef(store.state.selectedProjectId)
       .document(taskListId);
@@ -2087,7 +2087,8 @@ Future _deleteTaskList(
               .map((id) => _getTasksCollectionRef(store.state.selectedProjectId)
                   .document(id)
                   .path)
-              .toList()),
+              .toList(),
+          activityFeedReferencePath: activityFeedReference.path),
       store);
 
   var batch = Firestore.instance.batch();
@@ -2123,13 +2124,29 @@ List<String> _getProjectRelatedTaskListIds(
 }
 
 ThunkAction<AppState> deleteTask(
-    String taskId, String projectId, String taskName, BuildContext context) {
+  String taskId,
+  String projectId,
+  String taskName,
+  BuildContext context,
+) {
   return (Store<AppState> store) async {
     var ref = _getTasksCollectionRef(projectId).document(taskId);
+
+    // Activity Feed.
+    final activityFeedRef = _updateActivityFeed(
+      projectId: projectId,
+      projectName: _getProjectName(store.state.projects, projectId),
+      user: store.state.user,
+      type: ActivityFeedEventType.renameList,
+      title:
+          'deleted the task ${truncateString(taskName, activityFeedTitleTruncationCount)}',
+      details: '',
+    );
 
     pushUndoAction(
         DeleteTaskUndoActionModel(
           taskRefPath: ref.path,
+          activityFeedReferencePath: activityFeedRef.path,
         ),
         store);
 
@@ -2143,17 +2160,6 @@ ThunkAction<AppState> deleteTask(
             undoLastAction(store);
           }
         });
-
-    // Activity Feed.
-    _updateActivityFeed(
-      projectId: projectId,
-      projectName: _getProjectName(store.state.projects, projectId),
-      user: store.state.user,
-      type: ActivityFeedEventType.renameList,
-      title:
-          'deleted the task ${truncateString(taskName, activityFeedTitleTruncationCount)}',
-      details: '',
-    );
 
     try {
       var batch = Firestore.instance.batch();
@@ -2583,9 +2589,12 @@ ThunkAction<AppState> updateTaskName(String newValue, String oldValue,
       projectName: _getProjectName(store.state.projects, projectId),
       type: ActivityFeedEventType.editTask,
       user: store.state.user,
-      title: _buildTaskUpdateActivityFeedTitle(oldValue, newValue, hasArguments),
-      details: hasArguments == true && argMap != null ? _buildActivityFeedEventTaskDetails(argMap.isHighPriority,
-          argMap.dueDate, argMap.assignmentIds, argMap.note, store.state) : '',
+      title:
+          _buildTaskUpdateActivityFeedTitle(oldValue, newValue, hasArguments),
+      details: hasArguments == true && argMap != null
+          ? _buildActivityFeedEventTaskDetails(argMap.isHighPriority,
+              argMap.dueDate, argMap.assignmentIds, argMap.note, store.state)
+          : '',
       assignments: argMap == null || argMap.assignmentIds == null
           ? <Assignment>[]
           : argMap.assignmentIds
@@ -2602,12 +2611,13 @@ ThunkAction<AppState> updateTaskName(String newValue, String oldValue,
   };
 }
 
-String _buildTaskUpdateActivityFeedTitle(String oldValue, String newValue, bool hasArguments) {
+String _buildTaskUpdateActivityFeedTitle(
+    String oldValue, String newValue, bool hasArguments) {
   final prunedNewValue = TaskArgumentParser.trimArguments(newValue.trim());
 
   if (hasArguments && oldValue.trim() != prunedNewValue) {
     // Task has had Name and Properties changed.
-    return 'updated the properties and renamed the task $oldValue to ${TaskArgumentParser.trimArguments(newValue)}.'; 
+    return 'updated the properties and renamed the task $oldValue to ${TaskArgumentParser.trimArguments(newValue)}.';
   }
 
   if (hasArguments && oldValue.trim() == prunedNewValue) {
@@ -2952,6 +2962,29 @@ ThunkAction<AppState> multiDeleteTasks(
       return;
     }
 
+    final batch = Firestore.instance.batch();
+    final String projectName = _getProjectName(store.state.projects, projectId);
+    final List<DocumentReference> activityFeedReferences =
+        []; // Collect these to pass to the UndoAction later.
+
+    for (var task in tasks) {
+      batch.updateData(_getTasksCollectionRef(projectId).document(task.uid),
+          {'isDeleted': true});
+
+      // Activity Feed
+      activityFeedReferences.add(_updateActivityFeedToBatch(
+        batch: batch,
+        projectId: projectId,
+        projectName: projectName,
+        type: ActivityFeedEventType.deleteTask,
+        user: store.state.user,
+        title:
+            'deleted the task ${truncateString(task.taskName, activityFeedTitleTruncationCount)}',
+        details: '',
+      ));
+    }
+
+    // Undo Redo.
     var refPaths = tasks
         .map(
             (task) => _getTasksCollectionRef(projectId).document(task.uid).path)
@@ -2960,6 +2993,8 @@ ThunkAction<AppState> multiDeleteTasks(
     pushUndoAction(
         MultiDeleteTasksUndoActionModel(
           taskRefPaths: refPaths,
+          activityFeedReferencePaths:
+              activityFeedReferences.map((item) => item.path).toList(),
         ),
         store);
 
@@ -2974,25 +3009,6 @@ ThunkAction<AppState> multiDeleteTasks(
             undoLastAction(store);
           }
         });
-
-    final batch = Firestore.instance.batch();
-    final String projectName = _getProjectName(store.state.projects, projectId);
-
-    for (var task in tasks) {
-      batch.updateData(_getTasksCollectionRef(projectId).document(task.uid),
-          {'isDeleted': true});
-
-      _updateActivityFeedToBatch(
-        batch: batch,
-        projectId: projectId,
-        projectName: projectName,
-        type: ActivityFeedEventType.deleteTask,
-        user: store.state.user,
-        title:
-            'deleted the task ${truncateString(task.taskName, activityFeedTitleTruncationCount)}',
-        details: '',
-      );
-    }
 
     store.dispatch(SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: false));
 
@@ -3010,6 +3026,35 @@ ThunkAction<AppState> multiCompleteTasks(
     if (tasks == null || tasks.length == 0) {
       return;
     }
+
+    final batch = Firestore.instance.batch();
+    final projectName = _getProjectName(store.state.projects, projectId);
+    final List<DocumentReference> activityFeedReferences =
+        []; // Collect these to pass to UndoAction later.
+
+    for (var task in tasks) {
+      batch.updateData(_getTasksCollectionRef(projectId).document(task.uid),
+          {'isComplete': true});
+      batch.updateData(_getTasksCollectionRef(projectId).document(task.uid), {
+        'metadata': _getUpdatedTaskMetadata(task.metadata,
+                TaskMetadataUpdateType.completed, store.state.user.displayName)
+            .toMap(),
+      });
+
+      // Activity Feed.
+      activityFeedReferences.add(_updateActivityFeedToBatch(
+        batch: batch,
+        projectId: projectId,
+        projectName: projectName,
+        type: ActivityFeedEventType.completeTask,
+        user: store.state.user,
+        title:
+            'completed the task ${truncateString(task.taskName, activityFeedTitleTruncationCount)}',
+        details: '',
+      ));
+    }
+
+    // Undo Redo.
     var refPaths = tasks
         .map(
             (task) => _getTasksCollectionRef(projectId).document(task.uid).path)
@@ -3018,6 +3063,8 @@ ThunkAction<AppState> multiCompleteTasks(
     pushUndoAction(
         MultiCompleteTasksUndoActionModel(
           taskRefPaths: refPaths,
+          activityFeedReferencePaths:
+              activityFeedReferences.map((item) => item.path).toList(),
         ),
         store);
 
@@ -3033,31 +3080,6 @@ ThunkAction<AppState> multiCompleteTasks(
           }
         });
 
-    final batch = Firestore.instance.batch();
-    final projectName = _getProjectName(store.state.projects, projectId);
-
-    for (var task in tasks) {
-      batch.updateData(_getTasksCollectionRef(projectId).document(task.uid),
-          {'isComplete': true});
-      batch.updateData(_getTasksCollectionRef(projectId).document(task.uid), {
-        'metadata': _getUpdatedTaskMetadata(task.metadata,
-                TaskMetadataUpdateType.completed, store.state.user.displayName)
-            .toMap(),
-      });
-
-      // Activity Feed.
-      _updateActivityFeedToBatch(
-        batch: batch,
-        projectId: projectId,
-        projectName: projectName,
-        type: ActivityFeedEventType.completeTask,
-        user: store.state.user,
-        title:
-            'completed the task ${truncateString(task.taskName, activityFeedTitleTruncationCount)}',
-        details: '',
-      );
-    }
-
     store.dispatch(SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: false));
 
     try {
@@ -3071,20 +3093,11 @@ ThunkAction<AppState> multiCompleteTasks(
 ThunkAction<AppState> updateTaskComplete(String taskId, String projectId,
     String taskName, bool newValue, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
-    var ref =
+    final ref =
         _getTasksCollectionRef(store.state.selectedProjectId).document(taskId);
 
-    if (newValue == true) {
-      // Only allow an Undo if the Task is being completed.
-      pushUndoAction(
-          CompleteTaskUndoActionModel(
-            taskRefPath: ref.path,
-          ),
-          store);
-    }
-
     // Activity Feed
-    _updateActivityFeed(
+    final activityFeedReference = _updateActivityFeed(
       projectId: projectId,
       projectName: _getProjectName(store.state.projects, projectId),
       type: ActivityFeedEventType.completeTask,
@@ -3093,6 +3106,16 @@ ThunkAction<AppState> updateTaskComplete(String taskId, String projectId,
           'completed the task ${truncateString(taskName, activityFeedTitleTruncationCount)}',
       details: '',
     );
+
+    if (newValue == true) {
+      // Only allow an Undo if the Task is being completed.
+      pushUndoAction(
+          CompleteTaskUndoActionModel(
+            taskRefPath: ref.path,
+            activityFeedReferencePath: activityFeedReference.path,
+          ),
+          store);
+    }
 
     try {
       await ref.updateData({'isComplete': newValue});
@@ -3836,14 +3859,14 @@ String _getTaskListName(List<TaskListModel> taskLists, String taskListId) {
   return taskList.taskListName;
 }
 
-Future<void> _updateActivityFeed(
+DocumentReference _updateActivityFeed(
     {@required String projectId,
     @required UserModel user,
     @required projectName,
     @required ActivityFeedEventType type,
     @required String title,
     @required String details,
-    List<Assignment> assignments}) async {
+    List<Assignment> assignments}) {
   var ref = _getActivityFeedCollectionRef(projectId).document();
   var event = ActivityFeedEventModel(
     uid: ref.documentID,
@@ -3858,10 +3881,12 @@ Future<void> _updateActivityFeed(
     assignments: assignments,
   );
 
-  await ref.setData(event.toMap());
+  ref.setData(event.toMap());
+
+  return ref;
 }
 
-void _updateActivityFeedToBatch(
+DocumentReference _updateActivityFeedToBatch(
     {@required String projectId,
     @required UserModel user,
     @required projectName,
@@ -3885,7 +3910,7 @@ void _updateActivityFeedToBatch(
   );
 
   batch.setData(ref, event.toMap());
-  return;
+  return ref;
 }
 
 String _concatAssignmentsToDisplayNames(

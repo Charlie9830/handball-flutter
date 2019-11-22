@@ -1,14 +1,17 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/UndoActions/UndoAction.dart';
 import 'package:meta/meta.dart';
 
 class DeleteTaskUndoActionModel extends UndoActionModel {
   String taskRefPath;
+  String activityFeedReferencePath;
 
   DeleteTaskUndoActionModel({
     @required this.taskRefPath,
+    @required this.activityFeedReferencePath,
   }) : super(type: UndoActionType.deleteTask);
 
   DeleteTaskUndoActionModel.fromMap(Map<dynamic, dynamic> map) {

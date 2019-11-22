@@ -1,14 +1,17 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/UndoActions/UndoAction.dart';
 import 'package:meta/meta.dart';
 
 class MultiDeleteTasksUndoActionModel extends UndoActionModel {
   List<String> taskRefPaths;
+  List<String> activityFeedReferencePaths;
 
   MultiDeleteTasksUndoActionModel({
     @required this.taskRefPaths,
+    @required this.activityFeedReferencePaths,
   }) : super(type: UndoActionType.multiDeleteTasks);
 
   MultiDeleteTasksUndoActionModel.fromMap(Map<dynamic, dynamic> map) {

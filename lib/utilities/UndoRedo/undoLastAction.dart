@@ -52,42 +52,62 @@ void _undoMultiDeleteTasks(MultiDeleteTasksUndoActionModel undoAction) async {
     return;
   }
 
-  var refs = undoAction.taskRefPaths.map((path) => Firestore.instance.document(path));
+  var refs =
+      undoAction.taskRefPaths.map((path) => Firestore.instance.document(path));
+  final activityFeedRefs = undoAction.activityFeedReferencePaths
+      .map((path) => Firestore.instance.document(path));
   var batch = Firestore.instance.batch();
 
   for (var ref in refs) {
     batch.updateData(ref, {'isDeleted': false});
   }
 
+  for (var ref in activityFeedRefs) {
+    batch.delete(ref);
+  }
+
   try {
     await batch.commit();
-  } catch(error) {
+  } catch (error) {
     throw error;
   }
 }
 
-void _undoMultiCompleteTasks(MultiCompleteTasksUndoActionModel lastUndoAction) async {
+void _undoMultiCompleteTasks(
+    MultiCompleteTasksUndoActionModel lastUndoAction) async {
   var taskRefPaths = lastUndoAction.taskRefPaths;
 
   var refs = taskRefPaths.map((path) => Firestore.instance.document(path));
+  var activityFeedRefs = lastUndoAction.activityFeedReferencePaths
+      .map((path) => Firestore.instance.document(path));
   var batch = Firestore.instance.batch();
 
   for (var ref in refs) {
     batch.updateData(ref, {'isComplete': false});
   }
 
+  for (var ref in activityFeedRefs) {
+    batch.delete(ref);
+  }
+
   try {
     await batch.commit();
-  } catch(error) {
+  } catch (error) {
     throw error;
   }
 }
 
 void _undoTaskListDelete(DeleteTaskListUndoActionModel undoAction) async {
   var ref = Firestore.instance.document(undoAction.taskListRefPath);
+  var activityFeedRef =
+      Firestore.instance.document(undoAction.activityFeedReferencePath);
+  final batch = Firestore.instance.batch();
+
+  batch.updateData(ref, {'isDeleted': false});
+  batch.delete(activityFeedRef);
 
   try {
-    await ref.updateData({'isDeleted': false});
+    await batch.commit();
   } catch (error) {
     throw error;
   }
@@ -109,9 +129,15 @@ void _undoProjectDelete(DeleteProjectUndoActionModel undoAction) async {
 
 void _undoTaskComplete(CompleteTaskUndoActionModel undoAction) async {
   var ref = Firestore.instance.document(undoAction.taskRefPath);
+  var activityFeedRef =
+      Firestore.instance.document(undoAction.activityFeedReferencePath);
+  final batch = Firestore.instance.batch();
+
+  batch.updateData(ref, {'isComplete': false});
+  batch.delete(activityFeedRef);
 
   try {
-    ref.updateData({'isComplete': false});
+    await batch.commit();
   } catch (error) {
     throw error;
   }
@@ -119,14 +145,16 @@ void _undoTaskComplete(CompleteTaskUndoActionModel undoAction) async {
 
 void _undoTaskDelete(DeleteTaskUndoActionModel undoAction) async {
   var ref = Firestore.instance.document(undoAction.taskRefPath);
+  var activityFeedRef =
+      Firestore.instance.document(undoAction.activityFeedReferencePath);
+  var batch = Firestore.instance.batch();
+
+  batch.updateData(ref, {'deleted': Timestamp.fromDate(DateTime.now())});
+  batch.updateData(ref, {'isDeleted': false});
+  batch.delete(activityFeedRef);
 
   try {
-    var batch = Firestore.instance.batch();
-
-    batch.updateData(ref, {'deleted': Timestamp.fromDate(DateTime.now())});
-    batch.updateData(ref, {'isDeleted': false});
-
-    batch.commit();
+    await batch.commit();
   } catch (error) {
     throw error;
   }
