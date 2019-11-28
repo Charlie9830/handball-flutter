@@ -87,9 +87,13 @@ AppState appReducer(AppState state, dynamic action) {
     var inflatedProject =
         selectedProjectId == '-1' ? null : state.inflatedProject;
 
+    final projectsById = Map<String, ProjectModel>.from(state.projectsById);
+    projectsById[action.project.uid] = action.project;
+
     return state.copyWith(
         projects: filteredProjects,
         selectedProjectId: selectedProjectId,
+        projectsById: projectsById,
         inflatedProject: Optional.fromNullable(inflatedProject),
         enableState: state.enableState.copyWith(
           isProjectSelected: selectedProjectId != '-1'
@@ -299,39 +303,42 @@ AppState appReducer(AppState state, dynamic action) {
   }
 
   if (action is RemoveProjectEntities) {
-    var projectId = action.projectId;
-    var didDeleteSelectedProject = projectId == state.selectedProjectId;
-    var selectedProjectId =
+    final projectId = action.projectId;
+    final didDeleteSelectedProject = projectId == state.selectedProjectId;
+    final selectedProjectId =
         didDeleteSelectedProject ? '-1' : state.selectedProjectId;
-    var inflatedProject = didDeleteSelectedProject
+    final inflatedProject = didDeleteSelectedProject
         ? initialAppState.inflatedProject
         : state.inflatedProject;
+    
+    final projectsById = Map<String, ProjectModel>.from(state.projectsById)..remove(projectId);
 
-    var projects =
+    final projects =
         state.projects.where((project) => project.uid != projectId).toList();
-    var taskLists = state.taskLists
+    final taskLists = state.taskLists
         .where((taskList) => taskList.project != projectId)
         .toList();
-    var taskListsByProject = Map<String, List<TaskListModel>>.from(
+    final taskListsByProject = Map<String, List<TaskListModel>>.from(
         state.taskListsByProject..remove(projectId));
 
-    var tasks = state.tasks.where((task) => task.project != projectId).toList();
-    var tasksByProject = Map<String, List<TaskModel>>.from(
+    final tasks = state.tasks.where((task) => task.project != projectId).toList();
+    final tasksByProject = Map<String, List<TaskModel>>.from(
         state.tasksByProject..remove(projectId));
-    var incompletedTasksByProject = Map<String, List<TaskModel>>.from(
+    final incompletedTasksByProject = Map<String, List<TaskModel>>.from(
         state.incompletedTasksByProject..remove(projectId));
-    var completedTasksByProject = Map<String, List<TaskModel>>.from(
+    final completedTasksByProject = Map<String, List<TaskModel>>.from(
         state.completedTasksByProject..remove(projectId));
-    var tasksById = Map<String, TaskModel>.from(state.tasksById
+    final tasksById = Map<String, TaskModel>.from(state.tasksById
       ..removeWhere((key, value) => value.project == projectId));
 
-    var members = Map<String, List<MemberModel>>.from(state.members)
+    final members = Map<String, List<MemberModel>>.from(state.members)
       ..remove(projectId);
 
     return state.copyWith(
         selectedProjectId: selectedProjectId,
         inflatedProject: Optional.fromNullable(inflatedProject),
         projects: projects,
+        projectsById: projectsById,
         taskLists: taskLists,
         taskListsByProject: taskListsByProject,
         tasks: tasks,
@@ -393,6 +400,7 @@ AppState appReducer(AppState state, dynamic action) {
         taskLists: initialAppState.taskLists,
         taskListsByProject: initialAppState.taskListsByProject,
         projects: initialAppState.projects,
+        projectsById: initialAppState.projectsById,
         projectIndicatorGroups: initialAppState.projectIndicatorGroups,
         selectedProjectId: initialAppState.selectedProjectId,
         inflatedProject: Optional.fromNullable(initialAppState.inflatedProject),
@@ -407,6 +415,7 @@ AppState appReducer(AppState state, dynamic action) {
         showCompletedTasks: initialAppState.showCompletedTasks,
         showOnlySelfTasks: initialAppState.showOnlySelfTasks,
         accountConfig: Optional.fromNullable(initialAppState.accountConfig),
+        activityFeed: initialAppState.activityFeed,
         enableState: state.enableState.copyWith(
           isLoggedIn: false,
         ));
@@ -443,7 +452,7 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is ReceiveActivityFeed) {
     return state.copyWith(
-      activityFeed: action.activityFeed,
+      activityFeed: _filterActivityFeedEvents(action.activityFeed, state.projectsById)
     );
   }
 
@@ -715,4 +724,15 @@ Map<String, String> _updateFavirouteTaskListIds(
   }
 
   return newMap;
+}
+
+
+List<ActivityFeedEventModel> _filterActivityFeedEvents(List<ActivityFeedEventModel> original, Map<String, ProjectModel> projectsById) {
+  return original.where((item) {
+    if (projectsById.containsKey(item.projectId) == false) {
+      return false;
+    }
+
+    return !projectsById[item.projectId].isDeleted;
+  }).toList();
 }

@@ -26,6 +26,7 @@ final initialAppState = AppState(
   taskLists: <TaskListModel>[],
   taskListsByProject: <String, List<TaskListModel>>{},
   projects: [],
+  projectsById: <String, ProjectModel>{},
   activityFeed: <ActivityFeedEventModel>[],
   projectIndicatorGroups: <String, IndicatorGroup>{},
   selectedProjectId: '-1',

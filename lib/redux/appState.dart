@@ -19,6 +19,7 @@ import 'package:quiver/core.dart';
 class AppState {
   final List<ProjectIdModel> projectIds;
   final List<ProjectModel> projects;
+  final Map<String, ProjectModel> projectsById;
   final List<ActivityFeedEventModel> activityFeed;
   final String selectedProjectId;
   final ProjectModel projectShareMenuEntity;
@@ -110,11 +111,13 @@ class AppState {
     this.isRefreshingActivityFeed,
     this.selectedActivityFeedProjectId,
     this.canRefreshActivityFeed,
+    this.projectsById,
   });
 
   AppState copyWith({
     List<ProjectIdModel> projectIds,
     List<ProjectModel> projects,
+    Map<String, ProjectModel> projectsById,
     Map<String, ProjectType> projectTypeLookup,
     List<ActivityFeedEventModel> activityFeed,
     String selectedProjectId,
@@ -163,6 +166,7 @@ class AppState {
     return AppState(
       projectIds: projectIds ?? this.projectIds,
       projects: projects ?? this.projects,
+      projectsById: projectsById ?? this.projectsById,
       activityFeed: activityFeed ?? this.activityFeed,
       selectedProjectId: selectedProjectId ?? this.selectedProjectId,
       projectShareMenuEntity: projectShareMenuEntity == null ? this.projectShareMenuEntity : projectShareMenuEntity.orNull,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/AppDrawerScreenViewModel.dart';
 import 'package:handball_flutter/models/ProjectInvite.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
@@ -28,7 +29,7 @@ class AppDrawerContainer extends StatelessWidget {
       onAddNewProjectButtonPress: () =>
           store.dispatch(addNewProjectWithDialog(context)),
       onAppSettingsOpen: () => store.dispatch(OpenAppSettings()),
-      onActivityFeedButtonPressed: () => store.dispatch(OpenActivityFeed()),
+      onActivityFeedButtonPressed: () => store.dispatch(openActivityFeed('-1', ActivityFeedQueryLength.day)),
     );
   }
 
