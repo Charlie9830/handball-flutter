@@ -21,29 +21,17 @@ class ActivityFeedContainer extends StatelessWidget {
 
   _converter(Store<AppState> store, BuildContext context) {
     return new ActivityFeedViewModel(
-      activityFeed: _extractActivityFeedList(
-          store.state.activityFeed, store.state.selectedActivityFeedProjectId),
+      activityFeed: store.state.activityFeed,
       selectedActivityFeedProjectId: store.state.selectedActivityFeedProjectId,
       projects: store.state.projects,
-      isChangingActivityFeedLength:
-          store.state.isChangingActivityFeedQueryLength,
+      canRefreshActivityFeed: store.state.canRefreshActivityFeed,
+      isRefreshingActivityFeed:
+          store.state.isRefreshingActivityFeed,
       activityFeedQueryLength: store.state.activityFeedQueryLength,
-      onActivityFeedQueryLengthSelect: (newValue) => store.dispatch(
-          setActivityFeedQueryLengthAsync(
-              store.state.activityFeedQueryLength, newValue)),
-      onActivityFeedProjectSelect: (newValue) => store.dispatch(SetSelectedActivityFeedProjectId(projectId: newValue)) 
+      onActivityFeedProjectSelect: (newValue) => store.dispatch(SetSelectedActivityFeedProjectId(projectId: newValue, isUserInitiated: true)),
+      onActivityFeedQueryLengthSelect: (newValue) => store.dispatch(SetActivityFeedQueryLength(length: newValue, isUserInitiated: true)),
+      onApplyActivityFeedFilters: () => store.dispatch(refreshActivityFeed()),
+      onClosing: () => store.dispatch(CloseActivityFeed()),
     );
-  }
-
-  List<ActivityFeedEventModel> _extractActivityFeedList(
-      Map<String, List<ActivityFeedEventModel>> activityFeed,
-      String selectedActivityFeedProjectId) {
-    if (selectedActivityFeedProjectId == null ||
-        selectedActivityFeedProjectId == '-1') {
-      return activityFeed.values.expand((i) => i).toList();
-    } else {
-      return activityFeed[selectedActivityFeedProjectId] ??
-          <ActivityFeedEventModel>[];
-    }
   }
 }

@@ -19,7 +19,7 @@ import 'package:quiver/core.dart';
 class AppState {
   final List<ProjectIdModel> projectIds;
   final List<ProjectModel> projects;
-  final Map<String, List<ActivityFeedEventModel>> activityFeed;
+  final List<ActivityFeedEventModel> activityFeed;
   final String selectedProjectId;
   final ProjectModel projectShareMenuEntity;
   final InflatedProjectModel inflatedProject;
@@ -58,8 +58,9 @@ class AppState {
   final UndoActionModel lastUndoAction;
   final Map<String, String> favirouteTaskListIds;
   final ActivityFeedQueryLength activityFeedQueryLength;
-  final bool isChangingActivityFeedQueryLength;
+  final bool isRefreshingActivityFeed;
   final String selectedActivityFeedProjectId;
+  final bool canRefreshActivityFeed;
 
   final TextInputDialogModel textInputDialog;
 
@@ -106,15 +107,16 @@ class AppState {
     this.deletedTaskLists,
     this.favirouteTaskListIds,
     this.activityFeedQueryLength,
-    this.isChangingActivityFeedQueryLength,
+    this.isRefreshingActivityFeed,
     this.selectedActivityFeedProjectId,
+    this.canRefreshActivityFeed,
   });
 
   AppState copyWith({
     List<ProjectIdModel> projectIds,
     List<ProjectModel> projects,
     Map<String, ProjectType> projectTypeLookup,
-    Map<String, List<ActivityFeedEventModel>> activityFeed,
+    List<ActivityFeedEventModel> activityFeed,
     String selectedProjectId,
     Optional<ProjectModel> projectShareMenuEntity,
     Optional<TaskModel> selectedTaskEntity,
@@ -154,8 +156,9 @@ class AppState {
     Map<String, TaskListModel> deletedTaskLists,
     Map<String, String> favirouteTaskListIds,
     ActivityFeedQueryLength activityFeedQueryLength,
-    bool isChangingActivityFeedQueryLength,
+    bool isRefreshingActivityFeed,
     String selectedActivityFeedProjectId,
+    bool canRefreshActivityFeed,
   }) {
     return AppState(
       projectIds: projectIds ?? this.projectIds,
@@ -207,8 +210,9 @@ class AppState {
       deletedTaskLists: deletedTaskLists ?? this.deletedTaskLists,
       favirouteTaskListIds: favirouteTaskListIds ?? this.favirouteTaskListIds,
       activityFeedQueryLength: activityFeedQueryLength ?? this.activityFeedQueryLength,
-      isChangingActivityFeedQueryLength: isChangingActivityFeedQueryLength ?? this.isChangingActivityFeedQueryLength,
+      isRefreshingActivityFeed: isRefreshingActivityFeed ?? this.isRefreshingActivityFeed,
       selectedActivityFeedProjectId: selectedActivityFeedProjectId ?? this.selectedActivityFeedProjectId,
+      canRefreshActivityFeed: canRefreshActivityFeed ?? this.canRefreshActivityFeed,
     );
   }
 }

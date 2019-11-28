@@ -61,7 +61,7 @@ class AppDrawerHeader extends StatelessWidget {
                     onPressed: onCreateProjectButtonPressed,
                   ),
                   IconButton(
-                    icon: Icon(Icons.history),
+                    icon: Icon(Icons.notifications),
                     onPressed: onActivityFeedButtonPressed,
                   )
                 ],

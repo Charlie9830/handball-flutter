@@ -93,6 +93,8 @@ class OpenAppSettings {
 
 class OpenActivityFeed {}
 
+class CloseActivityFeed {}
+
 class ReceiveAccountConfig {
   final AccountConfigModel accountConfig;
 
@@ -103,9 +105,11 @@ class ReceiveAccountConfig {
 
 class SetActivityFeedQueryLength {
   final ActivityFeedQueryLength length;
+  final bool isUserInitiated;
 
   SetActivityFeedQueryLength({
     this.length,
+    this.isUserInitiated,
   });
 }
 
@@ -256,6 +260,12 @@ class SignIn {
   SignIn({this.user});
 }
 
+class SetCanRefreshActivityFeed {
+  final bool canRefresh;
+
+  SetCanRefreshActivityFeed({this.canRefresh});
+}
+
 class ReceiveMembers {
   final String projectId;
   final List<MemberModel> membersList;
@@ -267,20 +277,20 @@ class ReceiveMembers {
 }
 
 class ReceiveActivityFeed {
-  final String projectId;
   final List<ActivityFeedEventModel> activityFeed;
 
   ReceiveActivityFeed({
-    @required this.projectId,
     this.activityFeed,
   });
 }
 
 class SetSelectedActivityFeedProjectId {
   final String projectId;
+  final bool isUserInitiated;
 
   SetSelectedActivityFeedProjectId({
     this.projectId,
+    this.isUserInitiated,
   });
 }
 
@@ -306,11 +316,11 @@ class OpenShareProjectScreen {
   OpenShareProjectScreen({this.projectId});
 }
 
-class SetIsChangingActivityFeedLength {
-  final bool isChangingLength;
+class SetIsRefreshingActivityFeed {
+  final bool isRefreshingActivityFeed;
 
-  SetIsChangingActivityFeedLength({
-    this.isChangingLength,
+  SetIsRefreshingActivityFeed({
+    this.isRefreshingActivityFeed,
   });
 }
 
@@ -752,26 +762,6 @@ StreamSubscription<QuerySnapshot> _subscribeToProjectInvites(
 
     store.dispatch(ReceiveProjectInvites(invites: invites));
   });
-}
-
-ThunkAction<AppState> setActivityFeedQueryLengthAsync(
-    ActivityFeedQueryLength currentLength, ActivityFeedQueryLength newLength) {
-  return (Store<AppState> store) async {
-    if (currentLength == newLength) {
-      return;
-    }
-
-    store.dispatch(SetIsChangingActivityFeedLength(isChangingLength: true));
-    store.dispatch(SetActivityFeedQueryLength(length: newLength));
-
-    await _firestoreStreams.cancelActivityFeeds();
-    for (var projectId in _firestoreStreams.projectSubscriptions.keys) {
-      _firestoreStreams.projectSubscriptions[projectId].activityFeed =
-          _subscribeToActivityFeed(projectId, newLength, store);
-    }
-
-    store.dispatch(SetIsChangingActivityFeedLength(isChangingLength: false));
-  };
 }
 
 ThunkAction<AppState> acceptProjectInvite(String projectId) {
@@ -3415,13 +3405,12 @@ void _addProjectSubscription(String projectId, Store<AppState> store) {
 
   _firestoreStreams.projectSubscriptions[projectId] =
       ProjectSubscriptionContainer(
-          uid: projectId,
-          project: _subscribeToProject(projectId, store),
-          members: _subscribeToMembers(projectId, store),
-          taskLists: _subscribeToTaskLists(projectId, store),
-          incompletedTasks: _subscribeToIncompletedTasks(projectId, store),
-          activityFeed: _subscribeToActivityFeed(
-              projectId, store.state.activityFeedQueryLength, store));
+    uid: projectId,
+    project: _subscribeToProject(projectId, store),
+    members: _subscribeToMembers(projectId, store),
+    taskLists: _subscribeToTaskLists(projectId, store),
+    incompletedTasks: _subscribeToIncompletedTasks(projectId, store),
+  );
 }
 
 void _removeProjectSubscription(String projectId, Store<AppState> store) async {
@@ -3434,27 +3423,71 @@ void _removeProjectSubscription(String projectId, Store<AppState> store) async {
   }
 }
 
-StreamSubscription<QuerySnapshot> _subscribeToActivityFeed(String projectId,
-    ActivityFeedQueryLength queryLength, Store<AppState> store) {
-  return Firestore.instance
-      .collection('projects')
-      .document(projectId)
-      .collection('activityFeed')
-      .where('timestamp',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime.now()
-              .subtract(parseActivityFeedQueryLength(queryLength))))
-      .snapshots()
-      .listen((snapshot) {
-    List<ActivityFeedEventModel> events = [];
+ThunkAction<AppState> refreshActivityFeed() {
+  return (Store<AppState> store) async {
+    _refreshActivityFeed(store.state.selectedActivityFeedProjectId,
+        store.state.activityFeedQueryLength, store);
 
-    snapshot.documents.forEach((doc) => events
-        .add(ActivityFeedEventModel.fromDoc(doc, store.state.user.userId)));
+    store.dispatch(SetCanRefreshActivityFeed(canRefresh: false));
+  };
+}
+
+ThunkAction<AppState> openActivityFeed(
+    String projectId, ActivityFeedQueryLength queryLength) {
+  return (Store<AppState> store) async {
+    // Start the Query.
+    _refreshActivityFeed(projectId, queryLength, store);
+
+    // Preset Query Properties.
+    store.dispatch(SetActivityFeedQueryLength(length: queryLength));
+    store.dispatch(
+        SetSelectedActivityFeedProjectId(projectId: projectId ?? '-1'));
+
+    // Open Activity Feed.
+    store.dispatch(OpenActivityFeed());
+  };
+}
+
+void _refreshActivityFeed(String projectId, ActivityFeedQueryLength queryLength,
+    Store<AppState> store) async {
+  store.dispatch(SetIsRefreshingActivityFeed(isRefreshingActivityFeed: true));
+
+  if (projectId == null || projectId == '-1') {
+    // Query for all Projects. Map projectIds into ActivityFeed Queries.
+    List<Future<QuerySnapshot>> requests = [];
+    requests.addAll(store.state.projectIds.map((id) =>
+        _getActivityFeedCollectionRef(id.uid)
+            .where('timestamp',
+                isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime.now()
+                    .subtract(parseActivityFeedQueryLength(queryLength))))
+            .getDocuments()));
+
+    var snapshots = await Future.wait(requests);
+
+    // Flatten and Map snapshots into ActivityFeedModels
+    final events = snapshots.expand((item) => item.documents.map(
+        (doc) => ActivityFeedEventModel.fromDoc(doc, store.state.user.userId)));
+
+    // Update state.
+    store.dispatch(ReceiveActivityFeed(activityFeed: events.toList()));
+    store
+        .dispatch(SetIsRefreshingActivityFeed(isRefreshingActivityFeed: false));
+  } else {
+    // Only query for a single Project.
+    final snapshot = await _getActivityFeedCollectionRef(projectId)
+        .where('timestamp',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime.now()
+                .subtract(parseActivityFeedQueryLength(queryLength))))
+        .getDocuments();
 
     store.dispatch(ReceiveActivityFeed(
-      projectId: projectId,
-      activityFeed: events,
-    ));
-  });
+        activityFeed: snapshot.documents
+            .map((doc) =>
+                ActivityFeedEventModel.fromDoc(doc, store.state.user.userId))
+            .toList()));
+    store
+        .dispatch(SetIsRefreshingActivityFeed(isRefreshingActivityFeed: false));
+  }
 }
 
 StreamSubscription<QuerySnapshot> _subscribeToMembers(

@@ -26,7 +26,7 @@ final initialAppState = AppState(
   taskLists: <TaskListModel>[],
   taskListsByProject: <String, List<TaskListModel>>{},
   projects: [],
-  activityFeed: <String, List<ActivityFeedEventModel>>{},
+  activityFeed: <ActivityFeedEventModel>[],
   projectIndicatorGroups: <String, IndicatorGroup>{},
   selectedProjectId: '-1',
   projectShareMenuEntity: null,
@@ -71,8 +71,9 @@ final initialAppState = AppState(
   deletedTaskLists: <String, TaskListModel>{},
   favirouteTaskListIds: <String, String>{},
   activityFeedQueryLength: ActivityFeedQueryLength.day,
-  isChangingActivityFeedQueryLength: false,
+  isRefreshingActivityFeed: false,
   selectedActivityFeedProjectId: '-1',
+  canRefreshActivityFeed: false,
 );
 
 final appStore = new Store<AppState> (

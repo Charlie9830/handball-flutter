@@ -20,36 +20,37 @@ class ActivityFeedEventListTile extends StatelessWidget {
     this.timestamp,
     this.type,
     this.important,
-    }) : super(key: key);
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('jm');
 
     return Container(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          ListTile(
-            leading: Icon(getActivityFeedEventIcon(type), color: important ? Theme.of(context).colorScheme.secondaryVariant : null),
-            title: Text(title),
-            subtitle: Text(details),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                Text(projectName, style: Theme.of(context).textTheme.caption),
-                Text( dateFormat.format(timestamp),
-                   style: Theme.of(context).textTheme.caption)
-              ],
+        padding: const EdgeInsets.only(right: 16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ListTile(
+              leading: Icon(getActivityFeedEventIcon(type), color: important ? Theme.of(context).colorScheme.secondaryVariant : null),
+              title: Text(title),
+
+              subtitle: Text(details),
             ),
-          ),
-          Divider(),
-        ],
-      )
-    );
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Text(projectName, style: Theme.of(context).textTheme.caption),
+                  Text( dateFormat.format(timestamp),
+                     style: Theme.of(context).textTheme.caption)
+                ],
+              ),
+            ),
+            Divider(),
+          ],
+        ));
   }
 }

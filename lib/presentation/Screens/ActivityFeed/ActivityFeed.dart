@@ -22,82 +22,102 @@ class ActivityFeed extends StatelessWidget {
   Widget build(BuildContext context) {
     var projectEventsAndHeaders = _getSortedAndGroupedProjectEvents();
 
-    return Scaffold(
-        appBar: AppBar(
-          title: Text('Activity Feed'),
-          bottom: PreferredSize(
-              preferredSize: Size.fromHeight(16),
-              child: GestureDetector(
-                onTap: () => _handleActivityFeedLengthButtonPressed(context),
-                child: Container(
-                  alignment: Alignment.center,
-                  color: Theme.of(context).bottomAppBarColor,
-                  child: ActivityFeedDateRangeStatus(
-                    isChangingQueryLength:
-                        viewModel.isChangingActivityFeedLength,
-                    text: _getRangeHintText(viewModel.activityFeedQueryLength),
-                    showProjectName:
-                        viewModel.selectedActivityFeedProjectId != '-1',
-                    projectName: _getSelectedProjectName(),
-                  ),
-                ),
-              )),
-          actions: <Widget>[
-            IconButton(
-              icon: Icon(Icons.date_range),
-              onPressed: () => _handleActivityFeedLengthButtonPressed(context),
-            ),
-            IconButton(
-              icon: Icon(Icons.filter_list),
-              onPressed: () => _handleFilterButtonPressed(context),
-            )
-          ],
-        ),
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            PredicateBuilder(
-              predicate: () => viewModel.activityFeed.length == 0,
-              childIfTrue: Container(
+    return WillPopScope(
+      onWillPop: _handleWillPopScope,
+      child: Scaffold(
+          appBar: AppBar(
+            title: Text('Activity Feed'),
+            bottom: PreferredSize(
+              preferredSize: Size.fromHeight(32),
+              child: Container(
                 alignment: Alignment.center,
-                child: Text("No events", style: Theme.of(context).textTheme.caption),
-              ),
-              childIfFalse: Expanded(
-                child: ListView.builder(
-                    itemCount: projectEventsAndHeaders.length,
-                    itemBuilder: (context, index) {
-                      var event = projectEventsAndHeaders[index];
-
-                      if (event is ActivityFeedEventGroupModel) {
-                        return Container(
-                            key: Key('day_${event.timestamp.millisecondsSinceEpoch}'),
-                            padding: EdgeInsets.symmetric(vertical: 8.0),
-                            alignment: Alignment.center,
-                            child: Text(
-                                DateFormat('MMMMEEEEd').format(event.timestamp),
-                                style: Theme.of(context)
-                                    .accentTextTheme
-                                    .subtitle));
-                      }
-
-                      if (event is ActivityFeedEventModel) {
-                        return ActivityFeedEventListTile(
-                          key: Key(event.uid),
-                          type: event.type,
-                          important: event.isAssignedToSelf,
-                          projectName: event.projectName,
-                          title: event.isCreatedBySelf == true ? event.selfTitle : event.title,
-                          details: event.details,
-                          timestamp: event.timestamp,
-                        );
-                      }
-
-                      return Nothing();
-                    }),
+                color: Theme.of(context).bottomAppBarColor,
+                child: ActivityFeedDateRangeStatus(
+                  isRefreshing: viewModel.isRefreshingActivityFeed,
+                  text: _getRangeHintText(viewModel.activityFeedQueryLength),
+                  showProjectName:
+                      viewModel.selectedActivityFeedProjectId != '-1',
+                  projectName: _getSelectedProjectName(),
+                  showApplyButton: viewModel.canRefreshActivityFeed,
+                  onApplyButtonPressed: viewModel.onApplyActivityFeedFilters,
+                ),
               ),
             ),
-          ],
-        ));
+            actions: <Widget>[
+              IconButton(
+                icon: Icon(Icons.date_range),
+                onPressed: () =>
+                    _handleActivityFeedLengthButtonPressed(context),
+              ),
+              IconButton(
+                icon: Icon(Icons.filter_list),
+                onPressed: () => _handleFilterButtonPressed(context),
+              ),
+            ],
+          ),
+          body: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              PredicateBuilder(
+                predicate: () =>
+                    viewModel.activityFeed.length == 0 &&
+                    viewModel.isRefreshingActivityFeed == false,
+                childIfTrue: Container(
+                  alignment: Alignment.center,
+                  child: Text("No events",
+                      style: Theme.of(context).textTheme.subhead),
+                ),
+                childIfFalse: Expanded(
+                  child: ListView.builder(
+                      itemCount: projectEventsAndHeaders.length,
+                      itemBuilder: (context, index) {
+                        var event = projectEventsAndHeaders[index];
+
+                        if (event is ActivityFeedEventGroupModel) {
+                          return Container(
+                              key: Key(
+                                  'day_${event.timestamp.millisecondsSinceEpoch}'),
+                              padding: EdgeInsets.symmetric(
+                                  vertical: 16.0, horizontal: 16.0),
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                  DateFormat('MMMMEEEEd')
+                                      .format(event.timestamp),
+                                  style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondaryVariant,
+                                      fontWeight: FontWeight.bold)));
+                        }
+
+                        if (event is ActivityFeedEventModel) {
+                          return ActivityFeedEventListTile(
+                            key: Key(event.uid),
+                            type: event.type,
+                            important: event.isAssignedToSelf,
+                            projectName: event.projectName,
+                            title: event.isCreatedBySelf == true
+                                ? event.selfTitle
+                                : event.title,
+                            details: event.details,
+                            timestamp: event.timestamp,
+                          );
+                        }
+
+                        return Nothing();
+                      }),
+                ),
+              ),
+            ],
+          )),
+    );
+  }
+
+  Future<bool> _handleWillPopScope() async {
+    if (viewModel.onClosing != null) {
+      viewModel.onClosing();
+    }
+    return true;
   }
 
   String _getRangeHintText(ActivityFeedQueryLength queryLength) {

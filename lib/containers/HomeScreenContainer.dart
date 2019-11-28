@@ -83,6 +83,9 @@ class HomeScreenContainer extends StatelessWidget {
       onDebugButtonPressed: () => store.dispatch(debugButtonPressed()),
       onArchiveProject: () => store.dispatch(
               archiveProjectWithDialog(projectId, projectName, context)),
+      onActivityFeedOpen: () => store.dispatch(
+        openActivityFeed(projectId, ActivityFeedQueryLength.day)
+      )
     );
   }
 

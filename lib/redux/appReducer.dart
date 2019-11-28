@@ -412,6 +412,16 @@ AppState appReducer(AppState state, dynamic action) {
         ));
   }
 
+  if (action is CloseActivityFeed) {
+    return state.copyWith(
+      activityFeed: <ActivityFeedEventModel>[],
+      activityFeedQueryLength: ActivityFeedQueryLength.day,
+      selectedActivityFeedProjectId: '-1',
+      isRefreshingActivityFeed: false,
+      canRefreshActivityFeed: false,
+    );
+  }
+
   if (action is OpenShareProjectScreen) {
     return state.copyWith(
         projectShareMenuEntity: Optional.fromNullable(
@@ -433,28 +443,33 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is ReceiveActivityFeed) {
     return state.copyWith(
-      activityFeed: Map<String, List<ActivityFeedEventModel>>.from(
-          state.activityFeed
-            ..update(action.projectId, (existing) => action.activityFeed,
-                ifAbsent: () => action.activityFeed)),
+      activityFeed: action.activityFeed,
+    );
+  }
+
+  if (action is SetCanRefreshActivityFeed) {
+    return state.copyWith(
+      canRefreshActivityFeed: action.canRefresh,
     );
   }
 
   if (action is SetActivityFeedQueryLength) {
     return state.copyWith(
       activityFeedQueryLength: action.length,
+      canRefreshActivityFeed: action.isUserInitiated == true ? true : state.canRefreshActivityFeed,
     );
   }
 
   if (action is SetSelectedActivityFeedProjectId) {
     return state.copyWith(
-      selectedActivityFeedProjectId: action.projectId
+      selectedActivityFeedProjectId: action.projectId,
+      canRefreshActivityFeed: action.isUserInitiated == true ? true : state.canRefreshActivityFeed,
     );
   }
 
-  if (action is SetIsChangingActivityFeedLength) {
+  if (action is SetIsRefreshingActivityFeed) {
     return state.copyWith(
-      isChangingActivityFeedQueryLength: action.isChangingLength,
+      isRefreshingActivityFeed: action.isRefreshingActivityFeed,
     );
   }
 

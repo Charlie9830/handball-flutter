@@ -13,6 +13,7 @@ class ProjectMenu extends StatelessWidget {
   final dynamic onRenameProject;
   final dynamic onUndoAction;
   final dynamic onArchiveProject;
+  final dynamic onActivityFeedOpen;
 
   const ProjectMenu(
       {Key key,
@@ -25,7 +26,8 @@ class ProjectMenu extends StatelessWidget {
       this.onShowCompletedTasksChanged,
       this.onRenameProject,
       this.onUndoAction,
-      this.onArchiveProject})
+      this.onArchiveProject,
+      this.onActivityFeedOpen})
       : super(key: key);
 
   @override
@@ -88,7 +90,20 @@ class ProjectMenu extends StatelessWidget {
                 ],
               ),
               value: 'archive-project',
-            )
+            ),
+            PopupMenuDivider(),
+            PopupMenuItem(
+              child: Row(
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Icon(Icons.notifications),
+                  ),
+                  Text('Activity Feed'),
+                ],
+              ),
+              value: 'activity-feed',
+            ),
           ];
         });
   }
@@ -121,6 +136,10 @@ class ProjectMenu extends StatelessWidget {
 
       case 'archive-project':
         onArchiveProject();
+        break;
+
+      case 'activity-feed':
+        onActivityFeedOpen();
         break;
 
       default:
