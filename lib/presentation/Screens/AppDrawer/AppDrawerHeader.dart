@@ -48,14 +48,20 @@ class AppDrawerHeader extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  FlatButton(
+                  RaisedButton(
                     textColor:
                         Theme.of(context).buttonTheme.colorScheme.onPrimary,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: <Widget>[
-                        Icon(Icons.add),
-                        Text('Create Project')
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: Icon(Icons.add),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 4.0),
+                          child: Text('Create Project'),
+                        )
                       ],
                     ),
                     onPressed: onCreateProjectButtonPressed,
