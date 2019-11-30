@@ -1054,27 +1054,38 @@ ThunkAction<AppState> inviteUserToProject(
       store.dispatch(SetIsInvitingUser(isInvitingUser: false));
       // No user found.
       // TODO: Implement Firebase Dynamic Links to dispatch an email to the intended user, inviting them to the app.
-    }
+    } else {
+      // User was located in the directory.
+      try {
+        await _cloudFunctionsLayer.sendProjectInvite(
+          projectId: sourceProjectId,
+          projectName: projectName,
+          sourceDisplayName: store.state.user.displayName,
+          sourceEmail: store.state.user.email,
+          targetDisplayName: response.displayName,
+          targetEmail: response.email,
+          targetUserId: response.userId,
+          role: role,
+        );
 
-    try {
-      await _cloudFunctionsLayer.sendProjectInvite(
-        projectId: sourceProjectId,
-        projectName: projectName,
-        sourceDisplayName: store.state.user.displayName,
-        sourceEmail: store.state.user.email,
-        targetDisplayName: response.displayName,
-        targetEmail: response.email,
-        targetUserId: response.userId,
-        role: role,
-      );
+        _updateActivityFeed(
+          projectId: sourceProjectId,
+          projectName: _getProjectName(store.state.projects, sourceProjectId),
+          user: store.state.user,
+          type: ActivityFeedEventType.addMember,
+          title:
+              'invited ${response.displayName} to contribute to $projectName.',
+          details: '',
+        );
 
-      showSnackBar(
-          targetGlobalKey: shareScreenScaffoldKey,
-          message: 'Invite sent to ${response.displayName}.');
-      store.dispatch(SetIsInvitingUser(isInvitingUser: false));
-    } catch (error) {
-      store.dispatch(SetIsInvitingUser(isInvitingUser: false));
-      throw error;
+        showSnackBar(
+            targetGlobalKey: shareScreenScaffoldKey,
+            message: 'Invite sent to ${response.displayName}.');
+        store.dispatch(SetIsInvitingUser(isInvitingUser: false));
+      } catch (error) {
+        store.dispatch(SetIsInvitingUser(isInvitingUser: false));
+        throw error;
+      }
     }
   };
 }
@@ -1419,6 +1430,17 @@ Future<void> _leaveSharedProject(
   try {
     await _cloudFunctionsLayer.kickUserFromProject(
         projectId: projectId, userId: store.state.user.userId);
+
+    _updateActivityFeedWithMemberAction(
+      projectId: projectId,
+      projectName: _getProjectName(store.state.projects, projectId),
+      targetDisplayName: store.state.user.displayName,
+      originUserId: store.state.user.userId,
+      type: ActivityFeedEventType.removeMember,
+      title: 'left the project.',
+      details: '',
+    );
+
     return;
   } catch (error) {
     throw error;
@@ -1818,6 +1840,18 @@ ThunkAction<AppState> kickUserFromProject(String userId, String projectId,
           userId: userId, projectId: projectId);
       store.dispatch(SetProcessingMembers(
           processingMembers: store.state.processingMembers..remove(userId)));
+
+      // Activity Feed.
+      _updateActivityFeedWithMemberAction(
+        projectId: projectId,
+        projectName: _getProjectName(store.state.projects, projectId),
+        targetDisplayName: displayName,
+        originUserId: store.state.user.userId,
+        type: ActivityFeedEventType.removeMember,
+        title: 'was removed from the project',
+        details: '',
+      );
+
     } catch (error) {
       throw error;
     }
@@ -3871,6 +3905,8 @@ TaskMetadata _getUpdatedTaskMetadata(
 }
 
 String _getProjectName(List<ProjectModel> projects, String projectId) {
+  // TODO
+  // Re implement this to use the ProjectsById lookup.
   var project =
       projects.firstWhere((item) => item.uid == projectId, orElse: () => null);
 
@@ -3890,6 +3926,32 @@ String _getTaskListName(List<TaskListModel> taskLists, String taskListId) {
   }
 
   return taskList.taskListName;
+}
+
+DocumentReference _updateActivityFeedWithMemberAction({
+  @required String projectId,
+  @required String originUserId,
+  @required String targetDisplayName,
+  @required projectName,
+  @required ActivityFeedEventType type,
+  @required title,
+  @required details,
+}) {
+  var ref = _getActivityFeedCollectionRef(projectId).document();
+  var event = ActivityFeedEventModel(
+    uid: ref.documentID,
+    originUserId: originUserId,
+    type: type,
+    projectId: projectName,
+    projectName: projectName,
+    title: '$targetDisplayName $title',
+    selfTitle: 'You left the project.',
+    details: details ?? '',
+    timestamp: DateTime.now(),
+  );
+
+  ref.setData(event.toMap());
+  return ref;
 }
 
 DocumentReference _updateActivityFeed(
