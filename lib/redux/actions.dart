@@ -698,7 +698,8 @@ void handlePurchaseUpdates(
 void onAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
   if (user == null) {
     store.dispatch(SignOut());
-    _firestoreStreams.cancelAll();
+    await _firestoreStreams.cancelAll();
+    _firestoreStreams.projectSubscriptions.clear();
     _notificationsPlugin.cancelAll();
     return;
   }
@@ -1057,6 +1058,7 @@ ThunkAction<AppState> inviteUserToProject(
     } else {
       // User was located in the directory.
       try {
+        print(response.email);
         await _cloudFunctionsLayer.sendProjectInvite(
           projectId: sourceProjectId,
           projectName: projectName,
@@ -3408,6 +3410,7 @@ StreamSubscription<QuerySnapshot> _subscribeToProjectIds(
       var isArchived = projectIdModel.isArchived;
 
       if (change.type == DocumentChangeType.added && isArchived == false) {
+        print("PROJECT ID ADDED");
         _addProjectSubscription(projectId, store);
       }
 

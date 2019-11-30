@@ -23,7 +23,7 @@ class FirestoreStreamsContainer {
     requests.add(this.accountConfig?.cancel());
     requests.addAll(this.projectSubscriptions.values.map((item) => item.cancelAll()));
 
-    return Future.wait(requests.where((item) => item != null));
+    Future.wait(requests.where((item) => item != null));
   }
 }
 
