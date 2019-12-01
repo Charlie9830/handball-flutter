@@ -1,5 +1,6 @@
-import 'package:handball_flutter/redux/actions.dart';
 import 'package:handball_flutter/redux/appState.dart';
+import 'package:handball_flutter/redux/asyncActions.dart';
+import 'package:handball_flutter/redux/syncActions.dart';
 import 'package:redux/redux.dart';
 
 void completedTasksUnsubscribeMiddleware(

@@ -3,8 +3,9 @@ import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/models/ActivityFeedEventModel.dart';
 import 'package:handball_flutter/models/ActivityFeedViewModel.dart';
 import 'package:handball_flutter/presentation/Screens/ActivityFeed/ActivityFeed.dart';
-import 'package:handball_flutter/redux/actions.dart';
 import 'package:handball_flutter/redux/appState.dart';
+import 'package:handball_flutter/redux/asyncActions.dart';
+import 'package:handball_flutter/redux/syncActions.dart';
 import 'package:redux/redux.dart';
 
 class ActivityFeedContainer extends StatelessWidget {

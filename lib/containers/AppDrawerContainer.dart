@@ -5,8 +5,10 @@ import 'package:handball_flutter/models/AppDrawerScreenViewModel.dart';
 import 'package:handball_flutter/models/ProjectInvite.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/presentation/Screens/AppDrawer/AppDrawer.dart';
-import 'package:handball_flutter/redux/actions.dart';
+
 import 'package:handball_flutter/redux/appState.dart';
+import 'package:handball_flutter/redux/asyncActions.dart';
+import 'package:handball_flutter/redux/syncActions.dart';
 import 'package:redux/redux.dart';
 
 class AppDrawerContainer extends StatelessWidget {

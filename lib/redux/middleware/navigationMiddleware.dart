@@ -8,8 +8,8 @@ import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/containers/TaskInspectorScreenContainer.dart';
-import 'package:handball_flutter/redux/actions.dart';
 import 'package:handball_flutter/redux/appState.dart';
+import 'package:handball_flutter/redux/syncActions.dart';
 import 'package:redux/redux.dart';
 
 void navigationMiddleware(

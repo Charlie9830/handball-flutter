@@ -12,7 +12,7 @@ import 'package:handball_flutter/presentation/Dialogs/UpgradeToProDialog/Upgrade
 import 'package:handball_flutter/presentation/Screens/AppSettings/AppSettings.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/GeneralTab/ThemeEditor.dart';
 import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/TaskInspectorScreen.dart';
-import 'package:handball_flutter/redux/actions.dart';
+
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:redux/redux.dart';
 

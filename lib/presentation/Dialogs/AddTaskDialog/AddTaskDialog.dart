@@ -12,8 +12,9 @@ import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/PriorityShor
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/ReminderShortcutChip.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/TaskListSelectChip.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
-import 'package:handball_flutter/redux/actions.dart';
+import 'package:handball_flutter/redux/asyncActions.dart';
 import 'package:handball_flutter/utilities/TaskArgumentParser/TaskArgumentParser.dart';
+import 'package:handball_flutter/utilities/dialogPosters.dart';
 
 class AddTaskDialog extends StatefulWidget {
   List<TaskListModel> taskLists;

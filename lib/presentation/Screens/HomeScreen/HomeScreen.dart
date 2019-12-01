@@ -3,17 +3,9 @@ import 'package:handball_flutter/InheritatedWidgets/EnableStates.dart';
 import 'package:handball_flutter/containers/AppDrawerContainer.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/HomeScreenViewModel.dart';
-import 'package:handball_flutter/models/TaskList.dart';
-import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
-import 'package:handball_flutter/presentation/HintButtons/AddTaskListHintButton.dart';
-import 'package:handball_flutter/presentation/HintButtons/NoTaskListsHintButton.dart';
 import 'package:handball_flutter/presentation/Nothing.dart';
-import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/ProjectMenu.dart';
 import 'package:handball_flutter/presentation/Screens/HomeScreen/MultiSelectTaskAppBar.dart';
-import 'package:handball_flutter/presentation/Task/Task.dart';
-import 'package:handball_flutter/presentation/TaskList/TaskList.dart';
-import 'package:handball_flutter/presentation/TaskList/TaskListHeader.dart';
 import 'package:handball_flutter/presentation/TaskListsListView.dart';
 
 class HomeScreen extends StatelessWidget {

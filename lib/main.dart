@@ -10,7 +10,7 @@ import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/TopLevelViewModel.dart';
 import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/presentation/EditableTextInput.dart';
-import 'package:handball_flutter/redux/actions.dart';
+import 'package:handball_flutter/redux/asyncActions.dart';
 import 'package:handball_flutter/utilities/TaskArgumentParser/TaskArgumentParser.dart';
 import 'package:handball_flutter/utilities/buildAppThemeData.dart';
 import 'package:redux/redux.dart';

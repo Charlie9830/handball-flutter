@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:handball_flutter/presentation/Screens/SignUp/SignUpBase.dart';
 import 'package:handball_flutter/utilities/isValidEmail.dart';
 
 class LoggedOut extends StatefulWidget {

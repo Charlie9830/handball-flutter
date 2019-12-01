@@ -1,15 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:handball_flutter/FirestoreStreamsContainer.dart';
 import 'package:handball_flutter/configValues.dart';
 import 'package:handball_flutter/enums.dart';
+import 'package:handball_flutter/globals.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/AccountConfig.dart';
 import 'package:handball_flutter/models/ActivityFeedEventModel.dart';
@@ -18,12 +14,8 @@ import 'package:handball_flutter/models/ArchivedProject.dart';
 import 'package:handball_flutter/models/Assignment.dart';
 import 'package:handball_flutter/models/ChecklistSettings.dart';
 import 'package:handball_flutter/models/Comment.dart';
-import 'package:handball_flutter/models/DirectoryListing.dart';
-import 'package:handball_flutter/models/GroupedDocumentChanges.dart';
-import 'package:handball_flutter/models/InflatedProject.dart';
 import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/ProjectIdModel.dart';
-import 'package:handball_flutter/models/ProjectInvite.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Reminder.dart';
 import 'package:handball_flutter/models/ServerCleanupJobs/CleanupTaskListMove.dart';
@@ -45,30 +37,38 @@ import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialo
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/TaskListColorSelectDialog/TaskListColorSelectDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ArchivedProjectsBottomSheet/ArchivedProjectsBottomSheet.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
-import 'package:handball_flutter/presentation/Dialogs/DelegateOwnerDialog/DelegateOwnerDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/MoveListBottomSheet.dart';
 import 'package:handball_flutter/presentation/Dialogs/MoveTasksDialog/MoveTaskBottomSheet.dart';
-import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
 import 'package:handball_flutter/presentation/Screens/ListSortingScreen/ListSortingScreen.dart';
 import 'package:handball_flutter/presentation/Screens/SignUp/SignUpBase.dart';
-import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/redux/appState.dart';
+import 'package:handball_flutter/redux/syncActions.dart';
+import 'package:handball_flutter/utilities/PlayStore/handlePurchaseUpdates.dart';
+import 'package:handball_flutter/utilities/Reminders/buildNewRemindersMap.dart';
+import 'package:handball_flutter/utilities/Reminders/initializeLocalNotifications.dart';
 import 'package:handball_flutter/utilities/TaskAnimationUpdate.dart';
 import 'package:handball_flutter/utilities/TaskArgumentParser/TaskArgumentParser.dart';
 import 'package:handball_flutter/utilities/UndoRedo/parseUndoAction.dart';
 import 'package:handball_flutter/utilities/UndoRedo/pushUndoAction.dart';
 import 'package:handball_flutter/utilities/UndoRedo/undoActionSharedPreferencesKey.dart';
 import 'package:handball_flutter/utilities/UndoRedo/undoLastAction.dart';
+import 'package:handball_flutter/utilities/activivtyFeedUpdaters.dart';
 import 'package:handball_flutter/utilities/buildInflatedProject.dart';
+import 'package:handball_flutter/utilities/checklistHelpers.dart';
 import 'package:handball_flutter/utilities/convertMemberRole.dart';
+import 'package:handball_flutter/utilities/dialogPosters.dart';
 import 'package:handball_flutter/utilities/extractListCustomSortOrder.dart';
 import 'package:handball_flutter/utilities/extractProject.dart';
+import 'package:handball_flutter/utilities/firestoreReferenceGetters.dart';
+import 'package:handball_flutter/utilities/firestoreSubscribers.dart';
 import 'package:handball_flutter/utilities/isSameTime.dart';
 import 'package:handball_flutter/utilities/listSortingHelpers.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
 import 'package:handball_flutter/utilities/parseActivityFeedQueryLength.dart';
+import 'package:handball_flutter/utilities/showSnackbar.dart';
+import 'package:handball_flutter/utilities/snapshotHandlers.dart';
+import 'package:handball_flutter/utilities/taskAnimationHelpers.dart';
 import 'package:handball_flutter/utilities/truncateString.dart';
-import 'package:handball_flutter/utilities/ReminderNotificationSync/syncRemindersToDeviceNotifications.dart';
 import 'package:intl/intl.dart';
 import 'package:redux/redux.dart';
 import 'package:redux_thunk/redux_thunk.dart';
@@ -77,368 +77,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 final FirebaseAuth auth = FirebaseAuth.instance;
-final FirestoreStreamsContainer _firestoreStreams = FirestoreStreamsContainer();
 final CloudFunctionsLayer _cloudFunctionsLayer = CloudFunctionsLayer();
-final FlutterLocalNotificationsPlugin _notificationsPlugin =
-    FlutterLocalNotificationsPlugin();
+
 StreamSubscription<List<PurchaseDetails>> _purchaseUpdateStreamSubscription;
-
-class OpenAppSettings {
-  final AppSettingsTabs tab;
-
-  OpenAppSettings({
-    this.tab,
-  });
-}
-
-class OpenActivityFeed {}
-
-class CloseActivityFeed {}
-
-class ReceiveAccountConfig {
-  final AccountConfigModel accountConfig;
-
-  ReceiveAccountConfig({
-    this.accountConfig,
-  });
-}
-
-class SetActivityFeedQueryLength {
-  final ActivityFeedQueryLength length;
-  final bool isUserInitiated;
-
-  SetActivityFeedQueryLength({
-    this.length,
-    this.isUserInitiated,
-  });
-}
-
-class ReceiveTaskComments {
-  final List<CommentModel> taskComments;
-
-  ReceiveTaskComments({this.taskComments});
-}
-
-class AddMultiSelectedTask {
-  final TaskModel task;
-
-  AddMultiSelectedTask({this.task});
-}
-
-class RemoveMultiSelectedTask {
-  final TaskModel task;
-  RemoveMultiSelectedTask({this.task});
-}
-
-class SetIsInMultiSelectTaskMode {
-  final bool isInMultiSelectTaskMode;
-  final TaskModel initialSelection;
-
-  SetIsInMultiSelectTaskMode({
-    this.isInMultiSelectTaskMode,
-    this.initialSelection,
-  });
-}
-
-class SetIsGettingTaskComments {
-  final bool isGettingTaskComments;
-
-  SetIsGettingTaskComments({this.isGettingTaskComments});
-}
-
-class SetIsPaginatingTaskComments {
-  final bool isPaginatingTaskComments;
-
-  SetIsPaginatingTaskComments({this.isPaginatingTaskComments});
-}
-
-class CloseAppSettings {}
-
-class SetProcessingProjectInviteIds {
-  final List<String> processingProjectInviteIds;
-
-  SetProcessingProjectInviteIds({
-    this.processingProjectInviteIds,
-  });
-}
-
-class SetIsTaskCommentPaginationComplete {
-  final bool isComplete;
-
-  SetIsTaskCommentPaginationComplete({this.isComplete});
-}
-
-class SetListSorting {
-  final TaskListSorting listSorting;
-
-  SetListSorting({this.listSorting});
-}
-
-class SetProcessingMembers {
-  final List<String> processingMembers;
-
-  SetProcessingMembers({
-    this.processingMembers,
-  });
-}
-
-class ReceiveProjectIds {
-  final List<ProjectIdModel> projectIds;
-
-  ReceiveProjectIds({this.projectIds});
-}
-
-class SetShowOnlySelfTasks {
-  final bool showOnlySelfTasks;
-
-  SetShowOnlySelfTasks({this.showOnlySelfTasks});
-}
-
-class SetInflatedProject {
-  final InflatedProjectModel inflatedProject;
-
-  SetInflatedProject({this.inflatedProject});
-}
-
-class SetIsInvitingUser {
-  final bool isInvitingUser;
-
-  SetIsInvitingUser({
-    this.isInvitingUser,
-  });
-}
-
-class ReceiveDeletedTaskLists {
-  final List<TaskListModel> taskLists;
-  final String originProjectId;
-
-  ReceiveDeletedTaskLists({
-    this.taskLists,
-    this.originProjectId,
-  });
-}
-
-class SetShowCompletedTasks {
-  final bool showCompletedTasks;
-
-  SetShowCompletedTasks({
-    this.showCompletedTasks,
-  });
-}
-
-class ReceiveProjectInvites {
-  final List<ProjectInviteModel> invites;
-
-  ReceiveProjectInvites({
-    this.invites,
-  });
-}
-
-class SelectProject {
-  final String uid;
-
-  SelectProject(this.uid);
-}
-
-class RemoveProjectEntities {
-  final String projectId;
-
-  RemoveProjectEntities({this.projectId});
-}
-
-class SetAccountState {
-  final AccountState accountState;
-
-  SetAccountState({this.accountState});
-}
-
-class SignOut {}
-
-class SignIn {
-  final UserModel user;
-
-  SignIn({this.user});
-}
-
-class SetCanRefreshActivityFeed {
-  final bool canRefresh;
-
-  SetCanRefreshActivityFeed({this.canRefresh});
-}
-
-class ReceiveMembers {
-  final String projectId;
-  final List<MemberModel> membersList;
-
-  ReceiveMembers({
-    this.projectId,
-    this.membersList,
-  });
-}
-
-class ReceiveActivityFeed {
-  final List<ActivityFeedEventModel> activityFeed;
-
-  ReceiveActivityFeed({
-    this.activityFeed,
-  });
-}
-
-class SetSelectedActivityFeedProjectId {
-  final String projectId;
-  final bool isUserInitiated;
-
-  SetSelectedActivityFeedProjectId({
-    this.projectId,
-    this.isUserInitiated,
-  });
-}
-
-class ReceiveProject {
-  final ProjectModel project;
-
-  ReceiveProject({this.project});
-}
-
-class PushLastUsedTaskList {
-  final String projectId;
-  final String taskListId;
-
-  PushLastUsedTaskList({
-    this.projectId,
-    this.taskListId,
-  });
-}
-
-class OpenShareProjectScreen {
-  final String projectId;
-
-  OpenShareProjectScreen({this.projectId});
-}
-
-class SetIsRefreshingActivityFeed {
-  final bool isRefreshingActivityFeed;
-
-  SetIsRefreshingActivityFeed({
-    this.isRefreshingActivityFeed,
-  });
-}
-
-class ReceiveIncompletedTasks {
-  final List<TaskModel> tasks;
-  final String originProjectId;
-
-  ReceiveIncompletedTasks(
-      {@required this.tasks, @required this.originProjectId});
-}
-
-class ReceiveCompletedTasks {
-  final List<TaskModel> tasks;
-  final String originProjectId;
-
-  ReceiveCompletedTasks({
-    @required this.tasks,
-    @required this.originProjectId,
-  });
-}
-
-class ReceiveTaskLists {
-  final List<TaskListModel> taskLists;
-  final String originProjectId;
-
-  ReceiveTaskLists({@required this.taskLists, @required this.originProjectId});
-}
-
-class SetFocusedTaskListId {
-  final String taskListId;
-
-  SetFocusedTaskListId({this.taskListId});
-}
-
-class SetSelectedTaskEntity {
-  final taskEntity;
-
-  SetSelectedTaskEntity({this.taskEntity});
-}
-
-class OpenTaskInspector {
-  final TaskModel taskEntity;
-
-  OpenTaskInspector({this.taskEntity});
-}
-
-class OpenTaskCommentsScreen {}
-
-class CloseTaskCommentsScreen {}
-
-class CloseTaskInspector {}
-
-class SetTextInputDialog {
-  final TextInputDialogModel dialog;
-
-  SetTextInputDialog({this.dialog});
-}
-
-class SetLastUndoAction {
-  final UndoActionModel lastUndoAction;
-  final bool isInitializing;
-
-  SetLastUndoAction({
-    this.lastUndoAction,
-    this.isInitializing,
-  });
-}
-
-Future<TextInputDialogResult> postTextInputDialog(
-    String title, String text, BuildContext context) {
-  return showDialog(
-    context: context,
-    barrierDismissible: true,
-    builder: (context) => TextInputDialog(title: title, text: text),
-  );
-}
-
-Future<DialogResult> postConfirmationDialog(String title, String text,
-    String affirmativeText, String negativeText, BuildContext context) {
-  return showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-            title: Text(title),
-            content: Text(text),
-            actions: <Widget>[
-              FlatButton(
-                child: Text(negativeText),
-                onPressed: () =>
-                    Navigator.of(context).pop(DialogResult.negative),
-              ),
-              FlatButton(
-                child: Text(affirmativeText),
-                onPressed: () =>
-                    Navigator.of(context).pop(DialogResult.affirmative),
-              ),
-            ]);
-      });
-}
-
-Future<void> postAlertDialog(
-    String title, String text, String affirmativeText, BuildContext context) {
-  return showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return AlertDialog(
-            title: Text(title),
-            content: Text(text),
-            actions: <Widget>[
-              FlatButton(
-                child: Text(affirmativeText),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ]);
-      });
-}
 
 ThunkAction<AppState> updateTaskReminder(DateTime newValue,
     DateTime existingValue, String taskId, String taskName, String projectId) {
@@ -451,7 +92,7 @@ ThunkAction<AppState> updateTaskReminder(DateTime newValue,
 
     // User has removed Reminder.
     if (newValue == null) {
-      var ref = _getTasksCollectionRef(projectId).document(taskId);
+      var ref = getTasksCollectionRef(projectId).document(taskId);
 
       try {
         await ref.updateData({'reminders.$userId': FieldValue.delete()});
@@ -469,7 +110,7 @@ ThunkAction<AppState> updateTaskReminder(DateTime newValue,
         isSeen: false,
       );
 
-      var ref = _getTasksCollectionRef(projectId).document(taskId);
+      var ref = getTasksCollectionRef(projectId).document(taskId);
 
       try {
         ref.updateData({'reminders.$userId': reminder.toMap()});
@@ -478,17 +119,6 @@ ThunkAction<AppState> updateTaskReminder(DateTime newValue,
       }
     }
   };
-}
-
-Future<String> postDelegateOwnerDialog(
-    List<MemberModel> nonOwnerMembers, BuildContext context) {
-  // Returns userId of selected user or null if User cancelled dialog.
-  return showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return DelegateOwnerDialog(members: nonOwnerMembers);
-      });
 }
 
 ThunkAction<AppState> updateProjectName(
@@ -508,10 +138,10 @@ ThunkAction<AppState> updateProjectName(
         return;
       }
 
-      var ref = _getProjectsCollectionRef(store).document(projectId);
+      var ref = getProjectsCollectionRef().document(projectId);
 
       // Activity Feed.
-      _updateActivityFeed(
+      updateActivityFeed(
         user: store.state.user,
         projectId: projectId,
         projectName: existingName,
@@ -529,20 +159,6 @@ ThunkAction<AppState> updateProjectName(
   };
 }
 
-Future<void> _printPendingNotifications() async {
-  var pendingNotifications =
-      await _notificationsPlugin.pendingNotificationRequests();
-
-  print('');
-  print(' ========== PENDING NOTIFICATIONS ==========');
-  for (var notification in pendingNotifications) {
-    print(
-        '${notification.id}    :    ${notification.body}     :     Payload ${notification.payload}');
-  }
-  print('==========    ============');
-  print('');
-}
-
 ThunkAction<AppState> initializeApp() {
   return (Store<AppState> store) async {
     homeScreenScaffoldKey?.currentState?.openDrawer();
@@ -550,7 +166,7 @@ ThunkAction<AppState> initializeApp() {
     // Notifications.
     await initializeLocalNotifications(store);
 
-    _notificationsPlugin.cancelAll();
+    notificationsPlugin.cancelAll();
 
     // Debugging.
     //_printPendingNotifications();
@@ -620,87 +236,12 @@ ThunkAction<AppState> debugButtonPressed() {
   };
 }
 
-Future initializeLocalNotifications(Store<AppState> store) {
-  var initializationSettingsAndroid =
-      new AndroidInitializationSettings('handball_notification_icon');
-
-  var initializationSettingsIOS = new IOSInitializationSettings(
-      onDidReceiveLocalNotification:
-          iosOnDidReceiveLocalNotificationWhileForegrounded);
-
-  var initializationSettings = new InitializationSettings(
-      initializationSettingsAndroid, initializationSettingsIOS);
-
-  return _notificationsPlugin.initialize(initializationSettings,
-      onSelectNotification: (payload) => onSelectNotification(payload, store));
-}
-
-Future onSelectNotification(String payload, Store<AppState> store) async {
-  if (payload == null) {
-    return Future.value();
-  }
-
-  var reminder = ReminderModel.fromJSON(payload);
-  var taskId = reminder.originTaskId;
-
-  var task = store.state.tasksById[taskId];
-
-  if (task == null || task.isDeleted == true) {
-    // Show Task Deleted.
-  } else {
-    clearTaskReminder(taskId, task.project, store.state.user.userId);
-    store.dispatch(SelectProject(task.project));
-    store.dispatch(OpenTaskInspector(taskEntity: task));
-  }
-
-  return Future.value();
-}
-
-void clearTaskReminder(String taskId, String projectId, String userId) async {
-  var ref = _getTasksCollectionRef(projectId).document(taskId);
-
-  try {
-    await ref.updateData({'reminders.$userId': FieldValue.delete()});
-  } catch (error) {
-    throw error;
-  }
-}
-
-Future iosOnDidReceiveLocalNotificationWhileForegrounded(
-    int id, String title, String body, String payload) {
-  return Future.value();
-}
-
-void handlePurchaseUpdates(
-    List<PurchaseDetails> purchases, Store<AppState> store) async {
-  var purchase = purchases.last;
-
-  if (purchase.status == PurchaseStatus.purchased) {
-    var ref = Firestore.instance
-        .collection('users')
-        .document(store.state.user.userId);
-
-    try {
-      await ref.updateData({
-        'isPro': true,
-        'playPurchaseId': purchase.purchaseID,
-        'playPurchaseDate': purchase.transactionDate,
-        'playProductId': purchase.productID,
-      });
-
-      // TODO: Notify the user that they have sucessfully upgraded. Or Handle an error if this fails to complete.
-    } catch (error) {
-      throw error;
-    }
-  }
-}
-
 void onAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
   if (user == null) {
     store.dispatch(SignOut());
-    await _firestoreStreams.cancelAll();
-    _firestoreStreams.projectSubscriptions.clear();
-    _notificationsPlugin.cancelAll();
+    await firestoreStreams.cancelAll();
+    firestoreStreams.projectSubscriptions.clear();
+    notificationsPlugin.cancelAll();
     return;
   }
 
@@ -731,66 +272,20 @@ void onAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
   // }
 }
 
-void subscribeToDatabase(Store<AppState> store, String userId) {
-  _firestoreStreams.accountConfig = _subscribeToAccountConfig(userId, store);
-  _firestoreStreams.invites = _subscribeToProjectInvites(userId, store);
-  _firestoreStreams.projectIds = _subscribeToProjectIds(userId, store);
-}
-
-StreamSubscription<DocumentSnapshot> _subscribeToAccountConfig(
-    String userId, Store<AppState> store) {
-  return _getAccountConfigDocumentReference(userId)
-      .snapshots()
-      .listen((docSnapshot) {
-    if (docSnapshot.exists) {
-      var accountConfig = AccountConfigModel.fromDoc(docSnapshot);
-      store.dispatch(ReceiveAccountConfig(accountConfig: accountConfig));
-    }
-  });
-}
-
-StreamSubscription<QuerySnapshot> _subscribeToProjectInvites(
-    String userId, Store<AppState> store) {
-  return Firestore.instance
-      .collection('users')
-      .document(userId)
-      .collection('invites')
-      .snapshots()
-      .listen((snapshot) {
-    List<ProjectInviteModel> invites = [];
-    snapshot.documents
-        .forEach((doc) => invites.add(ProjectInviteModel.fromDoc(doc)));
-
-    store.dispatch(ReceiveProjectInvites(invites: invites));
-  });
-}
-
 ThunkAction<AppState> acceptProjectInvite(String projectId) {
   return (Store<AppState> store) async {
-    addProcessingProjectInviteId(projectId, store);
+    _addProcessingProjectInviteId(projectId, store);
 
     try {
       await _cloudFunctionsLayer.acceptProjectInvite(projectId: projectId);
       await _removeProjectInvite(store.state.user.userId, projectId);
 
-      removeProccessingProjectInviteId(projectId, store);
+      _removeProccessingProjectInviteId(projectId, store);
     } catch (error) {
-      removeProccessingProjectInviteId(projectId, store);
+      _removeProccessingProjectInviteId(projectId, store);
       throw error;
     }
   };
-}
-
-void addProcessingProjectInviteId(String projectId, Store<AppState> store) {
-  if (store.state.processingProjectInviteIds.contains(projectId)) {
-    return;
-  }
-
-  List<String> newList = store.state.processingProjectInviteIds.toList();
-  newList.add(projectId);
-
-  store.dispatch(
-      SetProcessingProjectInviteIds(processingProjectInviteIds: newList));
 }
 
 ThunkAction<AppState> updateAppTheme(AppThemeModel newAppTheme) {
@@ -804,32 +299,15 @@ ThunkAction<AppState> updateAppTheme(AppThemeModel newAppTheme) {
     if (store.state.accountConfig == null) {
       // Account Config doesn't exist yet.
       var accountConfigRef =
-          _getAccountConfigDocumentReference(store.state.user.userId);
+          getAccountConfigDocumentReference(store.state.user.userId);
       var newAccountConfig = AccountConfigModel(appTheme: newAppTheme);
       await accountConfigRef.setData(newAccountConfig.toMap());
     } else {
       // Account Config already Exists.
-      var ref = _getAccountConfigDocumentReference(store.state.user.userId);
+      var ref = getAccountConfigDocumentReference(store.state.user.userId);
       await ref.updateData({'appTheme': newAppTheme.toMap()});
     }
   };
-}
-
-DocumentReference _getAccountConfigDocumentReference(String userId) {
-  return Firestore.instance
-      .collection('users')
-      .document(userId)
-      .collection('accountConfig')
-      .document('0');
-}
-
-void removeProccessingProjectInviteId(String projectId, Store<AppState> store) {
-  List<String> newList = store.state.processingProjectInviteIds
-      .where((item) => item != projectId)
-      .toList();
-
-  store.dispatch(
-      SetProcessingProjectInviteIds(processingProjectInviteIds: newList));
 }
 
 ThunkAction<AppState> setShowOnlySelfTasks(bool showOnlySelfTasks) {
@@ -861,25 +339,25 @@ ThunkAction<AppState> setShowOnlySelfTasks(bool showOnlySelfTasks) {
     if (showOnlySelfTasks == true) {
       var removalAnimationUpdates = hiddenTasks.map((task) {
         return TaskAnimationUpdate(
-            index: _getTaskAnimationIndex(preMutationTaskIndices, task.uid),
-            listStateKey: _getAnimatedListStateKey(task.taskList),
+            index: getTaskAnimationIndex(preMutationTaskIndices, task.uid),
+            listStateKey: getAnimatedListStateKey(task.taskList),
             task: task);
       }).toList();
 
       removalAnimationUpdates.sort(TaskAnimationUpdate.removalSorter);
 
-      _driveTaskRemovalAnimations(removalAnimationUpdates);
+      driveTaskRemovalAnimations(removalAnimationUpdates);
     } else {
       var additionAnimationUpdates = hiddenTasks.map((task) {
         return TaskAnimationUpdate(
-          index: _getTaskAnimationIndex(postMutationTaskIndices, task.uid),
-          listStateKey: _getAnimatedListStateKey(task.taskList),
+          index: getTaskAnimationIndex(postMutationTaskIndices, task.uid),
+          listStateKey: getAnimatedListStateKey(task.taskList),
           task: null,
         );
       }).toList();
 
       additionAnimationUpdates.sort(TaskAnimationUpdate.additionSorter);
-      _driveTaskAdditionAnimations(additionAnimationUpdates);
+      driveTaskAdditionAnimations(additionAnimationUpdates);
     }
   };
 }
@@ -919,7 +397,7 @@ ThunkAction<AppState> moveTasksToListWithDialog(
 
       if (moveTasksResult.isNewTaskList == true) {
         // Create a new TaskList before proceeding.
-        var ref = _getTaskListsCollectionRef(projectId).document();
+        var ref = getTaskListsCollectionRef(projectId).document();
         var taskList = TaskListModel(
           dateAdded: DateTime.now(),
           project: projectId,
@@ -954,7 +432,7 @@ Future<void> moveTasks(List<TaskModel> tasks, String destinationTaskListId,
       state.taskListsByProject[projectId], destinationTaskListId);
 
   for (var task in tasks) {
-    var ref = _getTasksCollectionRef(projectId).document(task.uid);
+    var ref = getTasksCollectionRef(projectId).document(task.uid);
     batch.updateData(ref, {'taskList': destinationTaskListId});
     batch.updateData(ref, {
       'metadata': _getUpdatedTaskMetadata(
@@ -963,7 +441,7 @@ Future<void> moveTasks(List<TaskModel> tasks, String destinationTaskListId,
     });
 
     // Activity Feed
-    _updateActivityFeedToBatch(
+    updateActivityFeedToBatch(
         batch: batch,
         projectId: projectId,
         user: state.user,
@@ -978,20 +456,20 @@ Future<void> moveTasks(List<TaskModel> tasks, String destinationTaskListId,
 
 ThunkAction<AppState> denyProjectInvite(String projectId) {
   return (Store<AppState> store) async {
-    addProcessingProjectInviteId(projectId, store);
+    _addProcessingProjectInviteId(projectId, store);
     try {
       await _cloudFunctionsLayer.denyProjectInvite(projectId: projectId);
       await _removeProjectInvite(store.state.user.userId, projectId);
-      removeProccessingProjectInviteId(projectId, store);
+      _removeProccessingProjectInviteId(projectId, store);
     } catch (error) {
-      removeProccessingProjectInviteId(projectId, store);
+      _removeProccessingProjectInviteId(projectId, store);
       throw error;
     }
   };
 }
 
 Future<void> _removeProjectInvite(String userId, String projectId) async {
-  var ref = _getInvitesCollectionRef(userId).document(projectId);
+  var ref = getInvitesCollectionRef(userId).document(projectId);
   try {
     await ref.delete();
     return;
@@ -1000,42 +478,7 @@ Future<void> _removeProjectInvite(String userId, String projectId) async {
   }
 }
 
-showSnackBar(
-    {@required GlobalKey<ScaffoldState> targetGlobalKey,
-    @required String message,
-    int autoHideSeconds = 6,
-    String actionLabel,
-    dynamic onClosed}) async {
-  if (targetGlobalKey?.currentState == null) {
-    throw ArgumentError(
-        'targetGlobalKey or targetGlobalKey.currentState must not be null');
-  }
 
-  // Close any currently open Snackbars on targetGlobalKey.
-  targetGlobalKey.currentState
-      .hideCurrentSnackBar(reason: SnackBarClosedReason.hide);
-
-  var duration =
-      autoHideSeconds == 0 ? null : Duration(seconds: autoHideSeconds);
-  var snackBarAction = actionLabel == null
-      ? null
-      : SnackBarAction(
-          label: actionLabel,
-          onPressed: () => targetGlobalKey.currentState
-              .hideCurrentSnackBar(reason: SnackBarClosedReason.action),
-        );
-
-  var featureController = targetGlobalKey.currentState.showSnackBar(SnackBar(
-    content: Text(message ?? ''),
-    action: snackBarAction,
-    duration: duration,
-  ));
-
-  if (onClosed != null) {
-    var reason = await featureController.closed;
-    onClosed(reason);
-  }
-}
 
 ThunkAction<AppState> inviteUserToProject(
     String email, String sourceProjectId, String projectName, MemberRole role) {
@@ -1070,7 +513,7 @@ ThunkAction<AppState> inviteUserToProject(
           role: role,
         );
 
-        _updateActivityFeed(
+        updateActivityFeed(
           projectId: sourceProjectId,
           projectName: _getProjectName(store.state.projects, sourceProjectId),
           user: store.state.user,
@@ -1132,13 +575,13 @@ ThunkAction<AppState> changeAccount(
 ThunkAction<AppState> updateTaskPriority(bool newValue, String taskId,
     String projectId, String taskName, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
-    var ref = _getTasksCollectionRef(projectId).document(taskId);
+    var ref = getTasksCollectionRef(projectId).document(taskId);
 
     // Activity Feed.
     final String truncatedTaskName =
         truncateString(taskName, activityFeedTitleTruncationCount);
 
-    _updateActivityFeed(
+    updateActivityFeed(
       projectId: projectId,
       user: store.state.user,
       projectName: _getProjectName(store.state.projects, projectId),
@@ -1176,11 +619,11 @@ ThunkAction<AppState> updateTaskNote(
       return;
     }
 
-    var ref = _getTasksCollectionRef(projectId).document(taskId);
+    var ref = getTasksCollectionRef(projectId).document(taskId);
     var coercedValue = newValue ?? '';
 
     // Activity Feed.
-    _updateActivityFeed(
+    updateActivityFeed(
       projectId: projectId,
       user: store.state.user,
       projectName: _getProjectName(store.state.projects, projectId),
@@ -1212,7 +655,7 @@ ThunkAction<AppState> updateTaskAssignments(
     TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     var batch = Firestore.instance.batch();
-    var ref = _getTasksCollectionRef(projectId).document(taskId);
+    var ref = getTasksCollectionRef(projectId).document(taskId);
 
     batch.updateData(ref, {'assignedTo': newAssignments});
     batch.updateData(ref, {
@@ -1228,7 +671,7 @@ ThunkAction<AppState> updateTaskAssignments(
     if (newAssignments.length == 1) {
       if (newAssignments.first == store.state.user.userId)
         // User has assigned this task to themselves.
-        _updateActivityFeedToBatch(
+        updateActivityFeedToBatch(
           batch: batch,
           projectId: projectId,
           projectName: _getProjectName(store.state.projects, projectId),
@@ -1243,7 +686,7 @@ ThunkAction<AppState> updateTaskAssignments(
         );
       else {
         // User has assigned this task to someone other then themselves.
-        _updateActivityFeedToBatch(
+        updateActivityFeedToBatch(
           batch: batch,
           projectId: projectId,
           projectName: _getProjectName(store.state.projects, projectId),
@@ -1261,7 +704,7 @@ ThunkAction<AppState> updateTaskAssignments(
 
       if (newAssignments.length > 1) {
         // User has assigned this task to multiple contributors.
-        _updateActivityFeedToBatch(
+        updateActivityFeedToBatch(
           batch: batch,
           projectId: projectId,
           projectName: _getProjectName(store.state.projects, projectId),
@@ -1300,12 +743,12 @@ ThunkAction<AppState> updateTaskDueDate(
     }
 
     var ref =
-        _getTasksCollectionRef(store.state.selectedProjectId).document(taskId);
+        getTasksCollectionRef(store.state.selectedProjectId).document(taskId);
     String coercedValue = newValue == null ? '' : newValue.toIso8601String();
 
     // Activity Feed.
     if (newValue == null) {
-      _updateActivityFeed(
+      updateActivityFeed(
         projectId: projectId,
         projectName: _getProjectName(store.state.projects, projectId),
         user: store.state.user,
@@ -1320,7 +763,7 @@ ThunkAction<AppState> updateTaskDueDate(
       final truncatedTaskName =
           truncateString(taskName, activityFeedTitleTruncationCount);
 
-      _updateActivityFeed(
+      updateActivityFeed(
         projectId: projectId,
         projectName: _getProjectName(store.state.projects, projectId),
         user: store.state.user,
@@ -1433,7 +876,7 @@ Future<void> _leaveSharedProject(
     await _cloudFunctionsLayer.kickUserFromProject(
         projectId: projectId, userId: store.state.user.userId);
 
-    _updateActivityFeedWithMemberAction(
+    updateActivityFeedWithMemberAction(
       projectId: projectId,
       projectName: _getProjectName(store.state.projects, projectId),
       targetDisplayName: store.state.user.displayName,
@@ -1477,7 +920,7 @@ ThunkAction<AppState> getTaskComments(String projectId, String taskId) {
         .getDocuments();
 
     store.dispatch(SetIsGettingTaskComments(isGettingTaskComments: false));
-    _handleTaskCommentsSnapshot(store, snapshot);
+    handleTaskCommentsSnapshot(store, snapshot);
   };
 }
 
@@ -1503,7 +946,7 @@ ThunkAction<AppState> closeTaskCommentsScreen(String projectId, String taskId) {
 
     var taskComments = store.state.taskComments.toList();
     var userId = store.state.user.userId;
-    var taskRef = _getTasksCollectionRef(projectId).document(taskId);
+    var taskRef = getTasksCollectionRef(projectId).document(taskId);
     var batch = Firestore.instance.batch();
 
     // Posting and Deleting Comments already re-generates the Comment Preview. We only need to do so here, if we have
@@ -1522,7 +965,7 @@ ThunkAction<AppState> closeTaskCommentsScreen(String projectId, String taskId) {
 
     for (var comment in commentsNeedingSeenByUpdate) {
       var commentRef =
-          _getTaskCommentCollectionRef(projectId, taskId).document(comment.uid);
+          getTaskCommentCollectionRef(projectId, taskId).document(comment.uid);
       var seenBy = comment.seenBy.toList();
       seenBy.add(userId);
       batch.updateData(commentRef, {'seenBy': seenBy});
@@ -1565,22 +1008,6 @@ bool _doesTaskCommentPreviewSeenByNeedUpdate(
       0;
 }
 
-void _handleTaskCommentsSnapshot(
-    Store<AppState> store, QuerySnapshot snapshot) {
-  // We query for taskCommentQueryLimit + 1 documents. So if we didn't retreive that many documents,
-  // then we can guarantee that the Pagination is complete.
-  store.dispatch(SetIsTaskCommentPaginationComplete(
-      isComplete: snapshot.documents.length < taskCommentQueryLimit + 1));
-
-  List<CommentModel> comments = [];
-  snapshot.documents.forEach((doc) => comments.add(CommentModel.fromDoc(doc)));
-
-  var taskComments = store.state.taskComments.toList();
-  taskComments.addAll(comments.take(taskCommentQueryLimit));
-
-  store.dispatch(ReceiveTaskComments(taskComments: taskComments));
-}
-
 ThunkAction<AppState> paginateTaskComments(String projectId, String taskId) {
   return (Store<AppState> store) async {
     if (store.state.taskComments.length == 0) {
@@ -1604,7 +1031,7 @@ ThunkAction<AppState> paginateTaskComments(String projectId, String taskId) {
 
     store
         .dispatch(SetIsPaginatingTaskComments(isPaginatingTaskComments: false));
-    _handleTaskCommentsSnapshot(store, snapshot);
+    handleTaskCommentsSnapshot(store, snapshot);
   };
 }
 
@@ -1621,8 +1048,8 @@ ThunkAction<AppState> postTaskComment(
     var members = store.state.members[projectId];
 
     var batch = Firestore.instance.batch();
-    var taskRef = _getTasksCollectionRef(projectId).document(taskId);
-    var commentRef = _getTaskCommentCollectionRef(projectId, taskId).document();
+    var taskRef = getTasksCollectionRef(projectId).document(taskId);
+    var commentRef = getTaskCommentCollectionRef(projectId, taskId).document();
 
     var comment = CommentModel(
         uid: commentRef.documentID,
@@ -1710,8 +1137,8 @@ ThunkAction<AppState> deleteTaskComment(
     store.dispatch(ReceiveTaskComments(taskComments: newTaskComments));
 
     var commentRef =
-        _getTaskCommentCollectionRef(projectId, taskId).document(commentId);
-    var taskRef = _getTasksCollectionRef(projectId).document(taskId);
+        getTaskCommentCollectionRef(projectId, taskId).document(commentId);
+    var taskRef = getTasksCollectionRef(projectId).document(taskId);
     var batch = Firestore.instance.batch();
 
     var commentPreview = _generateTaskCommentPreview(newTaskComments)
@@ -1793,7 +1220,7 @@ ThunkAction<AppState> promoteUser(String userId, String projectId) {
 
 Future<void> _promoteUser(String userId, String projectId) async {
   try {
-    var memberRef = _getMembersCollectionRef(projectId).document(userId);
+    var memberRef = getMembersCollectionRef(projectId).document(userId);
     await memberRef.updateData({
       'role': convertMemberRole(MemberRole.owner),
     });
@@ -1805,7 +1232,7 @@ Future<void> _promoteUser(String userId, String projectId) async {
 
 ThunkAction<AppState> demoteUser(String userId, String projectId) {
   return (Store<AppState> store) async {
-    var memberRef = _getMembersCollectionRef(projectId).document(userId);
+    var memberRef = getMembersCollectionRef(projectId).document(userId);
 
     try {
       store.dispatch(SetProcessingMembers(
@@ -1844,7 +1271,7 @@ ThunkAction<AppState> kickUserFromProject(String userId, String projectId,
           processingMembers: store.state.processingMembers..remove(userId)));
 
       // Activity Feed.
-      _updateActivityFeedWithMemberAction(
+      updateActivityFeedWithMemberAction(
         projectId: projectId,
         projectName: _getProjectName(store.state.projects, projectId),
         targetDisplayName: displayName,
@@ -1853,7 +1280,6 @@ ThunkAction<AppState> kickUserFromProject(String userId, String projectId,
         title: 'was removed from the project',
         details: '',
       );
-
     } catch (error) {
       throw error;
     }
@@ -1876,8 +1302,8 @@ ThunkAction<AppState> archiveProjectWithDialog(
       return;
     }
 
-    var ref = _getProjectIdsCollectionRef(store.state.user.userId)
-        .document(projectId);
+    var ref =
+        getProjectIdsCollectionRef(store.state.user.userId).document(projectId);
 
     try {
       homeScreenScaffoldKey?.currentState?.openDrawer();
@@ -1964,11 +1390,11 @@ Future<void> _deleteProject(
       DeleteProjectUndoActionModel(
         taskIds: taskIds.toList(),
         taskListIds: taskListIds.toList(),
-        taskListsPath: _getTaskListsCollectionRef(projectId).path,
-        tasksPath: _getTasksCollectionRef(projectId).path,
+        taskListsPath: getTaskListsCollectionRef(projectId).path,
+        tasksPath: getTasksCollectionRef(projectId).path,
         projectIdPath:
-            _getProjectIdsCollectionRef(userId).document(projectId).path,
-        projectPath: _getProjectsCollectionRef(store).document(projectId).path,
+            getProjectIdsCollectionRef(userId).document(projectId).path,
+        projectPath: getProjectsCollectionRef().document(projectId).path,
       ),
       store);
 
@@ -1983,7 +1409,7 @@ Future<void> _deleteProject(
         }
       });
 
-  var ref = _getProjectsCollectionRef(store).document(projectId);
+  var ref = getProjectsCollectionRef().document(projectId);
 
   try {
     var batch = Firestore.instance.batch();
@@ -2041,7 +1467,7 @@ ThunkAction<AppState> renameTaskListWithDialog(String taskListId,
     }
 
     // Activity Feed.
-    _updateActivityFeed(
+    updateActivityFeed(
       projectId: projectId,
       projectName: _getProjectName(store.state.projects, projectId),
       user: store.state.user,
@@ -2051,7 +1477,7 @@ ThunkAction<AppState> renameTaskListWithDialog(String taskListId,
     );
 
     try {
-      await _getTaskListsCollectionRef(store.state.selectedProjectId)
+      await getTaskListsCollectionRef(store.state.selectedProjectId)
           .document(taskListId)
           .updateData({'taskListName': dialogResult.value});
     } catch (error) {
@@ -2083,7 +1509,7 @@ ThunkAction<AppState> deleteTaskListWithDialog(String taskListId,
         });
 
     // Activity Feed.
-    final activityFeedReference = _updateActivityFeed(
+    final activityFeedReference = updateActivityFeed(
       projectId: projectId,
       projectName: _getProjectName(store.state.projects, projectId),
       user: store.state.user,
@@ -2103,14 +1529,14 @@ ThunkAction<AppState> deleteTaskListWithDialog(String taskListId,
 Future _deleteTaskList(String taskListId, Store<AppState> store, String userId,
     DocumentReference activityFeedReference) async {
   var taskIds = _getListRelatedTaskIds(taskListId, store.state.tasks);
-  var taskListRef = _getTaskListsCollectionRef(store.state.selectedProjectId)
+  var taskListRef = getTaskListsCollectionRef(store.state.selectedProjectId)
       .document(taskListId);
 
   pushUndoAction(
       DeleteTaskListUndoActionModel(
           taskListRefPath: taskListRef.path,
           childTaskPaths: taskIds
-              .map((id) => _getTasksCollectionRef(store.state.selectedProjectId)
+              .map((id) => getTasksCollectionRef(store.state.selectedProjectId)
                   .document(id)
                   .path)
               .toList(),
@@ -2156,10 +1582,10 @@ ThunkAction<AppState> deleteTask(
   BuildContext context,
 ) {
   return (Store<AppState> store) async {
-    var ref = _getTasksCollectionRef(projectId).document(taskId);
+    var ref = getTasksCollectionRef(projectId).document(taskId);
 
     // Activity Feed.
-    final activityFeedRef = _updateActivityFeed(
+    final activityFeedRef = updateActivityFeed(
       projectId: projectId,
       projectName: _getProjectName(store.state.projects, projectId),
       user: store.state.user,
@@ -2206,7 +1632,7 @@ ThunkAction<AppState> updateTaskSorting(String projectId, String taskListId,
       return;
     }
 
-    var ref = _getTaskListsCollectionRef(projectId).document(taskListId);
+    var ref = getTaskListsCollectionRef(projectId).document(taskListId);
     var newSettings = existingSettings?.copyWith(sortBy: sorting);
 
     try {
@@ -2229,7 +1655,7 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
       var batch = Firestore.instance.batch();
 
       // Project Entity Ref.
-      var projectRef = _getProjectsCollectionRef(store).document();
+      var projectRef = getProjectsCollectionRef().document();
       var project = ProjectModel(
         uid: projectRef.documentID,
         projectName: result.value.trim().isEmpty
@@ -2240,7 +1666,7 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
 
       // Project ID Ref.
       var projectIdRef =
-          _getProjectIdsCollectionRef(userId).document(projectRef.documentID);
+          getProjectIdsCollectionRef(userId).document(projectRef.documentID);
       var projectId = ProjectIdModel(
         uid: projectRef.documentID,
         archivedOn: null,
@@ -2249,14 +1675,14 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
       );
 
       // Member Ref.
-      var memberRef = _getProjectMembersCollectionRef(projectRef.documentID)
+      var memberRef = getProjectMembersCollectionRef(projectRef.documentID)
           .document(userId);
       var member =
           store.state.user.toMember(MemberRole.owner, MemberStatus.added);
 
       // Initial TaskList
       var taskListRef =
-          _getTaskListsCollectionRef(projectRef.documentID).document();
+          getTaskListsCollectionRef(projectRef.documentID).document();
       var taskList = TaskListModel(
         uid: taskListRef.documentID,
         project: projectRef.documentID,
@@ -2270,7 +1696,7 @@ ThunkAction<AppState> addNewProjectWithDialog(BuildContext context) {
       batch.setData(taskListRef, taskList.toMap());
 
       // Activity Feed.
-      _updateActivityFeedToBatch(
+      updateActivityFeedToBatch(
         batch: batch,
         projectId: projectRef.documentID,
         type: ActivityFeedEventType.addProject,
@@ -2306,13 +1732,13 @@ ThunkAction<AppState> setShowCompletedTasks(
         SetShowCompletedTasks(showCompletedTasks: showCompletedTasks));
 
     if (showCompletedTasks == true) {
-      _firestoreStreams.projectSubscriptions[projectId].completedTasks =
-          _subscribeToCompletedTasks(projectId, store);
+      firestoreStreams.projectSubscriptions[projectId].completedTasks =
+          subscribeToCompletedTasks(projectId, store, notificationsPlugin);
 
       // _handleTasksSnapshot will be called for the query and handle everything from here.
 
     } else {
-      await _firestoreStreams.projectSubscriptions[projectId]?.completedTasks
+      await firestoreStreams.projectSubscriptions[projectId]?.completedTasks
           ?.cancel();
 
       // _handleTasksSnapshot won't be called, so we need to Animated the Tasks out Manually.
@@ -2327,8 +1753,8 @@ ThunkAction<AppState> setShowCompletedTasks(
             Map<String, int>.from(store.state.inflatedProject.taskIndices);
         var taskAnimationUpdates = outgoingTasks
             .map((task) => TaskAnimationUpdate(
-                  index: _getTaskAnimationIndex(preMutationIndices, task.uid),
-                  listStateKey: _getAnimatedListStateKey(task.taskList),
+                  index: getTaskAnimationIndex(preMutationIndices, task.uid),
+                  listStateKey: getAnimatedListStateKey(task.taskList),
                   task: task,
                 ))
             .toList();
@@ -2339,22 +1765,10 @@ ThunkAction<AppState> setShowCompletedTasks(
         ));
 
         taskAnimationUpdates.sort(TaskAnimationUpdate.removalSorter);
-        _driveTaskRemovalAnimations(taskAnimationUpdates);
+        driveTaskRemovalAnimations(taskAnimationUpdates);
       }
     }
   };
-}
-
-StreamSubscription<QuerySnapshot> _subscribeToCompletedTasks(
-    String projectId, Store<AppState> store) {
-  return Firestore.instance
-      .collection('projects')
-      .document(projectId)
-      .collection('tasks')
-      .where('isComplete', isEqualTo: true)
-      .snapshots()
-      .listen((snapshot) => _handleTasksSnapshot(
-          TasksSnapshotType.completed, snapshot, projectId, store));
 }
 
 ThunkAction<AppState> addNewTaskListWithDialog(
@@ -2364,7 +1778,7 @@ ThunkAction<AppState> addNewTaskListWithDialog(
 
     if (result is TextInputDialogResult &&
         result.result == DialogResult.affirmative) {
-      var ref = _getTaskListsCollectionRef(projectId).document();
+      var ref = getTaskListsCollectionRef(projectId).document();
       var taskList = TaskListModel(
         uid: ref.documentID,
         project: projectId,
@@ -2374,7 +1788,7 @@ ThunkAction<AppState> addNewTaskListWithDialog(
       );
 
       // Activity Feed.
-      _updateActivityFeed(
+      updateActivityFeed(
         projectId: projectId,
         type: ActivityFeedEventType.addList,
         projectName: _getProjectName(store.state.projects, projectId),
@@ -2414,7 +1828,7 @@ ThunkAction<AppState> updateListSorting(
           : existingTaskLists;
 
       var ref =
-          _getMembersCollectionRef(projectId).document(store.state.user.userId);
+          getMembersCollectionRef(projectId).document(store.state.user.userId);
 
       try {
         await ref.updateData({
@@ -2473,7 +1887,7 @@ ThunkAction<AppState> moveTaskListToProjectWithDialog(String taskListId,
     moveTaskList(taskListId, projectId, targetProjectId, store.state);
 
     // Activity Feed.
-    _updateActivityFeed(
+    updateActivityFeed(
       projectId: projectId,
       type: ActivityFeedEventType.moveList,
       projectName: _getProjectName(store.state.projects, projectId),
@@ -2512,7 +1926,7 @@ void moveTaskList(String taskListId, String sourceProjectId,
   TaskListModel sourceTaskList = state.taskListsByProject[sourceProjectId]
       ?.firstWhere((item) => item.uid == taskListId, orElse: () => null);
   var sourceTaskListRef =
-      _getTaskListsCollectionRef(sourceProjectId).document(taskListId);
+      getTaskListsCollectionRef(sourceProjectId).document(taskListId);
 
   if (sourceTaskList == null) {
     return;
@@ -2521,7 +1935,7 @@ void moveTaskList(String taskListId, String sourceProjectId,
   TaskListModel targetTaskList =
       sourceTaskList.copyWith(project: targetProjectId);
   var targetTaskListRef =
-      _getTaskListsCollectionRef(targetProjectId).document(taskListId);
+      getTaskListsCollectionRef(targetProjectId).document(taskListId);
 
   // Everything Prepped. Let's move.
   var batch = Firestore.instance.batch();
@@ -2529,7 +1943,7 @@ void moveTaskList(String taskListId, String sourceProjectId,
   // Write operations to new Location.
   batch.setData(targetTaskListRef, targetTaskList.toMap());
   for (var task in targetChildTasks) {
-    batch.setData(_getTasksCollectionRef(targetProjectId).document(task.uid),
+    batch.setData(getTasksCollectionRef(targetProjectId).document(task.uid),
         task.toMap());
   }
 
@@ -2546,22 +1960,18 @@ void moveTaskList(String taskListId, String sourceProjectId,
     taskListId: taskListId,
     taskIds: targetChildTasks.map((item) => item.uid).toList(),
     sourceTaskListRefPath: sourceTaskListRef.path,
-    sourceTasksRefPath: _getTasksCollectionRef(sourceProjectId).path,
+    sourceTasksRefPath: getTasksCollectionRef(sourceProjectId).path,
     targetTaskListRefPath: targetTaskListRef.path,
-    targetTasksRefPath: _getTasksCollectionRef(targetProjectId).path,
+    targetTasksRefPath: getTasksCollectionRef(targetProjectId).path,
   ));
 
-  batch.setData(_getJobsQueueCollectionRef().document(), cleanupJob.toMap());
+  batch.setData(getJobsQueueCollectionRef().document(), cleanupJob.toMap());
 
   try {
     await batch.commit();
   } catch (error) {
     throw error;
   }
-}
-
-CollectionReference _getJobsQueueCollectionRef() {
-  return Firestore.instance.collection('jobsQueue');
 }
 
 ThunkAction<AppState> updateTaskName(String newValue, String oldValue,
@@ -2573,7 +1983,7 @@ ThunkAction<AppState> updateTaskName(String newValue, String oldValue,
 
     newValue = newValue.trim();
     var batch = Firestore.instance.batch();
-    var ref = _getTasksCollectionRef(projectId).document(taskId);
+    var ref = getTasksCollectionRef(projectId).document(taskId);
     ArgumentMap argMap;
     bool hasArguments = TaskArgumentParser.hasArguments(newValue);
 
@@ -2609,7 +2019,7 @@ ThunkAction<AppState> updateTaskName(String newValue, String oldValue,
           .toMap()
     });
 
-    _updateActivityFeedToBatch(
+    updateActivityFeedToBatch(
       batch: batch,
       projectId: projectId,
       projectName: _getProjectName(store.state.projects, projectId),
@@ -2680,10 +2090,10 @@ ThunkAction<AppState> updateTaskListColorWithDialog(
             ));
 
     if (result is int) {
-      var ref = _getTaskListsCollectionRef(projectId).document(taskListId);
+      var ref = getTaskListsCollectionRef(projectId).document(taskListId);
 
       // Activity Feed.
-      _updateActivityFeed(
+      updateActivityFeed(
         projectId: projectId,
         projectName: _getProjectName(store.state.projects, projectId),
         user: store.state.user,
@@ -2742,7 +2152,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
         var batch = Firestore.instance.batch();
 
         // New TaskList
-        var taskListRef = _getTaskListsCollectionRef(projectId).document();
+        var taskListRef = getTaskListsCollectionRef(projectId).document();
 
         var newTaskList = TaskListModel(
           uid: taskListRef.documentID,
@@ -2754,7 +2164,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
         );
 
         // New Task
-        var taskRef = _getTasksCollectionRef(projectId).document();
+        var taskRef = getTasksCollectionRef(projectId).document();
         var taskName = result.taskName.trim().isEmpty
             ? 'Untitled Task'
             : result.taskName.trim();
@@ -2770,7 +2180,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
             dateAdded: DateTime.now(),
             assignedTo: result.assignedToIds,
             note: result.note,
-            reminders: _buildNewRemindersMap(taskRef.documentID, taskName,
+            reminders: buildNewRemindersMap(taskRef.documentID, taskName,
                 store.state.user.userId, result.reminderTime),
             metadata: TaskMetadata(
               createdBy: store.state.user.displayName,
@@ -2781,7 +2191,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
         batch.setData(taskListRef, newTaskList.toMap());
 
         // Activity Feed.
-        _updateActivityFeedToBatch(
+        updateActivityFeedToBatch(
           batch: batch,
           projectId: projectId,
           projectName: _getProjectName(store.state.projects, projectId),
@@ -2817,7 +2227,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
         // User selected an existing TaskList.
         var batch = Firestore.instance.batch();
 
-        var taskRef = _getTasksCollectionRef(projectId).document();
+        var taskRef = getTasksCollectionRef(projectId).document();
         var targetTaskListId = result.taskListId ??
             taskListId; // Use the taskListId parameter if Dialog returns a null taskListId.
         var taskName = result.taskName.trim().isEmpty
@@ -2835,7 +2245,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
             dateAdded: DateTime.now(),
             assignedTo: result.assignedToIds,
             note: result.note,
-            reminders: _buildNewRemindersMap(taskRef.documentID, taskName,
+            reminders: buildNewRemindersMap(taskRef.documentID, taskName,
                 store.state.user.userId, result.reminderTime),
             metadata: TaskMetadata(
                 createdBy: store.state.user.displayName,
@@ -2844,7 +2254,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
         batch.setData(taskRef, task.toMap());
 
         // Activity Feed.
-        _updateActivityFeedToBatch(
+        updateActivityFeedToBatch(
           batch: batch,
           projectId: projectId,
           projectName: _getProjectName(store.state.projects, projectId),
@@ -2881,25 +2291,7 @@ ThunkAction<AppState> addNewTaskWithDialog(
   };
 }
 
-Map<String, ReminderModel> _buildNewRemindersMap(
-    String taskId, String taskName, String userId, DateTime reminderTime) {
-  if (reminderTime == null) {
-    return <String, ReminderModel>{};
-  }
 
-  var reminder = ReminderModel(
-    message: truncateString(taskName, taskReminderMessageLength),
-    originTaskId: taskId,
-    time: reminderTime,
-    title: taskReminderTitle,
-    isSeen: false,
-    userId: userId,
-  );
-
-  return <String, ReminderModel>{
-    userId: reminder,
-  };
-}
 
 TaskListModel _getAddTaskDialogPreselectedTaskList(String projectId,
     String taskListId, List<TaskListModel> taskLists, AppState state) {
@@ -2958,7 +2350,7 @@ ThunkAction<AppState> updateFavouriteTaskList(
   return (Store<AppState> store) async {
     var userId = store.state.user.userId;
 
-    var memberRef = _getMembersCollectionRef(projectId).document(userId);
+    var memberRef = getMembersCollectionRef(projectId).document(userId);
 
     try {
       await memberRef.updateData({
@@ -2994,11 +2386,11 @@ ThunkAction<AppState> multiDeleteTasks(
         []; // Collect these to pass to the UndoAction later.
 
     for (var task in tasks) {
-      batch.updateData(_getTasksCollectionRef(projectId).document(task.uid),
+      batch.updateData(getTasksCollectionRef(projectId).document(task.uid),
           {'isDeleted': true});
 
       // Activity Feed
-      activityFeedReferences.add(_updateActivityFeedToBatch(
+      activityFeedReferences.add(updateActivityFeedToBatch(
         batch: batch,
         projectId: projectId,
         projectName: projectName,
@@ -3012,8 +2404,7 @@ ThunkAction<AppState> multiDeleteTasks(
 
     // Undo Redo.
     var refPaths = tasks
-        .map(
-            (task) => _getTasksCollectionRef(projectId).document(task.uid).path)
+        .map((task) => getTasksCollectionRef(projectId).document(task.uid).path)
         .toList();
 
     pushUndoAction(
@@ -3059,16 +2450,16 @@ ThunkAction<AppState> multiCompleteTasks(
         []; // Collect these to pass to UndoAction later.
 
     for (var task in tasks) {
-      batch.updateData(_getTasksCollectionRef(projectId).document(task.uid),
+      batch.updateData(getTasksCollectionRef(projectId).document(task.uid),
           {'isComplete': true});
-      batch.updateData(_getTasksCollectionRef(projectId).document(task.uid), {
+      batch.updateData(getTasksCollectionRef(projectId).document(task.uid), {
         'metadata': _getUpdatedTaskMetadata(task.metadata,
                 TaskMetadataUpdateType.completed, store.state.user.displayName)
             .toMap(),
       });
 
       // Activity Feed.
-      activityFeedReferences.add(_updateActivityFeedToBatch(
+      activityFeedReferences.add(updateActivityFeedToBatch(
         batch: batch,
         projectId: projectId,
         projectName: projectName,
@@ -3082,8 +2473,7 @@ ThunkAction<AppState> multiCompleteTasks(
 
     // Undo Redo.
     var refPaths = tasks
-        .map(
-            (task) => _getTasksCollectionRef(projectId).document(task.uid).path)
+        .map((task) => getTasksCollectionRef(projectId).document(task.uid).path)
         .toList();
 
     pushUndoAction(
@@ -3120,10 +2510,10 @@ ThunkAction<AppState> updateTaskComplete(String taskId, String projectId,
     String taskName, bool newValue, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
     final ref =
-        _getTasksCollectionRef(store.state.selectedProjectId).document(taskId);
+        getTasksCollectionRef(store.state.selectedProjectId).document(taskId);
 
     // Activity Feed
-    final activityFeedReference = _updateActivityFeed(
+    final activityFeedReference = updateActivityFeed(
       projectId: projectId,
       projectName: _getProjectName(store.state.projects, projectId),
       type: ActivityFeedEventType.completeTask,
@@ -3156,309 +2546,14 @@ ThunkAction<AppState> updateTaskComplete(String taskId, String projectId,
   };
 }
 
-StreamSubscription<QuerySnapshot> _subscribeToTaskLists(
-    String projectId, Store<AppState> store) {
-  return Firestore.instance
-      .collection('projects')
-      .document(projectId)
-      .collection('taskLists')
-      .snapshots()
-      .listen(
-          (snapshot) => _handleTaskListsSnapshot(snapshot, projectId, store));
-}
-
-void _handleTaskListsSnapshot(
-    QuerySnapshot snapshot, String originProjectId, Store<AppState> store) {
-  var taskLists = <TaskListModel>[];
-  var deletedTaskLists = <TaskListModel>[];
-  var checklists = <TaskListModel>[];
-
-  snapshot.documents.forEach((doc) {
-    var taskList = TaskListModel.fromDoc(doc);
-
-    // Don't add lists Flagged to the main collections. Add them to the deletedMap.
-    if (taskList.isDeleted != true) {
-      taskLists.add(taskList);
-
-      if (taskList.settings?.checklistSettings?.isChecklist == true) {
-        checklists.add(taskList);
-      }
-    } else {
-      deletedTaskLists.add(taskList);
-    }
-  });
-
-  store.dispatch(
-      ReceiveTaskLists(taskLists: taskLists, originProjectId: originProjectId));
-
-  store.dispatch(processChecklists(checklists));
-
-  store.dispatch(ReceiveDeletedTaskLists(
-    taskLists: deletedTaskLists,
-    originProjectId: originProjectId,
-  ));
-}
-
-ThunkAction<AppState> subscribeToLocalTaskLists(String userId) {
-  return (Store<AppState> store) async {};
-}
-
 ThunkAction<AppState> processChecklists(List<TaskListModel> checklists) {
   return (Store<AppState> store) async {
     for (var taskList in checklists) {
-      renewChecklist(taskList, store);
+      renewChecklist(taskList, _getProjectName(store.state.projects, taskList.project), store);
     }
   };
 }
 
-void renewChecklist(TaskListModel checklist, Store<AppState> store,
-    {bool isManuallyInitiated = false}) async {
-  if (checklist.settings.checklistSettings.isDueForRenew == false &&
-      isManuallyInitiated == false) {
-    return;
-  }
-
-  // 'unComplete' related Tasks.
-  var batch = Firestore.instance.batch();
-  var snapshot = await _getTasksCollectionRef(checklist.project)
-      .where('taskList', isEqualTo: checklist.uid)
-      .getDocuments();
-
-  snapshot.documents
-      .forEach((doc) => batch.updateData(doc.reference, {'isComplete': false}));
-
-  // Activity Feed.
-  if (isManuallyInitiated == true) {
-    _updateActivityFeedToBatch(
-      batch: batch,
-      projectId: checklist.project,
-      projectName: _getProjectName(store.state.projects, checklist.project),
-      user: store.state.user,
-      type: ActivityFeedEventType.renewChecklist,
-      title: 'manually renewed the checklist ${checklist.taskListName}',
-      details: '',
-    );
-  }
-
-  try {
-    batch.commit();
-  } catch (error) {
-    throw error;
-  }
-
-  // Update TaskList.
-  if (isManuallyInitiated == false) {
-    var currentChecklistSettings = checklist.settings.checklistSettings;
-    var newSettings = checklist.settings.copyWith(
-        checklistSettings: currentChecklistSettings.copyWith(
-            lastRenewDate: determineNextRenewDate(
-                currentChecklistSettings.lastRenewDate ??
-                    currentChecklistSettings.initialStartDate,
-                currentChecklistSettings.renewInterval)));
-
-    var ref =
-        _getTaskListsCollectionRef(checklist.project).document(checklist.uid);
-
-    try {
-      ref.updateData({'settings': newSettings.toMap()});
-    } catch (error) {
-      throw error;
-    }
-  }
-}
-
-DateTime determineNextRenewDate(DateTime lastRenewDate, int renewInterval) {
-  assert(lastRenewDate != null);
-
-  var now = normalizeDate(DateTime.now());
-  var projectedRenewDate = lastRenewDate.add(Duration(days: renewInterval));
-  if (projectedRenewDate.isAfter(now)) {
-    return projectedRenewDate;
-  }
-
-  // The next projectedRenewDate is still behind Today's Date. We have to play catchup. In other words, wind the date forward
-  // honoring the renewInterval until we find a date in the Future.
-  while (now.isAfter(projectedRenewDate)) {
-    projectedRenewDate = projectedRenewDate.add(Duration(days: renewInterval));
-  }
-
-  return projectedRenewDate;
-}
-
-StreamSubscription<QuerySnapshot> _subscribeToIncompletedTasks(
-    String projectId, Store<AppState> store) {
-  return Firestore.instance
-      .collection('projects')
-      .document(projectId)
-      .collection('tasks')
-      .where('isComplete', isEqualTo: false)
-      .snapshots()
-      .listen((snapshot) => _handleTasksSnapshot(
-          TasksSnapshotType.incompleted, snapshot, projectId, store));
-}
-
-void _handleTasksSnapshot(TasksSnapshotType type, QuerySnapshot snapshot,
-    String originProjectId, Store<AppState> store) {
-  var tasks = <TaskModel>[];
-  var flaggedAsDeletedTasks = <String, TaskModel>{};
-
-  snapshot.documents.forEach((doc) {
-    // **** TO FUTURE SELF *******
-    // If you add another condition that causes a task to be filtered out here, you will cause problems with _getGroupedTaskDocumentChanges,
-    // Specifically when it is sorting through the modifcations looking for tasks that have been un-deleted. There is a note already there on how to
-    // work aroound this.
-    if (doc.data['isDeleted'] == true) {
-      flaggedAsDeletedTasks[doc.documentID] =
-          TaskModel.fromDoc(doc, store.state.user.userId);
-    } else {
-      tasks.add(TaskModel.fromDoc(doc, store.state.user.userId));
-    }
-  });
-
-  // Reminder Notification Sync
-  if (type == TasksSnapshotType.incompleted) {
-    syncRemindersToDeviceNotifications(
-        _notificationsPlugin,
-        snapshot.documentChanges,
-        store.state.tasksById,
-        store.state.user.userId);
-  }
-
-  if (store.state.selectedProjectId == originProjectId) {
-    // Animation.
-    var groupedDocumentChanges = _getGroupedTaskDocumentChanges(
-        snapshot.documentChanges,
-        store.state.inflatedProject,
-        flaggedAsDeletedTasks,
-        store.state.tasksById);
-
-    var preMutationTaskIndices =
-        Map<String, int>.from(store.state.inflatedProject.taskIndices);
-
-    if (type == TasksSnapshotType.incompleted) {
-      store.dispatch(ReceiveIncompletedTasks(
-          tasks: tasks, originProjectId: originProjectId));
-    }
-
-    if (type == TasksSnapshotType.completed) {
-      store.dispatch(ReceiveCompletedTasks(
-          tasks: tasks, originProjectId: originProjectId));
-    }
-
-    // Removal.
-    _driveTaskRemovalAnimations(_getTaskRemovalAnimationUpdates(
-        groupedDocumentChanges.removed,
-        preMutationTaskIndices,
-        store.state.user.userId));
-
-    // Additons.
-    _driveTaskAdditionAnimations(_getTaskAdditionAnimationUpdates(
-        groupedDocumentChanges.added, store.state.inflatedProject.taskIndices));
-  } else {
-    // No animation required. Just dispatch the changes to the store.
-    if (type == TasksSnapshotType.incompleted) {
-      store.dispatch(ReceiveIncompletedTasks(
-          tasks: tasks, originProjectId: originProjectId));
-    }
-
-    if (type == TasksSnapshotType.completed) {
-      store.dispatch(ReceiveCompletedTasks(
-          tasks: tasks, originProjectId: originProjectId));
-    }
-  }
-}
-
-List<TaskAnimationUpdate> _getTaskRemovalAnimationUpdates(
-    List<CustomDocumentChange> removedCustomDocumentChanges,
-    Map<String, int> preMutationTaskIndices,
-    String userId) {
-  var list = removedCustomDocumentChanges.map((change) {
-    return TaskAnimationUpdate(
-      task: TaskModel.fromDoc(change.document, userId),
-      index: _getTaskAnimationIndex(preMutationTaskIndices, change.uid),
-      listStateKey: _getAnimatedListStateKey(change.taskList),
-    );
-  }).toList();
-
-  list.sort(TaskAnimationUpdate.removalSorter);
-  return list;
-}
-
-List<TaskAnimationUpdate> _getTaskAdditionAnimationUpdates(
-    List<CustomDocumentChange> addedCustomDocumentChanges,
-    Map<String, int> postMutationTaskIndices) {
-  var list = addedCustomDocumentChanges.map((docChange) {
-    return TaskAnimationUpdate(
-      index: _getTaskAnimationIndex(
-          postMutationTaskIndices, docChange.document.documentID),
-      listStateKey:
-          _getAnimatedListStateKey(docChange.document.data['taskList']),
-      task: null, // Additions don't require the actual Task.
-    );
-  }).toList();
-
-  list.sort(TaskAnimationUpdate.additionSorter);
-  return list;
-}
-
-StreamSubscription<QuerySnapshot> _subscribeToProjectIds(
-    String userId, Store<AppState> store) {
-  return _getProjectIdsCollectionRef(userId).snapshots().listen((data) {
-    for (var change in data.documentChanges) {
-      var projectIdModel = ProjectIdModel.fromDoc(change.document);
-      var projectId = projectIdModel.uid;
-      var isArchived = projectIdModel.isArchived;
-
-      if (change.type == DocumentChangeType.added && isArchived == false) {
-        print("PROJECT ID ADDED");
-        _addProjectSubscription(projectId, store);
-      }
-
-      if (change.type == DocumentChangeType.removed) {
-        _removeProjectSubscription(projectId, store);
-      }
-
-      if (change.type == DocumentChangeType.modified) {
-        if (isArchived == true) {
-          _removeProjectSubscription(projectId, store);
-        } else {
-          _addProjectSubscription(projectId,
-              store); // _addProjectSubscription will ignore if we have already added it.
-        }
-      }
-    }
-
-    store.dispatch(ReceiveProjectIds(
-        projectIds:
-            data.documents.map((doc) => ProjectIdModel.fromDoc(doc)).toList()));
-  });
-}
-
-void _addProjectSubscription(String projectId, Store<AppState> store) {
-  if (_firestoreStreams.projectSubscriptions.containsKey(projectId) ||
-      _firestoreStreams.projectSubscriptions[projectId] != null) {
-    return;
-  }
-
-  _firestoreStreams.projectSubscriptions[projectId] =
-      ProjectSubscriptionContainer(
-    uid: projectId,
-    project: _subscribeToProject(projectId, store),
-    members: _subscribeToMembers(projectId, store),
-    taskLists: _subscribeToTaskLists(projectId, store),
-    incompletedTasks: _subscribeToIncompletedTasks(projectId, store),
-  );
-}
-
-void _removeProjectSubscription(String projectId, Store<AppState> store) async {
-  if (_firestoreStreams.projectSubscriptions.containsKey(projectId)) {
-    await _firestoreStreams.projectSubscriptions[projectId]?.cancelAll();
-
-    _firestoreStreams.projectSubscriptions.remove(projectId);
-
-    store.dispatch(RemoveProjectEntities(projectId: projectId));
-  }
-}
 
 ThunkAction<AppState> refreshActivityFeed() {
   return (Store<AppState> store) async {
@@ -3493,7 +2588,7 @@ void _refreshActivityFeed(String projectId, ActivityFeedQueryLength queryLength,
     // Query for all Projects. Map projectIds into ActivityFeed Queries.
     List<Future<QuerySnapshot>> requests = [];
     requests.addAll(store.state.projectIds.map((id) =>
-        _getActivityFeedCollectionRef(id.uid)
+        getActivityFeedCollectionRef(id.uid)
             .where('timestamp',
                 isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime.now()
                     .subtract(parseActivityFeedQueryLength(queryLength))))
@@ -3511,7 +2606,7 @@ void _refreshActivityFeed(String projectId, ActivityFeedQueryLength queryLength,
         .dispatch(SetIsRefreshingActivityFeed(isRefreshingActivityFeed: false));
   } else {
     // Only query for a single Project.
-    final snapshot = await _getActivityFeedCollectionRef(projectId)
+    final snapshot = await getActivityFeedCollectionRef(projectId)
         .where('timestamp',
             isGreaterThanOrEqualTo: Timestamp.fromDate(DateTime.now()
                 .subtract(parseActivityFeedQueryLength(queryLength))))
@@ -3527,36 +2622,6 @@ void _refreshActivityFeed(String projectId, ActivityFeedQueryLength queryLength,
   }
 }
 
-StreamSubscription<QuerySnapshot> _subscribeToMembers(
-    String projectId, Store<AppState> store) {
-  return Firestore.instance
-      .collection('projects')
-      .document(projectId)
-      .collection('members')
-      .snapshots()
-      .listen((snapshot) {
-    List<MemberModel> members = [];
-    snapshot.documents.forEach((doc) => members.add(MemberModel.fromDoc(doc)));
-
-    store.dispatch(ReceiveMembers(projectId: projectId, membersList: members));
-  });
-}
-
-StreamSubscription<DocumentSnapshot> _subscribeToProject(
-    String projectId, Store<AppState> store) {
-  return Firestore.instance
-      .collection('projects')
-      .document(projectId)
-      .snapshots()
-      .listen((doc) => _handleProjectSnapshot(doc, store));
-}
-
-void _handleProjectSnapshot(DocumentSnapshot doc, Store<AppState> store) {
-  if (doc.exists) {
-    // Filtering of projects with isDeleted flag is handled by the Reducer.
-    store.dispatch(ReceiveProject(project: ProjectModel.fromDoc(doc)));
-  }
-}
 
 ThunkAction<AppState> restoreProjectWithDialog(BuildContext context) {
   return (Store<AppState> store) async {
@@ -3580,7 +2645,7 @@ ThunkAction<AppState> restoreProjectWithDialog(BuildContext context) {
 
     if (result is String) {
       var projectId = result;
-      var ref = _getProjectIdsCollectionRef(store.state.user.userId)
+      var ref = getProjectIdsCollectionRef(store.state.user.userId)
           .document(projectId);
 
       showSnackBar(
@@ -3617,12 +2682,14 @@ ThunkAction<AppState> openChecklistSettings(
     if (result != null && result is ChecklistSettingsDialogResult) {
       if (result.renewNow == true) {
         // Renew Now
-        renewChecklist(taskList, store, isManuallyInitiated: true);
+        renewChecklist(taskList,
+            _getProjectName(store.state.projects, taskList.project), store,
+            isManuallyInitiated: true);
 
         return;
       } else {
         var ref =
-            _getTaskListsCollectionRef(taskList.project).document(taskList.uid);
+            getTaskListsCollectionRef(taskList.project).document(taskList.uid);
         var newTaskListSettings = taskList.settings.copyWith(
             checklistSettings: ChecklistSettingsModel(
           isChecklist: result.isChecklist,
@@ -3641,239 +2708,6 @@ ThunkAction<AppState> openChecklistSettings(
       }
     }
   };
-}
-
-CollectionReference _getInvitesCollectionRef(
-  String userId,
-) {
-  return Firestore.instance
-      .collection('users')
-      .document(userId)
-      .collection('invites');
-}
-
-CollectionReference _getTaskCommentCollectionRef(
-  String projectId,
-  String taskId,
-) {
-  return Firestore.instance
-      .collection('projects')
-      .document(projectId)
-      .collection('tasks')
-      .document(taskId)
-      .collection('taskComments');
-}
-
-CollectionReference _getMembersCollectionRef(
-  String projectId,
-) {
-  return Firestore.instance
-      .collection('projects')
-      .document(projectId)
-      .collection('members');
-}
-
-CollectionReference _getActivityFeedCollectionRef(String projectId) {
-  return Firestore.instance
-      .collection('projects')
-      .document(projectId)
-      .collection('activityFeed');
-}
-
-CollectionReference _getTasksCollectionRef(String projectId) {
-  return Firestore.instance
-      .collection('projects')
-      .document(projectId)
-      .collection('tasks');
-}
-
-CollectionReference _getTaskListsCollectionRef(String projectId) {
-  return Firestore.instance
-      .collection('projects')
-      .document(projectId)
-      .collection('taskLists');
-}
-
-CollectionReference _getProjectMembersCollectionRef(String projectId) {
-  return Firestore.instance
-      .collection('projects')
-      .document(projectId)
-      .collection('members');
-}
-
-CollectionReference _getProjectIdsCollectionRef(String userId) {
-  return Firestore.instance
-      .collection('users')
-      .document(userId)
-      .collection('projectIds');
-}
-
-CollectionReference _getProjectsCollectionRef(Store<AppState> store) {
-  return Firestore.instance.collection('projects');
-}
-
-GroupedTaskDocumentChanges _getGroupedTaskDocumentChanges(
-    List<DocumentChange> firestoreDocChanges,
-    InflatedProjectModel currentInflatedProject,
-    Map<String, TaskModel> flaggedAsDeletedTasks,
-    Map<String, TaskModel> existingTasksById) {
-  var groupedChanges = GroupedTaskDocumentChanges();
-
-  for (var change in firestoreDocChanges) {
-    if (change.type == DocumentChangeType.removed) {
-      groupedChanges.removed.add(CustomDocumentChange(
-        uid: change.document.documentID,
-        taskList: change.document.data['taskList'],
-        document: change.document,
-      ));
-    }
-
-    if (change.type == DocumentChangeType.modified) {
-      groupedChanges.modified.add(CustomDocumentChange(
-        uid: change.document.documentID,
-        taskList: change.document.data['taskList'],
-        document: change.document,
-      ));
-
-      if (currentInflatedProject != null &&
-          currentInflatedProject.data.uid == change.document.data['project']) {
-        // We may need to adjust what is in the added, modifed and removed collections to appease the Task AnimatedList.
-        if (_didMoveTaskList(change.document, existingTasksById)) {
-          // A Task has moved. Whilst the project is selected. The Animation system won't catch it if we leave it
-          // simply as a modified Task. Therefore, we need to add the old version of the Task to the removed collection then
-          // add the new version (with the updated taskList field) to the added collection.
-          var oldTask = existingTasksById[change.document.documentID];
-
-          if (oldTask != null) {
-            groupedChanges.removed.add(CustomDocumentChange(
-              uid: change.document.documentID,
-              taskList: oldTask.taskList,
-              document: change.document,
-            ));
-
-            groupedChanges.added.add(CustomDocumentChange(
-              uid: change.document.documentID,
-              taskList: change.document.data['taskList'],
-              document: change.document,
-            ));
-          }
-        }
-
-        // Task has been flagged as Deleted.
-        if (flaggedAsDeletedTasks.containsKey(change.document.documentID)) {
-          groupedChanges.removed.add(CustomDocumentChange(
-            uid: change.document.documentID,
-            taskList: change.document.data['taskList'],
-            document: change.document,
-          ));
-        }
-
-        // Task has been un-flagged as Deleted.
-        // We infer this by checking if the task exists in the State. Because we don't add tasks that have been flagged as deleted to State. We can safely assume
-        // that the task has been un-deleted on account of the fact that we are in the Firestore Modified doc changes.. ie Firestore thinks we already have this task
-        // in State.
-        // *********
-        // IF THIS FAILS IN FUTURE
-        // *********
-        // Don't panic. Just Save the deleted tasks into the State, but put them in a seperate map. That way, here can compare against that map to determine if the task has
-        // been un-deleted.
-        if (existingTasksById.containsKey(change.document.documentID) ==
-            false) {
-          groupedChanges.added.add(CustomDocumentChange(
-            uid: change.document.documentID,
-            taskList: change.document.data['taskList'],
-            document: change.document,
-          ));
-        }
-      }
-    }
-
-    if (change.type == DocumentChangeType.added) {
-      groupedChanges.added.add(CustomDocumentChange(
-        uid: change.document.documentID,
-        taskList: change.document.data['taskList'],
-        document: change.document,
-      ));
-    }
-  }
-
-  return groupedChanges;
-}
-
-bool _didMoveTaskList(
-    DocumentSnapshot incomingDoc, Map<String, TaskModel> existingTasksById) {
-  var taskId = incomingDoc.documentID;
-  var existingTask = existingTasksById[taskId];
-
-  if (existingTask == null) {
-    return false;
-  }
-
-  return existingTask.taskList != incomingDoc.data['taskList'];
-}
-
-void _driveTaskAdditionAnimations(
-    List<TaskAnimationUpdate> taskAnimationUpdates) {
-  /*
-          WHAT THE F**K?
-          AnimatedLists and their component removeItem() and insertItem() methods are designed to really only deal with single
-          mutations at a time. When you try and make multiple mutations in one pass, you have to make sure that the index is
-          updated for each following item, otherwise the AnimatedList will try to start removing items at incorrect indexes,
-          throwing an out of range index exception. The easiest way to do this is to Build the doc changes into a List of
-          TaskAnimationUpdate objects, then sort them by TaskList, then index in descending order. That way, we don't have to
-          adjust any following indexes as we are mutating the AnimatedList.
-        */
-
-  for (var update in taskAnimationUpdates) {
-    var index = update.index;
-    var listStateKey = update.listStateKey;
-
-    if (index != null && listStateKey?.currentState != null) {
-      // If the index is null, that means that the parent TaskList isn't on Device yet, Don't PANIC! We can just ignore
-      // the Animation Update of that Task because once the TaskList arrives, it will be rendered in the initialRender of
-      // list anyway.
-      listStateKey.currentState.insertItem(index);
-    }
-  }
-}
-
-void _driveTaskRemovalAnimations(
-    List<TaskAnimationUpdate> taskRemovalAnimationUpdates) {
-  /*
-          WHAT THE F**K?
-          AnimatedLists and their component removeItem() and insertItem() methods are designed to really only deal with single
-          mutations at a time. When you try and make multiple mutations in one pass, you have to make sure that the index is
-          updated for each following item, otherwise the AnimatedList will try to start removing items at incorrect indexes,
-          throwing an out of range index exception. The easiest way to do this is to Build the doc changes into a List of
-          TaskAnimationUpdate objects, then sort them by TaskList, then index in descending order. That way, we don't have to
-          adjust any following indexes as we are mutating the AnimatedList.
-        */
-
-  for (var update in taskRemovalAnimationUpdates) {
-    var index = update.index;
-    var listStateKey = update.listStateKey;
-    var task = update.task;
-
-    if (index != null && listStateKey?.currentState != null) {
-      listStateKey.currentState.removeItem(index, (context, animation) {
-        return SizeTransition(
-            sizeFactor: animation,
-            axis: Axis.vertical,
-            child: Task(
-              key: Key(task.uid),
-              model: TaskViewModel(data: task),
-            ));
-      }, duration: Duration(milliseconds: 150));
-    }
-  }
-}
-
-int _getTaskAnimationIndex(Map<String, int> indices, String taskId) {
-  return indices[taskId];
-}
-
-GlobalKey<AnimatedListState> _getAnimatedListStateKey(String taskListId) {
-  return taskListAnimatedListStateKeys[taskListId];
 }
 
 TaskMetadata _getUpdatedTaskMetadata(
@@ -3931,86 +2765,6 @@ String _getTaskListName(List<TaskListModel> taskLists, String taskListId) {
   return taskList.taskListName;
 }
 
-DocumentReference _updateActivityFeedWithMemberAction({
-  @required String projectId,
-  @required String originUserId,
-  @required String targetDisplayName,
-  @required projectName,
-  @required ActivityFeedEventType type,
-  @required title,
-  @required details,
-}) {
-  var ref = _getActivityFeedCollectionRef(projectId).document();
-  var event = ActivityFeedEventModel(
-    uid: ref.documentID,
-    originUserId: originUserId,
-    type: type,
-    projectId: projectName,
-    projectName: projectName,
-    title: '$targetDisplayName $title',
-    selfTitle: 'You left the project.',
-    details: details ?? '',
-    timestamp: DateTime.now(),
-  );
-
-  ref.setData(event.toMap());
-  return ref;
-}
-
-DocumentReference _updateActivityFeed(
-    {@required String projectId,
-    @required UserModel user,
-    @required projectName,
-    @required ActivityFeedEventType type,
-    @required String title,
-    @required String details,
-    List<Assignment> assignments}) {
-  var ref = _getActivityFeedCollectionRef(projectId).document();
-  var event = ActivityFeedEventModel(
-    uid: ref.documentID,
-    originUserId: user.userId,
-    type: type,
-    projectId: projectId,
-    projectName: projectName,
-    title: '${user.displayName} $title ',
-    selfTitle: 'You $title',
-    details: details ?? '',
-    timestamp: DateTime.now(),
-    assignments: assignments,
-  );
-
-  ref.setData(event.toMap());
-
-  return ref;
-}
-
-DocumentReference _updateActivityFeedToBatch(
-    {@required String projectId,
-    @required UserModel user,
-    @required projectName,
-    @required ActivityFeedEventType type,
-    @required String title,
-    @required String details,
-    @required WriteBatch batch,
-    List<Assignment> assignments}) {
-  var ref = _getActivityFeedCollectionRef(projectId).document();
-  var event = ActivityFeedEventModel(
-    uid: ref.documentID,
-    originUserId: user.userId,
-    type: type,
-    projectId: projectId,
-    projectName: projectName,
-    title: '${user.displayName} $title ',
-    selfTitle: 'You $title',
-    details: details,
-    timestamp: DateTime.now(),
-    assignments: assignments,
-  );
-
-  batch.setData(ref, event.toMap());
-  return ref;
-}
-
 String _concatAssignmentsToDisplayNames(
     List<String> assignments, AppState state) {
   if (assignments.length == 1) {
@@ -4048,4 +2802,25 @@ String _buildActivityFeedEventTaskDetails(bool isHighPriority, DateTime dueDate,
       : 'Details: ${truncateString(note, 32)}. ';
 
   return priorityString + dueDateString + assignmentsString + detailsString;
+}
+
+void _addProcessingProjectInviteId(String projectId, Store<AppState> store) {
+  if (store.state.processingProjectInviteIds.contains(projectId)) {
+    return;
+  }
+
+  List<String> newList = store.state.processingProjectInviteIds.toList();
+  newList.add(projectId);
+
+  store.dispatch(
+      SetProcessingProjectInviteIds(processingProjectInviteIds: newList));
+}
+
+void _removeProccessingProjectInviteId(String projectId, Store<AppState> store) {
+  List<String> newList = store.state.processingProjectInviteIds
+      .where((item) => item != projectId)
+      .toList();
+
+  store.dispatch(
+      SetProcessingProjectInviteIds(processingProjectInviteIds: newList));
 }

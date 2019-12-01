@@ -11,8 +11,9 @@ import 'package:handball_flutter/models/TaskInspectorScreenViewModel.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/AppSettings.dart';
 import 'package:handball_flutter/presentation/Screens/CommentScreen.dart';
 import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/TaskInspectorScreen.dart';
-import 'package:handball_flutter/redux/actions.dart';
+
 import 'package:handball_flutter/redux/appState.dart';
+import 'package:handball_flutter/redux/asyncActions.dart';
 import 'package:redux/redux.dart';
 
 class CommentScreenContainer extends StatelessWidget {

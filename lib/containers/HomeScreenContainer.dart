@@ -9,8 +9,10 @@ import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/presentation/Screens/HomeScreen/HomeScreen.dart';
 import 'package:handball_flutter/redux/appState.dart';
+import 'package:handball_flutter/redux/asyncActions.dart';
+import 'package:handball_flutter/redux/syncActions.dart';
 import 'package:redux/redux.dart';
-import 'package:handball_flutter/redux/actions.dart';
+
 
 class HomeScreenContainer extends StatelessWidget {
   @override
@@ -139,8 +141,6 @@ class HomeScreenContainer extends StatelessWidget {
     if (store.state.inflatedProject == null) {
       return List<TaskListViewModel>();
     }
-
-    
 
     return store.state.inflatedProject.inflatedTaskLists.map((taskList) {
       return TaskListViewModel(

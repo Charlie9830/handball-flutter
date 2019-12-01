@@ -1,3 +1,4 @@
+import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/ActivityFeedEventModel.dart';
 import 'package:handball_flutter/models/EnableState.dart';
 import 'package:handball_flutter/models/InflatedProject.dart';
@@ -8,7 +9,9 @@ import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/UndoActions/NoAction.dart';
 import 'package:handball_flutter/models/User.dart';
+import 'package:handball_flutter/redux/appState.dart';
 import 'package:handball_flutter/redux/appStore.dart';
+import 'package:handball_flutter/redux/syncActions.dart';
 import 'package:handball_flutter/utilities/buildInflatedProject.dart';
 import 'package:handball_flutter/utilities/extractListCustomSortOrder.dart';
 import 'package:handball_flutter/utilities/extractProject.dart';
@@ -17,9 +20,6 @@ import 'package:handball_flutter/utilities/getProjectIndicatorGroups.dart';
 import 'package:meta/meta.dart';
 import 'package:quiver/core.dart';
 
-import '../enums.dart';
-import './appState.dart';
-import './actions.dart';
 
 AppState appReducer(AppState state, dynamic action) {
   if (action is SelectProject) {
