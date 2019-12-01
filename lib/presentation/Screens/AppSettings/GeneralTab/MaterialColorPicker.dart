@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart' as prefix0;
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/GeneralTab/ColorChit.dart';
 import 'package:handball_flutter/utilities/Colors/AppThemeColors.dart';

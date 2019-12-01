@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_page_indicator/flutter_page_indicator.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 
 class StoreShelf extends StatelessWidget {
   final ProductDetails product;

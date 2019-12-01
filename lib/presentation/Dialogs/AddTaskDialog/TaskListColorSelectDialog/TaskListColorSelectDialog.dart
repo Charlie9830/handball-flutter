@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
-import 'package:handball_flutter/presentation/DateSelectListTile.dart';
-import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/RenewIntervalListTile.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/GeneralTab/MaterialColorPicker.dart';
-import 'package:intl/intl.dart';
 
 class TaskListColorSelectDialog extends StatefulWidget {
   final int colorIndex;

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/models/TaskMetadata.dart';
 import 'package:handball_flutter/presentation/TaskMetadataListItem/TaskMetadataValueGroup.dart';
-import 'package:intl/intl.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class TaskMetadataExpansionTile extends StatefulWidget {

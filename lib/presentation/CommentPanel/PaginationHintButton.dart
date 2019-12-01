@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 
 class PaginationHintButton extends StatelessWidget {
   final bool isPaginating;

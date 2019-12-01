@@ -12,12 +12,12 @@ import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/redux/middleware/completedTasksUnsubscribeMiddleware.dart';
-import 'package:redux_thunk/redux_thunk.dart';
-import 'package:redux/redux.dart';
-import './appState.dart';
-import './appReducer.dart';
 import 'package:handball_flutter/redux/middleware/navigationMiddleware.dart';
-import 'package:redux_logging/redux_logging.dart';
+import 'package:redux/redux.dart';
+import 'package:redux_thunk/redux_thunk.dart';
+
+import './appReducer.dart';
+import './appState.dart';
 
 final initialAppState = AppState(
   projectIds: <ProjectIdModel>[],

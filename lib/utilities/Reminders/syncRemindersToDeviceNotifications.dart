@@ -1,9 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:handball_flutter/utilities/isSameTime.dart';
-import 'package:meta/meta.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:handball_flutter/models/Reminder.dart';
 import 'package:handball_flutter/models/Task.dart';
+import 'package:handball_flutter/utilities/isSameTime.dart';
 
 void syncRemindersToDeviceNotifications(
     FlutterLocalNotificationsPlugin plugin,

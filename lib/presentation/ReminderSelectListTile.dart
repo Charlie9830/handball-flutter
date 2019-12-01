@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/utilities/getDateTimeText.dart';
 import 'package:handball_flutter/utilities/showReminderPicker.dart';
-import 'package:intl/intl.dart';
 
 class ReminderSelectListTile extends StatelessWidget {
   final DateTime initialDate;

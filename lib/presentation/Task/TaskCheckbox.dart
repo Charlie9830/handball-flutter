@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:handball_flutter/presentation/Task/SelectCheckbox.dart';
 import 'package:circular_check_box/circular_check_box.dart';
+import 'package:flutter/material.dart';
 
 class TaskCheckbox extends StatelessWidget {
   final bool isInMultiSelectTaskMode;

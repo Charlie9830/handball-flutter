@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/models/Assignment.dart';
-import 'package:handball_flutter/utilities/UserColor.dart';
 
 class AssignmentIndicator extends StatelessWidget {
   final List<Assignment> assignments;

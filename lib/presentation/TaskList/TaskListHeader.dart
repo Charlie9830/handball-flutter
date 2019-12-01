@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
-import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/presentation/TaskList/TaskListSettingsMenu.dart';
-import 'package:handball_flutter/utilities/Colors/AppThemeColors.dart';
 
 class TaskListHeader extends StatelessWidget {
   final String name;

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:handball_flutter/models/ProjectInvite.dart';
 import 'package:handball_flutter/presentation/Screens/AppDrawer/ProjectInviteListTileButtons.dart';
 
 class ProjectInviteListTile extends StatelessWidget {

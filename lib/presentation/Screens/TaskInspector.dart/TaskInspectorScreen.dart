@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:handball_flutter/models/Assignment.dart';
-import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/TaskInspectorScreenViewModel.dart';
 import 'package:handball_flutter/presentation/CommentPanel/CommentPanel.dart';
 import 'package:handball_flutter/presentation/EditableTextInput.dart';

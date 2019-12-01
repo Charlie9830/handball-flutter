@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:handball_flutter/models/ActivityFeedEventModel.dart';
 import 'package:handball_flutter/models/ActivityFeedViewModel.dart';
 import 'package:handball_flutter/presentation/Screens/ActivityFeed/ActivityFeed.dart';
 import 'package:handball_flutter/redux/appState.dart';

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/containers/ThemeEditorContainer.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/GeneralTab/SettingsCard.dart';
-import 'package:handball_flutter/presentation/Screens/AppSettings/GeneralTab/ThemeEditor.dart';
 
 class GeneralTab extends StatelessWidget {
   final dynamic onViewArchivedProjectsTap;

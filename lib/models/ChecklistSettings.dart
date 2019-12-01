@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
 
 class ChecklistSettingsModel {

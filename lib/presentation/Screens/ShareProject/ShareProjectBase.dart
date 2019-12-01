@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/ShareProjectViewModel.dart';
-import 'package:handball_flutter/presentation/Nothing.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/Screens/ShareProject/ComplexShareProject.dart';
 import 'package:handball_flutter/presentation/Screens/ShareProject/SimplifiedShareProject.dart';

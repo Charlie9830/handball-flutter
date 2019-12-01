@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
-import 'package:handball_flutter/models/AppTheme.dart';
 import 'package:handball_flutter/models/ThemeEditorViewModel.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/GeneralTab/MaterialColorPicker.dart';
 

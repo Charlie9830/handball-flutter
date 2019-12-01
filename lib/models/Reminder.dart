@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:handball_flutter/utilities/coerceDate.dart';
 import 'package:meta/meta.dart';
 

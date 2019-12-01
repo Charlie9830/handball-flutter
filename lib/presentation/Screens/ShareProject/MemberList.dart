@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/presentation/ReactiveAnimatedList.dart';
 import 'package:handball_flutter/presentation/Screens/ShareProject/MemberListTile.dart';

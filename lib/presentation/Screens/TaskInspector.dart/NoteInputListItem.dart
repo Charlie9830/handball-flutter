@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/presentation/Dialogs/MultilineTextInputDialog.dart';
-import 'package:handball_flutter/presentation/EditableTextInput.dart';
-import 'package:handball_flutter/presentation/PredicateBuilder.dart';
-import 'package:intl/intl.dart';
 
 class NoteInputListItem extends StatelessWidget {
   final String note;

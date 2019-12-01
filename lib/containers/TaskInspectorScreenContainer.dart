@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:handball_flutter/models/AppDrawerScreenViewModel.dart';
 import 'package:handball_flutter/models/Assignment.dart';
 import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/Member.dart';
-import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskInspectorScreenViewModel.dart';
 import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/TaskInspectorScreen.dart';
-
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:handball_flutter/redux/asyncActions.dart';
 import 'package:handball_flutter/redux/syncActions.dart';

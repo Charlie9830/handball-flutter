@@ -1,21 +1,16 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/InheritatedWidgets/EnableStates.dart';
-import 'package:handball_flutter/containers/AppDrawerContainer.dart';
 import 'package:handball_flutter/containers/HomeScreenContainer.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/AppTheme.dart';
-import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/TopLevelViewModel.dart';
-import 'package:handball_flutter/presentation/Dialogs/TextInputDialog.dart';
-import 'package:handball_flutter/presentation/EditableTextInput.dart';
 import 'package:handball_flutter/redux/asyncActions.dart';
-import 'package:handball_flutter/utilities/TaskArgumentParser/TaskArgumentParser.dart';
 import 'package:handball_flutter/utilities/buildAppThemeData.dart';
 import 'package:redux/redux.dart';
-import './redux/appStore.dart';
+
 import './redux/appState.dart';
+import './redux/appStore.dart';
 
 void main() {
   runApp(App(store: appStore));

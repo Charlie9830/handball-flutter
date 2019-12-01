@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:handball_flutter/utilities/getDateTimeText.dart';
-import 'package:handball_flutter/utilities/getPositionFromGlobalKey.dart';
 import 'package:handball_flutter/utilities/showReminderPicker.dart';
-import 'package:intl/intl.dart';
 
 class ReminderShortcutChip extends StatefulWidget {
   final DateTime reminderTime;

@@ -3,7 +3,6 @@ import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/presentation/Nothing.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/TaskListColorChit.dart';
-import 'package:handball_flutter/utilities/Colors/AppThemeColors.dart';
 import 'package:handball_flutter/utilities/getPositionFromGlobalKey.dart';
 
 class TaskListSelectChip extends StatefulWidget {

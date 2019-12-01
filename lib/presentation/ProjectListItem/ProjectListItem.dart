@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
-import 'package:handball_flutter/presentation/DueDateChit.dart';
-import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/ProjectListItem/ProjectIndicators.dart';
 
 typedef OnSelectCallback = Function(String uid);

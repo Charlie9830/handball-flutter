@@ -1,7 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:handball_flutter/enums.dart';
-import 'package:handball_flutter/models/ChecklistSettings.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskListSettings.dart';
 import 'package:handball_flutter/utilities/Colors/AppThemeColors.dart';

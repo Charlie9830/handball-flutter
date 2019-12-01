@@ -1,7 +1,5 @@
 import 'package:handball_flutter/enums.dart';
-import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
-import 'package:meta/meta.dart';
 
 class HomeScreenViewModel {
   final String projectId;

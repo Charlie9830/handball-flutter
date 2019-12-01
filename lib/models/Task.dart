@@ -4,11 +4,9 @@ import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/Reminder.dart';
 import 'package:handball_flutter/models/TaskMetadata.dart';
-import 'package:handball_flutter/utilities/TaskArgumentParser/TaskArgumentParser.dart';
 import 'package:handball_flutter/utilities/coerceDate.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
 import 'package:meta/meta.dart';
-import 'package:quiver/core.dart';
 
 class TaskModel {
   String uid;

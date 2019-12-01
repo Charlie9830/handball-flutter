@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/models/ArchivedProject.dart';
-import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/presentation/Dialogs/ArchivedProjectsBottomSheet/NoArchivedProjectsFallback.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:timeago/timeago.dart' as timeago;

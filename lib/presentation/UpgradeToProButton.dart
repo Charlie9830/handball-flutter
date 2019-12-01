@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/containers/UpgradeToProDialogContainer.dart';
-import 'package:handball_flutter/presentation/Dialogs/UpgradeToProDialog/UpgradeToProDialog.dart';
 
 class UpgradeToProButton extends StatelessWidget {
   const UpgradeToProButton({Key key}) : super(key: key);

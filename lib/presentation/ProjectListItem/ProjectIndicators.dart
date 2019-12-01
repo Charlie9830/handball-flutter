@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/presentation/DueDateChit.dart';
-import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 
 class ProjectIndicators extends StatelessWidget {
   final int laterDueDates;

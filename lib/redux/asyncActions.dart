@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:handball_flutter/configValues.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/globals.dart';
@@ -31,7 +31,6 @@ import 'package:handball_flutter/models/UndoActions/DeleteTaskUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/MultiCompleteTasksUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/MultiDeleteTasksUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/NoAction.dart';
-import 'package:handball_flutter/models/UndoActions/UndoAction.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/TaskListColorSelectDialog/TaskListColorSelectDialog.dart';
@@ -43,6 +42,7 @@ import 'package:handball_flutter/presentation/Screens/ListSortingScreen/ListSort
 import 'package:handball_flutter/presentation/Screens/SignUp/SignUpBase.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:handball_flutter/redux/syncActions.dart';
+import 'package:handball_flutter/utilities/CloudFunctionLayer.dart';
 import 'package:handball_flutter/utilities/PlayStore/handlePurchaseUpdates.dart';
 import 'package:handball_flutter/utilities/Reminders/buildNewRemindersMap.dart';
 import 'package:handball_flutter/utilities/Reminders/initializeLocalNotifications.dart';
@@ -69,12 +69,11 @@ import 'package:handball_flutter/utilities/showSnackbar.dart';
 import 'package:handball_flutter/utilities/snapshotHandlers.dart';
 import 'package:handball_flutter/utilities/taskAnimationHelpers.dart';
 import 'package:handball_flutter/utilities/truncateString.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:intl/intl.dart';
 import 'package:redux/redux.dart';
 import 'package:redux_thunk/redux_thunk.dart';
-import 'package:handball_flutter/utilities/CloudFunctionLayer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 
 final FirebaseAuth auth = FirebaseAuth.instance;
 final CloudFunctionsLayer _cloudFunctionsLayer = CloudFunctionsLayer();

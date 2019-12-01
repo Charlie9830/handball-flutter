@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/utilities/getActivityFeedEventIcon.dart';
 import 'package:intl/intl.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 class ActivityFeedEventListTile extends StatelessWidget {
   final String title;

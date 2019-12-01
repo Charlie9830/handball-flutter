@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/AppDrawerScreenViewModel.dart';
-import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/presentation/ProjectList.dart';
 import 'package:handball_flutter/presentation/Screens/AppDrawer/AppDrawerHeader.dart';
 import 'package:handball_flutter/presentation/Screens/AppDrawer/ProjectInviteList.dart';

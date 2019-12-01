@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:handball_flutter/presentation/EditableTextInput.dart';
 
 class CommentInput extends StatefulWidget {
   final dynamic onPost;

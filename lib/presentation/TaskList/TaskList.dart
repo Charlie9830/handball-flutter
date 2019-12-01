@@ -1,7 +1,5 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/keys.dart';
-import 'package:handball_flutter/presentation/Nothing.dart';
 import 'package:sticky_headers/sticky_headers.dart';
 
 class TaskList extends StatelessWidget {
@@ -9,7 +7,7 @@ class TaskList extends StatelessWidget {
   final Widget header;
   final List<Widget> children;
   final onTap;
-  bool isFocused;
+  final bool isFocused;
 
   TaskList({
     this.uid,

@@ -4,7 +4,6 @@ import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/Assignment.dart';
 import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/TaskList.dart';
-import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AssignmentShortcutChip.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/DueDateShorcutChip.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/NoteShortcutChip.dart';
@@ -12,7 +11,6 @@ import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/PriorityShor
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/ReminderShortcutChip.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/TaskListSelectChip.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
-import 'package:handball_flutter/redux/asyncActions.dart';
 import 'package:handball_flutter/utilities/TaskArgumentParser/TaskArgumentParser.dart';
 import 'package:handball_flutter/utilities/dialogPosters.dart';
 

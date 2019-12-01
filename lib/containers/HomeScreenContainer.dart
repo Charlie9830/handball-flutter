@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
-import 'package:handball_flutter/InheritatedWidgets/EnableStates.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/HomeScreenViewModel.dart';
 import 'package:handball_flutter/models/InflatedTaskList.dart';

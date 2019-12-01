@@ -1,8 +1,5 @@
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/ActivityFeedEventModel.dart';
-import 'package:handball_flutter/models/EnableState.dart';
-import 'package:handball_flutter/models/InflatedProject.dart';
-import 'package:handball_flutter/models/InflatedTaskList.dart';
 import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
@@ -17,7 +14,6 @@ import 'package:handball_flutter/utilities/extractListCustomSortOrder.dart';
 import 'package:handball_flutter/utilities/extractProject.dart';
 import 'package:handball_flutter/utilities/foldTasksTogether.dart';
 import 'package:handball_flutter/utilities/getProjectIndicatorGroups.dart';
-import 'package:meta/meta.dart';
 import 'package:quiver/core.dart';
 
 

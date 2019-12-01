@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/UndoActions/DeleteProjectUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/DeleteTaskListUndoAction.dart';

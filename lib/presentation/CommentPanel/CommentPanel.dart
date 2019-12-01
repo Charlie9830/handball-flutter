@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/presentation/CommentPanel/Comment.dart';
 import 'package:handball_flutter/presentation/CommentPanel/PaginationHintButton.dart';
-import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/ReactiveAnimatedList.dart';
 import 'package:timeago/timeago.dart' as timeago;
 

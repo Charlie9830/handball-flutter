@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:handball_flutter/enums.dart';
-import 'package:handball_flutter/models/TextInputDialogModel.dart';
-import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 
 class EditableTextInput extends StatefulWidget {
   final String text;
