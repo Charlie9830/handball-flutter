@@ -13,7 +13,7 @@ import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:handball_flutter/redux/asyncActions.dart';
 import 'package:handball_flutter/redux/syncActions.dart';
-import 'package:handball_flutter/utilities/ReminderNotificationSync/syncRemindersToDeviceNotifications.dart';
+import 'package:handball_flutter/utilities/Reminders/syncRemindersToDeviceNotifications.dart';
 import 'package:handball_flutter/utilities/firestoreSubscribers.dart';
 import 'package:handball_flutter/utilities/taskAnimationHelpers.dart';
 import 'package:redux/redux.dart';
