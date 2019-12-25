@@ -100,7 +100,7 @@ ChangedReminders _extractChangedReminders(List<DocumentChange> documentChanges,
               .add(ReminderModel.removed(change.document.documentID));
         } else if (_didCreateReminder(existingTask, change.document, userId)) {
           changedReminders.added.add(_extractReminder(change.document, userId));
-        } else if (_didChange(existingTask, change.document, userId)) {
+        } else if (_didChange(existingTask, change.document, userId) && _hasReminder(change.document, userId)) {
           changedReminders.modified
               .add(_extractReminder(change.document, userId));
         }
