@@ -79,7 +79,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
       case AppLifecycleState.paused:
         // TODO: Handle this case.
         break;
-      case AppLifecycleState.suspending:
+      case AppLifecycleState.detached:
         // TODO: Handle this case.
         break;
     }

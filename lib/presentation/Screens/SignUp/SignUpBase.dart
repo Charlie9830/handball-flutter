@@ -257,8 +257,9 @@ class _SignUpBaseState extends State<SignUpBase> with TickerProviderStateMixin {
     _tabController.index = resultIndex;
 
     try {
-      var user = await widget.firebaseAuth
+      final authResult = await widget.firebaseAuth
           .createUserWithEmailAndPassword(email: email, password: password);
+      final user = authResult.user;
 
       UserUpdateInfo profileUpdateInfo = new UserUpdateInfo();
       profileUpdateInfo.displayName = displayName;

@@ -172,7 +172,7 @@ ThunkAction<AppState> initializeApp() {
 
     // Firestore settings.
     // TODO: Is this even doing anything?
-    Firestore.instance.settings(timestampsInSnapshotsEnabled: true);
+    Firestore.instance.settings();
 
     // In App Purchases.
     final Stream purchaseUpdates =
