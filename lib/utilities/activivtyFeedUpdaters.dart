@@ -68,6 +68,7 @@ DocumentReference updateActivityFeedToBatch(
     @required String title,
     @required String details,
     @required WriteBatch batch,
+    bool isSelfAssignment, // Speical case for selfAssignment. Adjusts the wording slightly.
     List<Assignment> assignments}) {
   var ref = getActivityFeedCollectionRef(projectId).document();
   var event = ActivityFeedEventModel(
@@ -76,8 +77,8 @@ DocumentReference updateActivityFeedToBatch(
     type: type,
     projectId: projectId,
     projectName: projectName,
-    title: '${user.displayName} $title ',
-    selfTitle: 'You $title',
+    title: isSelfAssignment ? '${user.displayName} $title themselves. ' : '${user.displayName} $title ',
+    selfTitle: isSelfAssignment ? 'You $title yourself.' : 'You $title',
     details: details,
     timestamp: DateTime.now(),
     assignments: assignments,

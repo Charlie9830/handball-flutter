@@ -17,7 +17,7 @@ IconData getActivityFeedEventIcon(ActivityFeedEventType type) {
       return Icons.edit;
 
     case ActivityFeedEventType.unCompleteTask:
-      return Icons.check;
+      return Icons.indeterminate_check_box;
 
     case ActivityFeedEventType.moveTask:
       return Icons.archive;

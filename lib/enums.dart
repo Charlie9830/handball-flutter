@@ -58,7 +58,7 @@ enum ActivityFeedEventType {
   editTask,
   moveTask,
   unCompleteTask,
-  commentOnTask,
+  commentOnTask, // Not implemented. Has the potentional to greatly increase the ammount of Database Writes and Reads.
   prioritizeTask,
   unPrioritizeTask,
   changeDueDate,
@@ -68,7 +68,7 @@ enum ActivityFeedEventType {
   deleteList,
   renameList,
   addMember,
-  removeMember,
+  removeMember, // Not implemented. Not sure how I feel about a user being removed from the Project being gazzeted in the Activity Feed.
   addProject,
   renameProject,
   renewChecklist,

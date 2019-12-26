@@ -676,8 +676,9 @@ ThunkAction<AppState> updateTaskAssignments(
           projectName: _getProjectName(store.state.projects, projectId),
           type: ActivityFeedEventType.assignmentUpdate,
           user: store.state.user,
-          title: 'assigned the task $truncatedTaskName to themselves.',
+          title: 'assigned the task $truncatedTaskName to ',
           details: '',
+          isSelfAssignment: true,
           assignments: newAssignments
               .map((id) =>
                   Assignment.fromMemberModel(store.state.memberLookup[id]))
@@ -1075,17 +1076,6 @@ ThunkAction<AppState> postTaskComment(
       'unseenTaskCommentMembers':
           _buildUnseenTaskCommentMembers(members, userId)
     });
-
-    // // Activity Feed.
-    // _updateActivityFeedToBatch(
-    //   batch: batch,
-    //   projectId: projectId,
-    //   projectName: _getProjectName(store.state.projects, projectId),
-    //   type: ActivityFeedEventType.commentOnTask,
-    //   user: store.state.user,
-    //   title: 'commented on the task ${truncateString(selectedTaskEntity.taskName, activityFeedTitleTruncationCount)}',
-    //   details: text,
-    // );
 
     // Update State directly. We only use single Fire queries to get Task Comments so we aren't subscribed to Changes,
     // therefore we have to update State directly.
@@ -1588,7 +1578,7 @@ ThunkAction<AppState> deleteTask(
       projectId: projectId,
       projectName: _getProjectName(store.state.projects, projectId),
       user: store.state.user,
-      type: ActivityFeedEventType.renameList,
+      type: ActivityFeedEventType.deleteTask,
       title:
           'deleted the task ${truncateString(taskName, activityFeedTitleTruncationCount)}',
       details: '',
@@ -2515,10 +2505,10 @@ ThunkAction<AppState> updateTaskComplete(String taskId, String projectId,
     final activityFeedReference = updateActivityFeed(
       projectId: projectId,
       projectName: _getProjectName(store.state.projects, projectId),
-      type: ActivityFeedEventType.completeTask,
+      type: newValue == true ? ActivityFeedEventType.completeTask : ActivityFeedEventType.unCompleteTask,
       user: store.state.user,
       title:
-          'completed the task ${truncateString(taskName, activityFeedTitleTruncationCount)}',
+          newValue == true ? 'completed the task ${truncateString(taskName, activityFeedTitleTruncationCount)}' : 'undid the task ${truncateString(taskName, activityFeedTitleTruncationCount)}',
       details: '',
     );
 
