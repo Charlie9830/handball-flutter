@@ -68,38 +68,28 @@ AppState appReducer(AppState state, dynamic action) {
   }
 
   if (action is ReceiveProject) {
-    var projects = _mergeProject(state.projects, action.project);
-    var filteredProjects =
-        projects.where((item) => item.isDeleted == false).toList();
+    final projects = _mergeProject(state.projects, action.project);
+    final isSelectedProjectIdValid = projects.indexWhere((item) => item.uid == state.selectedProjectId) != -1;
 
-    // Coerce selectedProjectId and inflatedProject.
-    var selectedProjectId = filteredProjects.firstWhere(
-                (item) => item.uid == state.selectedProjectId,
-                orElse: () => null) ==
-            null
-        ? '-1'
-        : state.selectedProjectId;
-
+    // Coerce inflatedProject.
     var inflatedProject =
-        selectedProjectId == '-1' ? null : state.inflatedProject;
+        state.selectedProjectId == '-1' || isSelectedProjectIdValid == false ? null : state.inflatedProject;
 
     final projectsById = Map<String, ProjectModel>.from(state.projectsById);
     projectsById[action.project.uid] = action.project;
 
     return state.copyWith(
-        projects: filteredProjects,
-        selectedProjectId: selectedProjectId,
+        projects: projects,
+        selectedProjectId: state.selectedProjectId,
         projectsById: projectsById,
         inflatedProject: Optional.fromNullable(inflatedProject),
         enableState: state.enableState.copyWith(
-          isProjectSelected: selectedProjectId != '-1'
-              ? true
-              : state.enableState.isProjectSelected,
-          showNoProjectsHint: filteredProjects.length == 0,
-          showSelectAProjectHint: filteredProjects.length > 0 &&
+          isProjectSelected: state.selectedProjectId != '-1' && isSelectedProjectIdValid,
+          showNoProjectsHint: projects.length == 0,
+          showSelectAProjectHint: projects.length > 0 &&
               (state.selectedProjectId == '-1' ||
                   state.selectedProjectId == null),
-          canMoveTaskList: filteredProjects.length > 1,
+          canMoveTaskList: projects.length > 1,
         ));
   }
 
@@ -723,12 +713,13 @@ Map<String, String> _updateFavirouteTaskListIds(
 }
 
 
+// TODO: This is probably no longer requried. But needs proper testing after it's removed.
 List<ActivityFeedEventModel> _filterActivityFeedEvents(List<ActivityFeedEventModel> original, Map<String, ProjectModel> projectsById) {
   return original.where((item) {
     if (projectsById.containsKey(item.projectId) == false) {
       return false;
     }
 
-    return !projectsById[item.projectId].isDeleted;
+    return true;
   }).toList();
 }

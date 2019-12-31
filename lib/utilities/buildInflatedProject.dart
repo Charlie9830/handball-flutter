@@ -13,7 +13,7 @@ InflatedProjectModel buildInflatedProject(
     @required TaskListSorting listSorting,
     @required List<String> listCustomSortOrder,
     @required bool showOnlySelfTasks}) {
-  if (project == null) {
+  if (project == null || tasks == null || taskLists == null) {
     return null;
   }
 

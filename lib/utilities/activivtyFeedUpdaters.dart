@@ -68,7 +68,7 @@ DocumentReference updateActivityFeedToBatch(
     @required String title,
     @required String details,
     @required WriteBatch batch,
-    bool isSelfAssignment, // Speical case for selfAssignment. Adjusts the wording slightly.
+    bool isSelfAssignment = false, // Speical case for selfAssignment. Adjusts the wording slightly.
     List<Assignment> assignments}) {
   var ref = getActivityFeedCollectionRef(projectId).document();
   var event = ActivityFeedEventModel(

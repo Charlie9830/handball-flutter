@@ -5,20 +5,17 @@ class ProjectModel {
   String uid;
   String projectName;
   String created;
-  bool isDeleted;
 
   ProjectModel({
     @required this.uid,
     this.projectName,
     this.created,
-    this.isDeleted = false,
   });
 
   ProjectModel.fromDoc(DocumentSnapshot doc) {
     this.uid = doc['uid'];
     this.projectName = doc['projectName'];
     this.created = doc['created'];
-    this.isDeleted = doc['isDeleted'] ?? false;
   }
 
   Map<String, dynamic> toMap() {
@@ -26,7 +23,6 @@ class ProjectModel {
       'uid': this.uid,
       'projectName': this.projectName,
       'created': this.created,
-      'isDeleted': this.isDeleted,
     };
   }
 

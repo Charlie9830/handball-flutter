@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/configValues.dart';
+import 'package:handball_flutter/containers/AddTaskDialogContainer.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/globals.dart';
 import 'package:handball_flutter/keys.dart';
@@ -65,6 +66,7 @@ import 'package:handball_flutter/utilities/isSameTime.dart';
 import 'package:handball_flutter/utilities/listSortingHelpers.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
 import 'package:handball_flutter/utilities/parseActivityFeedQueryLength.dart';
+import 'package:handball_flutter/utilities/quickActionsLayer/quickActionsLayer.dart';
 import 'package:handball_flutter/utilities/showSnackbar.dart';
 import 'package:handball_flutter/utilities/snapshotHandlers.dart';
 import 'package:handball_flutter/utilities/taskAnimationHelpers.dart';
@@ -162,10 +164,15 @@ ThunkAction<AppState> initializeApp() {
   return (Store<AppState> store) async {
     homeScreenScaffoldKey?.currentState?.openDrawer();
 
+    // TODO: Move initializeLocalNotifcations and notificationsPlugin.cancelAll() into a seperate function so we can fire
+    // and forget without having to await it.
     // Notifications.
     await initializeLocalNotifications(store);
 
     notificationsPlugin.cancelAll();
+
+    // Quick Actions - Home screen shortcuts.
+    QuickActionsLayer.initialize(store);
 
     // Debugging.
     //_printPendingNotifications();
@@ -202,36 +209,7 @@ ThunkAction<AppState> initializeApp() {
 
 ThunkAction<AppState> debugButtonPressed() {
   return (Store<AppState> store) async {
-    // var dateFormater = new DateFormat('EEEE MMMM d');
-    // var projectName = store.state.projects
-    //     .firstWhere((item) => item.uid == store.state.selectedProjectId)
-    //     .projectName;
-
-    // List<ActivityFeedEventModel> events = List.generate(10, (index) {
-    //   return ActivityFeedEventModel(
-    //     title: '$index',
-    //     details:
-    //         '${dateFormater.format(DateTime.now().subtract(Duration(days: index * 4)))}',
-    //     originUserId: 'userUID',
-    //     projectId: store.state.selectedProjectId,
-    //     projectName: projectName,
-    //     selfTitle: 'Self Description',
-    //     uid: '$index',
-    //     timestamp: DateTime.now()
-    //         .subtract(Duration(days: index * (projectName.length / 4).round())),
-    //   );
-    // });
-
-    // var batch = Firestore.instance.batch();
-    // var collectionRef =
-    //     _getActivityFeedCollectionRef(store.state.selectedProjectId);
-
-    // for (var event in events) {
-    //   batch.setData(collectionRef.document(event.uid), event.toMap());
-    // }
-
-    // await batch.commit();
-    // print('Batch Committed');
+    store.dispatch(SelectProject('a project that very much doesnt exist'));
   };
 }
 
@@ -476,8 +454,6 @@ Future<void> _removeProjectInvite(String userId, String projectId) async {
     throw error;
   }
 }
-
-
 
 ThunkAction<AppState> inviteUserToProject(
     String email, String sourceProjectId, String projectName, MemberRole role) {
@@ -856,7 +832,7 @@ ThunkAction<AppState> leaveSharedProject(String projectId, String projectName,
 }
 
 bool _canDeleteProject(String userId, List<MemberModel> members) {
-  if (members.length == 0) {
+  if (members == null || members.length == 0) {
     return true;
   }
 
@@ -1398,7 +1374,7 @@ Future<void> _deleteProject(
         }
       });
 
-  var ref = getProjectsCollectionRef().document(projectId);
+  var ref = getProjectIdsCollectionRef(userId).document(projectId);
 
   try {
     var batch = Firestore.instance.batch();
@@ -2105,29 +2081,13 @@ ThunkAction<AppState> addNewTaskWithDialog(
     String projectId, BuildContext context,
     {String taskListId}) {
   return (Store<AppState> store) async {
-    var preselectedTaskList = _getAddTaskDialogPreselectedTaskList(projectId,
-        taskListId, store.state.taskListsByProject[projectId], store.state);
-
-    var assignmentOptions = store.state.members[projectId] == null
-        ? <Assignment>[]
-        : store.state.members[projectId]
-            .map((item) =>
-                Assignment(userId: item.userId, displayName: item.displayName))
-            .toList();
-
     var result = await showDialog(
       barrierDismissible: true,
       context: context,
-      builder: (context) => AddTaskDialog(
-        preselectedTaskList: preselectedTaskList,
-        taskLists: store.state.taskListsByProject[projectId],
-        favirouteTaskListId: store.state.favirouteTaskListIds[projectId],
-        allowTaskListChange: taskListId == null,
-        assignmentOptions: assignmentOptions,
-        memberLookup: store.state.memberLookup,
-        isProjectShared: store.state.members[projectId] != null &&
-            store.state.members[projectId].length > 1,
-      ),
+      builder: (context) => AddTaskDialogContainer(
+        destinationTaskListId: taskListId,
+        projectId: projectId,
+      )
     );
 
     if (result == null) {
@@ -2281,58 +2241,6 @@ ThunkAction<AppState> addNewTaskWithDialog(
 }
 
 
-
-TaskListModel _getAddTaskDialogPreselectedTaskList(String projectId,
-    String taskListId, List<TaskListModel> taskLists, AppState state) {
-  // Try to retreive a Tasklist to become the Preselected List for the AddTaskDialog.
-  // Honor these rules in order.
-  // 1. Try and retrieve Tasklist directly using provided taskListId (if provided). This indicates the user has
-  //  used the TaskList addTask button instead of the Fab.
-  // 2. Try and retreive using the Users elected Faviroute Task List.
-  // 3. Try and retreive using the lastUsedTaskLists Map. (Most recent addition).
-  // 4. Check if only one TaskList is available.
-
-  // First try and retrieve directly.
-  if (taskListId != null && taskListId != '-1') {
-    var extractedTaskList = state.taskListsByProject[projectId]
-        .firstWhere((item) => item.uid == taskListId, orElse: () => null);
-    if (extractedTaskList != null) {
-      return extractedTaskList;
-    }
-  }
-
-  // Nothing? Try FavirouteTaskListId.
-  if (state.favirouteTaskListIds.containsKey(projectId)) {
-    var favirouteTaskListId = state.favirouteTaskListIds[projectId];
-    var faviorouteTaskList = taskLists.firstWhere(
-        (item) => item.uid == favirouteTaskListId,
-        orElse: () => null);
-
-    if (faviorouteTaskList != null) {
-      return faviorouteTaskList;
-    }
-  }
-
-  // Retreiving directly failed, probably because no taskListId was provided to begin with.
-  // So now try and retrieve from lastUsedTaskLists.
-  var lastUsedTaskListId = state.lastUsedTaskLists[projectId];
-  if (lastUsedTaskListId != null) {
-    var extractedTaskList = state.taskListsByProject[projectId].firstWhere(
-        (item) => item.uid == lastUsedTaskListId,
-        orElse: () => null);
-
-    if (extractedTaskList != null) {
-      return extractedTaskList;
-    }
-  }
-
-  if (state.taskListsByProject[projectId].length == 1) {
-    return state.taskListsByProject[projectId].first;
-  }
-
-  // Everything has Failed. TaskList could not be retrieved.
-  return null;
-}
 
 ThunkAction<AppState> updateFavouriteTaskList(
     String taskListId, String projectId, bool isFavourite) {
@@ -2505,10 +2413,13 @@ ThunkAction<AppState> updateTaskComplete(String taskId, String projectId,
     final activityFeedReference = updateActivityFeed(
       projectId: projectId,
       projectName: _getProjectName(store.state.projects, projectId),
-      type: newValue == true ? ActivityFeedEventType.completeTask : ActivityFeedEventType.unCompleteTask,
+      type: newValue == true
+          ? ActivityFeedEventType.completeTask
+          : ActivityFeedEventType.unCompleteTask,
       user: store.state.user,
-      title:
-          newValue == true ? 'completed the task ${truncateString(taskName, activityFeedTitleTruncationCount)}' : 'undid the task ${truncateString(taskName, activityFeedTitleTruncationCount)}',
+      title: newValue == true
+          ? 'completed the task ${truncateString(taskName, activityFeedTitleTruncationCount)}'
+          : 'undid the task ${truncateString(taskName, activityFeedTitleTruncationCount)}',
       details: '',
     );
 
@@ -2538,11 +2449,11 @@ ThunkAction<AppState> updateTaskComplete(String taskId, String projectId,
 ThunkAction<AppState> processChecklists(List<TaskListModel> checklists) {
   return (Store<AppState> store) async {
     for (var taskList in checklists) {
-      renewChecklist(taskList, _getProjectName(store.state.projects, taskList.project), store);
+      renewChecklist(taskList,
+          _getProjectName(store.state.projects, taskList.project), store);
     }
   };
 }
-
 
 ThunkAction<AppState> refreshActivityFeed() {
   return (Store<AppState> store) async {
@@ -2610,7 +2521,6 @@ void _refreshActivityFeed(String projectId, ActivityFeedQueryLength queryLength,
         .dispatch(SetIsRefreshingActivityFeed(isRefreshingActivityFeed: false));
   }
 }
-
 
 ThunkAction<AppState> restoreProjectWithDialog(BuildContext context) {
   return (Store<AppState> store) async {
@@ -2805,7 +2715,8 @@ void _addProcessingProjectInviteId(String projectId, Store<AppState> store) {
       SetProcessingProjectInviteIds(processingProjectInviteIds: newList));
 }
 
-void _removeProccessingProjectInviteId(String projectId, Store<AppState> store) {
+void _removeProccessingProjectInviteId(
+    String projectId, Store<AppState> store) {
   List<String> newList = store.state.processingProjectInviteIds
       .where((item) => item != projectId)
       .toList();

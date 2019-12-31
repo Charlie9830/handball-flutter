@@ -18,22 +18,18 @@ class AddTaskDialog extends StatefulWidget {
   List<TaskListModel> taskLists;
   TaskListModel preselectedTaskList;
   String favirouteTaskListId;
-  String text;
   List<Assignment> assignmentOptions;
   Map<String, MemberModel> memberLookup;
   bool isProjectShared;
   bool allowTaskListChange;
-  DateTime reminderTime;
 
   AddTaskDialog(
       {this.taskLists,
       this.preselectedTaskList,
-      this.text = '',
       this.allowTaskListChange,
       this.assignmentOptions,
       this.isProjectShared,
       this.memberLookup,
-      this.reminderTime,
       this.favirouteTaskListId});
 
   @override
@@ -56,7 +52,7 @@ class _AddTaskDialog extends State<AddTaskDialog> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.text);
+    _controller = TextEditingController(text:'');
     _textInputFocusNode = new FocusNode();
     _argumentParser = TaskArgumentParser(
         projectMembers: widget.assignmentOptions
@@ -112,7 +108,8 @@ class _AddTaskDialog extends State<AddTaskDialog> {
                                           ? (List.from(widget.taskLists)
                                             ..add(_selectedTaskList))
                                           : widget.taskLists,
-                                      favirouteTaskListId: widget.favirouteTaskListId,
+                                      favirouteTaskListId:
+                                          widget.favirouteTaskListId,
                                       onChanged: (newValue) =>
                                           _handleTaskListSelectChanged(
                                               newValue, context),

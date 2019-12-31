@@ -15,6 +15,7 @@ import 'package:handball_flutter/redux/asyncActions.dart';
 import 'package:handball_flutter/redux/syncActions.dart';
 import 'package:handball_flutter/utilities/Reminders/syncRemindersToDeviceNotifications.dart';
 import 'package:handball_flutter/utilities/firestoreSubscribers.dart';
+import 'package:handball_flutter/utilities/quickActionsLayer/quickActionsLayer.dart';
 import 'package:handball_flutter/utilities/taskAnimationHelpers.dart';
 import 'package:redux/redux.dart';
 
@@ -49,7 +50,7 @@ void handleTasksSnapshot(
         store.state.user.userId);
   }
 
-  if (store.state.selectedProjectId == originProjectId) {
+  if (store.state.selectedProjectId == originProjectId && store.state.inflatedProject != null) {
     // Animation.
     var groupedDocumentChanges = getGroupedTaskDocumentChanges(
         snapshot.documentChanges,
@@ -159,11 +160,12 @@ void handleProjectInvitesSnapshot(
 
 void handleProjectIdsSnapshot(QuerySnapshot snapshot, Store<AppState> store) {
   for (var change in snapshot.documentChanges) {
-    var projectIdModel = ProjectIdModel.fromDoc(change.document);
-    var projectId = projectIdModel.uid;
-    var isArchived = projectIdModel.isArchived;
+    final projectIdModel = ProjectIdModel.fromDoc(change.document);
+    final projectId = projectIdModel.uid;
+    final isArchived = projectIdModel.isArchived;
+    final isDeleted = projectIdModel.isDeleted;
 
-    if (change.type == DocumentChangeType.added && isArchived == false) {
+    if (change.type == DocumentChangeType.added && isArchived == false && isDeleted == false) {
       addProjectSubscription(projectId, store);
     }
 
@@ -172,9 +174,9 @@ void handleProjectIdsSnapshot(QuerySnapshot snapshot, Store<AppState> store) {
     }
 
     if (change.type == DocumentChangeType.modified) {
-      if (isArchived == true) {
+      if (isArchived == true || isDeleted == true) {
         removeProjectSubscription(projectId, store);
-      } else {
+      } else if (isArchived == false && isDeleted == false) {
         addProjectSubscription(projectId,
             store); // _addProjectSubscription will ignore if we have already added it.
       }

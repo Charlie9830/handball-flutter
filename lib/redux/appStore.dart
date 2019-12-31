@@ -13,7 +13,9 @@ import 'package:handball_flutter/models/TextInputDialogModel.dart';
 import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/redux/middleware/completedTasksUnsubscribeMiddleware.dart';
 import 'package:handball_flutter/redux/middleware/navigationMiddleware.dart';
+import 'package:handball_flutter/redux/middleware/quickActionsMiddleware.dart';
 import 'package:redux/redux.dart';
+import 'package:redux_logging/redux_logging.dart';
 import 'package:redux_thunk/redux_thunk.dart';
 
 import './appReducer.dart';
@@ -44,8 +46,8 @@ final initialAppState = AppState(
   textInputDialog: TextInputDialogModel(
     isOpen: false,
     text: '',
-    onOkay: (){},
-    onCancel: (){},
+    onOkay: () {},
+    onCancel: () {},
   ),
   accountState: AccountState.loggedOut,
   projectInvites: <ProjectInviteModel>[],
@@ -77,8 +79,11 @@ final initialAppState = AppState(
   canRefreshActivityFeed: false,
 );
 
-final appStore = new Store<AppState> (
-  appReducer,
-  initialState: initialAppState,
-  middleware: [thunkMiddleware, navigationMiddleware, completedTasksUnsubscribeMiddleware /* LoggingMiddleware.printer() */]
-);
+final appStore =
+    new Store<AppState>(appReducer, initialState: initialAppState, middleware: [
+  thunkMiddleware,
+  navigationMiddleware,
+  completedTasksUnsubscribeMiddleware,
+  quickActionsMiddleware,
+  // LoggingMiddleware.printer()
+]);

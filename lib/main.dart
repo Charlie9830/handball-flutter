@@ -7,6 +7,7 @@ import 'package:handball_flutter/models/AppTheme.dart';
 import 'package:handball_flutter/models/TopLevelViewModel.dart';
 import 'package:handball_flutter/redux/asyncActions.dart';
 import 'package:handball_flutter/utilities/buildAppThemeData.dart';
+import 'package:handball_flutter/utilities/quickActionsLayer/quickActionsLayer.dart';
 import 'package:redux/redux.dart';
 
 import './redux/appState.dart';
@@ -71,6 +72,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.resumed:
+        //QuickActionsLayer.firePendingQuickActionIfAny();
         store.dispatch(processChecklists(store.state.taskLists));
         break;
       case AppLifecycleState.inactive:
@@ -80,6 +82,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
         // TODO: Handle this case.
         break;
       case AppLifecycleState.detached:
+        QuickActionsLayer.reAssertShortcuts();
         // TODO: Handle this case.
         break;
     }

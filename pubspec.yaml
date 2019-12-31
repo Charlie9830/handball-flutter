@@ -34,6 +34,7 @@ dependencies:
   in_app_purchase: ^0.2.2+4
   flutter_swiper: ^1.1.6
   flutter_local_notifications: ^0.9.0+1
+  quick_actions: ^0.4.0+1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -66,6 +67,7 @@ flutter:
    - assets/images/
    - assets/images/product_images/
    - assets/release_notes/
+   - assets/icons/
 
 
 
