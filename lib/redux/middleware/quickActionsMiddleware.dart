@@ -27,4 +27,10 @@ void quickActionsMiddleware(
   if (action is RemoveProjectEntities) {
     QuickActionsLayer.deleteProjectShortcut(action.projectId);
   }
+
+  if (action is SignOut) {
+    QuickActionsLayer.clearAllShortcutItems();
+  }
+
+  
 }

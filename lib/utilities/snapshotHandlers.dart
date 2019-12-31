@@ -146,6 +146,7 @@ void handleAccountConfigSnapshot(
   if (docSnapshot.exists) {
     var accountConfig = AccountConfigModel.fromDoc(docSnapshot);
     store.dispatch(ReceiveAccountConfig(accountConfig: accountConfig));
+    store.dispatch(persistLastUsedAppTheme(accountConfig.appTheme));
   }
 }
 

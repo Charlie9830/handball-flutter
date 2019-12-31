@@ -21,6 +21,10 @@ class QuickActionsLayer {
     }
   }
 
+  static void clearAllShortcutItems() async {
+    return _quickActions.clearShortcutItems();
+  }
+
   static void addProjectShortcut(String projectId, String projectName) async {
     if (_alreadyContainsProjectShortcut(projectId)) {
       return;

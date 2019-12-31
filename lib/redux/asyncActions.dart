@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/SharedPreferencesKeys.dart';
 import 'package:handball_flutter/configValues.dart';
 import 'package:handball_flutter/containers/AddTaskDialogContainer.dart';
 import 'package:handball_flutter/enums.dart';
@@ -51,7 +52,6 @@ import 'package:handball_flutter/utilities/TaskAnimationUpdate.dart';
 import 'package:handball_flutter/utilities/TaskArgumentParser/TaskArgumentParser.dart';
 import 'package:handball_flutter/utilities/UndoRedo/parseUndoAction.dart';
 import 'package:handball_flutter/utilities/UndoRedo/pushUndoAction.dart';
-import 'package:handball_flutter/utilities/UndoRedo/undoActionSharedPreferencesKey.dart';
 import 'package:handball_flutter/utilities/UndoRedo/undoLastAction.dart';
 import 'package:handball_flutter/utilities/activivtyFeedUpdaters.dart';
 import 'package:handball_flutter/utilities/buildInflatedProject.dart';
@@ -162,14 +162,14 @@ ThunkAction<AppState> updateProjectName(
 
 ThunkAction<AppState> initializeApp() {
   return (Store<AppState> store) async {
+    // Auth Listener
+    auth.onAuthStateChanged
+        .listen((user) => handleAuthStateChanged(store, user));
+
     homeScreenScaffoldKey?.currentState?.openDrawer();
 
-    // TODO: Move initializeLocalNotifcations and notificationsPlugin.cancelAll() into a seperate function so we can fire
-    // and forget without having to await it.
     // Notifications.
-    await initializeLocalNotifications(store);
-
-    notificationsPlugin.cancelAll();
+    initializeLocalNotifications(store);
 
     // Quick Actions - Home screen shortcuts.
     QuickActionsLayer.initialize(store);
@@ -187,33 +187,44 @@ ThunkAction<AppState> initializeApp() {
     _purchaseUpdateStreamSubscription = purchaseUpdates
         .listen((purchases) => handlePurchaseUpdates(purchases, store));
 
-    // Auth Listener
-    auth.onAuthStateChanged.listen((user) => onAuthStateChanged(store, user));
-
     // Stripe.
     //StripeSource.setPublishableKey("pk_test_5utVgPAtC8r6wNUtFzlSZAnE00BhffRN0G");
 
-    // Pull listSorting and lastUndoAction from SharedPreferences.
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    TaskListSorting listSorting =
-        parseTaskListSorting(prefs.getString('listSorting'));
-    store.dispatch(SetListSorting(listSorting: listSorting));
-
-    var lastUndoAction =
-        parseUndoAction(prefs.getString(undoActionSharedPreferencesKey));
-
-    store.dispatch(SetLastUndoAction(
-        lastUndoAction: lastUndoAction ?? NoAction(), isInitializing: true));
+    _initializeSharedPreferences(store);
   };
+}
+
+void _initializeSharedPreferences(Store<AppState> store) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  // If the state.user has already been set. That means we have been beaten by onAuthStateChange. So no need to push lastUsedTheme.
+  if (store.state.user == null) {
+    AppThemeModel lastUsedTheme = AppThemeModel.fromJSON(
+        prefs.getString(lastUsedAppThemeSharedPreferencesKey));
+    if (lastUsedTheme != null) {
+      store.dispatch(ReceiveAccountConfig(
+          accountConfig: AccountConfigModel(appTheme: lastUsedTheme)));
+    }
+  }
+
+  TaskListSorting listSorting =
+      parseTaskListSorting(prefs.getString('listSorting'));
+  store.dispatch(SetListSorting(listSorting: listSorting));
+
+  var lastUndoAction =
+      parseUndoAction(prefs.getString(undoActionSharedPreferencesKey));
+
+  store.dispatch(SetLastUndoAction(
+      lastUndoAction: lastUndoAction ?? NoAction(), isInitializing: true));
 }
 
 ThunkAction<AppState> debugButtonPressed() {
   return (Store<AppState> store) async {
     store.dispatch(SelectProject('a project that very much doesnt exist'));
+    store.dispatch(addNewTaskWithDialog('boopdewoop', homeScreenScaffoldKey.currentContext));
   };
 }
 
-void onAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
+void handleAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
   if (user == null) {
     store.dispatch(SignOut());
     await firestoreStreams.cancelAll();
@@ -270,8 +281,6 @@ ThunkAction<AppState> updateAppTheme(AppThemeModel newAppTheme) {
     if (newAppTheme == null || store.state.user.isLoggedIn == false) {
       return;
     }
-
-    //newAppTheme.debugPrint();
 
     if (store.state.accountConfig == null) {
       // Account Config doesn't exist yet.
@@ -2082,16 +2091,24 @@ ThunkAction<AppState> addNewTaskWithDialog(
     {String taskListId}) {
   return (Store<AppState> store) async {
     var result = await showDialog(
-      barrierDismissible: true,
-      context: context,
-      builder: (context) => AddTaskDialogContainer(
-        destinationTaskListId: taskListId,
-        projectId: projectId,
-      )
-    );
+        barrierDismissible: true,
+        context: context,
+        builder: (context) => AddTaskDialogContainer(
+              destinationTaskListId: taskListId,
+              projectId: projectId,
+            ));
 
     if (result == null) {
       return;
+    }
+
+    final projectActuallyExists = store.state.projects.indexWhere((item) => item.uid == projectId) != -1;
+
+    if (projectActuallyExists == false) {
+      showSnackBar(
+        targetGlobalKey: homeScreenScaffoldKey,
+        message: 'Woops! Sorry that project no longer exists.',
+      );
     }
 
     if (result is AddTaskDialogResult &&
@@ -2239,8 +2256,6 @@ ThunkAction<AppState> addNewTaskWithDialog(
     }
   };
 }
-
-
 
 ThunkAction<AppState> updateFavouriteTaskList(
     String taskListId, String projectId, bool isFavourite) {
@@ -2452,6 +2467,16 @@ ThunkAction<AppState> processChecklists(List<TaskListModel> checklists) {
       renewChecklist(taskList,
           _getProjectName(store.state.projects, taskList.project), store);
     }
+  };
+}
+
+ThunkAction<AppState> persistLastUsedAppTheme(AppThemeModel appTheme) {
+  return (Store<AppState> store) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (appTheme == null) {
+      prefs.remove(lastUsedAppThemeSharedPreferencesKey);
+    }
+    prefs.setString(lastUsedAppThemeSharedPreferencesKey, appTheme.toJSON());
   };
 }
 

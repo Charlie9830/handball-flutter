@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 class AppThemeModel {
@@ -19,6 +21,20 @@ class AppThemeModel {
     this.primaryColorIndex = docMap['primaryColorIndex'] ?? 0;
     this.accentColorIndex = docMap['accentColorIndex'] ?? 0;
     this.brightness = _parseBrightness(docMap['brightness']);
+  }
+  
+  AppThemeModel.fromJSON(String json) {
+    final decoder = JsonDecoder();
+    final map = decoder.convert(json);
+
+    this.primaryColorIndex = map['primaryColorIndex'] ?? 0;
+    this.accentColorIndex = map['accentColorIndex'] ?? 0;
+    this.brightness = _parseBrightness(map['brightness']);
+  }
+
+  String toJSON() {
+    final encoder = JsonEncoder();
+    return encoder.convert(toMap());
   }
 
   Map<dynamic, dynamic> toMap() {
@@ -73,5 +89,3 @@ class AppThemeModel {
     print('');
   }
 }
-
-

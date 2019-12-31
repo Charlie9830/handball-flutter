@@ -5,7 +5,7 @@ import 'package:handball_flutter/redux/iosDidReceiveNotificationWhileForegrounde
 import 'package:handball_flutter/utilities/Reminders/onSelectNotification.dart';
 import 'package:redux/redux.dart';
 
-Future initializeLocalNotifications(Store<AppState> store) {
+void initializeLocalNotifications(Store<AppState> store) async {
   var initializationSettingsAndroid =
       new AndroidInitializationSettings('handball_notification_icon');
 
@@ -16,6 +16,8 @@ Future initializeLocalNotifications(Store<AppState> store) {
   var initializationSettings = new InitializationSettings(
       initializationSettingsAndroid, initializationSettingsIOS);
 
-  return notificationsPlugin.initialize(initializationSettings,
+  await notificationsPlugin.initialize(initializationSettings,
       onSelectNotification: (payload) => onSelectNotification(payload, store));
+
+  notificationsPlugin.cancelAll();
 }
