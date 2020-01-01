@@ -241,6 +241,12 @@ class PushLastUsedTaskList {
   });
 }
 
+class SetLastUsedTaskLists {
+  final Map<String, String> value;
+
+  SetLastUsedTaskLists({this.value});
+}
+
 class OpenShareProjectScreen {
   final String projectId;
 

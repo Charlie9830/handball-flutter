@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -64,6 +65,7 @@ import 'package:handball_flutter/utilities/firestoreReferenceGetters.dart';
 import 'package:handball_flutter/utilities/firestoreSubscribers.dart';
 import 'package:handball_flutter/utilities/isSameTime.dart';
 import 'package:handball_flutter/utilities/listSortingHelpers.dart';
+import 'package:handball_flutter/utilities/mergeLastUsedTaskList.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
 import 'package:handball_flutter/utilities/parseActivityFeedQueryLength.dart';
 import 'package:handball_flutter/utilities/quickActionsLayer/quickActionsLayer.dart';
@@ -168,6 +170,9 @@ ThunkAction<AppState> initializeApp() {
 
     homeScreenScaffoldKey?.currentState?.openDrawer();
 
+    // Shared Preferences
+    _initializeSharedPreferences(store);
+
     // Notifications.
     initializeLocalNotifications(store);
 
@@ -189,8 +194,6 @@ ThunkAction<AppState> initializeApp() {
 
     // Stripe.
     //StripeSource.setPublishableKey("pk_test_5utVgPAtC8r6wNUtFzlSZAnE00BhffRN0G");
-
-    _initializeSharedPreferences(store);
   };
 }
 
@@ -206,8 +209,22 @@ void _initializeSharedPreferences(Store<AppState> store) async {
     }
   }
 
+  // Fetch lastUsedTaskListIds.
+  final jsonDecoder = JsonDecoder();
+  final lastUsedTaskListsRawString =
+      prefs.getString(lastUsedTaskListIdsSharedPreferencesKey);
+      print('lastUsedTaskListsString');
+      print(lastUsedTaskListsRawString);
+  if (lastUsedTaskListsRawString != null &&
+      lastUsedTaskListsRawString != '') {
+    final lastUsedTaskListIds = Map<String, String>.from(
+        jsonDecoder.convert(lastUsedTaskListsRawString));
+    store.dispatch(SetLastUsedTaskLists(value: lastUsedTaskListIds));
+  }
+
+  // Fetch listSorting.
   TaskListSorting listSorting =
-      parseTaskListSorting(prefs.getString('listSorting'));
+      parseTaskListSorting(prefs.getString(listSortingSharedPreferencesKey));
   store.dispatch(SetListSorting(listSorting: listSorting));
 
   var lastUndoAction =
@@ -220,7 +237,8 @@ void _initializeSharedPreferences(Store<AppState> store) async {
 ThunkAction<AppState> debugButtonPressed() {
   return (Store<AppState> store) async {
     store.dispatch(SelectProject('a project that very much doesnt exist'));
-    store.dispatch(addNewTaskWithDialog('boopdewoop', homeScreenScaffoldKey.currentContext));
+    store.dispatch(addNewTaskWithDialog(
+        'boopdewoop', homeScreenScaffoldKey.currentContext));
   };
 }
 
@@ -1820,7 +1838,8 @@ ThunkAction<AppState> updateListSorting(
     // Update on Device Storage.
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('listSorting', convertTaskListSorting(sorting));
+      await prefs.setString(
+          listSortingSharedPreferencesKey, convertTaskListSorting(sorting));
     } catch (error) {
       throw error;
     }
@@ -2102,7 +2121,8 @@ ThunkAction<AppState> addNewTaskWithDialog(
       return;
     }
 
-    final projectActuallyExists = store.state.projects.indexWhere((item) => item.uid == projectId) != -1;
+    final projectActuallyExists =
+        store.state.projects.indexWhere((item) => item.uid == projectId) != -1;
 
     if (projectActuallyExists == false) {
       showSnackBar(
@@ -2178,11 +2198,15 @@ ThunkAction<AppState> addNewTaskWithDialog(
               .toList(),
         );
 
-        // Push the new value to lastUsedTaskLists
+        // Push the new lastUsedTaskListId to state and also persist it on Device storage. So that it can be fetched by the AddNewTaskDialog when triggered from a
+        // homescreen shortcut.
         store.dispatch(PushLastUsedTaskList(
           projectId: projectId,
           taskListId: newTaskList.uid,
         ));
+
+        _persistLastUsedTaskLists(mergeLastUsedTaskList(
+            store.state.lastUsedTaskLists, projectId, newTaskList.uid));
 
         try {
           await batch.commit();
@@ -2241,11 +2265,15 @@ ThunkAction<AppState> addNewTaskWithDialog(
               .toList(),
         );
 
-        // Push the new value to lastUsedTaskLists
+        // Push the new lastUsedTaskListId to state and also persist it on Device storage. So that it can be fetched by the AddNewTaskDialog when triggered from a
+        // homescreen shortcut.
         store.dispatch(PushLastUsedTaskList(
           projectId: projectId,
           taskListId: targetTaskListId,
         ));
+
+        _persistLastUsedTaskLists(mergeLastUsedTaskList(
+            store.state.lastUsedTaskLists, projectId, targetTaskListId));
 
         try {
           await batch.commit();
@@ -2748,4 +2776,12 @@ void _removeProccessingProjectInviteId(
 
   store.dispatch(
       SetProcessingProjectInviteIds(processingProjectInviteIds: newList));
+}
+
+void _persistLastUsedTaskLists(Map<String, String> lastUsedTaskLists) async {
+  final prefs = await SharedPreferences.getInstance();
+  final jsonEncoder = JsonEncoder();
+
+  await prefs.setString(lastUsedTaskListIdsSharedPreferencesKey,
+      jsonEncoder.convert(lastUsedTaskLists ?? <String, String>{}));
 }

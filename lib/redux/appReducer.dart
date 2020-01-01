@@ -14,8 +14,8 @@ import 'package:handball_flutter/utilities/extractListCustomSortOrder.dart';
 import 'package:handball_flutter/utilities/extractProject.dart';
 import 'package:handball_flutter/utilities/foldTasksTogether.dart';
 import 'package:handball_flutter/utilities/getProjectIndicatorGroups.dart';
+import 'package:handball_flutter/utilities/mergeLastUsedTaskList.dart';
 import 'package:quiver/core.dart';
-
 
 AppState appReducer(AppState state, dynamic action) {
   if (action is SelectProject) {
@@ -69,11 +69,15 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is ReceiveProject) {
     final projects = _mergeProject(state.projects, action.project);
-    final isSelectedProjectIdValid = projects.indexWhere((item) => item.uid == state.selectedProjectId) != -1;
+    final isSelectedProjectIdValid =
+        projects.indexWhere((item) => item.uid == state.selectedProjectId) !=
+            -1;
 
     // Coerce inflatedProject.
     var inflatedProject =
-        state.selectedProjectId == '-1' || isSelectedProjectIdValid == false ? null : state.inflatedProject;
+        state.selectedProjectId == '-1' || isSelectedProjectIdValid == false
+            ? null
+            : state.inflatedProject;
 
     final projectsById = Map<String, ProjectModel>.from(state.projectsById);
     projectsById[action.project.uid] = action.project;
@@ -84,7 +88,8 @@ AppState appReducer(AppState state, dynamic action) {
         projectsById: projectsById,
         inflatedProject: Optional.fromNullable(inflatedProject),
         enableState: state.enableState.copyWith(
-          isProjectSelected: state.selectedProjectId != '-1' && isSelectedProjectIdValid,
+          isProjectSelected:
+              state.selectedProjectId != '-1' && isSelectedProjectIdValid,
           showNoProjectsHint: projects.length == 0,
           showSelectAProjectHint: projects.length > 0 &&
               (state.selectedProjectId == '-1' ||
@@ -296,8 +301,9 @@ AppState appReducer(AppState state, dynamic action) {
     final inflatedProject = didDeleteSelectedProject
         ? initialAppState.inflatedProject
         : state.inflatedProject;
-    
-    final projectsById = Map<String, ProjectModel>.from(state.projectsById)..remove(projectId);
+
+    final projectsById = Map<String, ProjectModel>.from(state.projectsById)
+      ..remove(projectId);
 
     final projects =
         state.projects.where((project) => project.uid != projectId).toList();
@@ -307,7 +313,8 @@ AppState appReducer(AppState state, dynamic action) {
     final taskListsByProject = Map<String, List<TaskListModel>>.from(
         state.taskListsByProject..remove(projectId));
 
-    final tasks = state.tasks.where((task) => task.project != projectId).toList();
+    final tasks =
+        state.tasks.where((task) => task.project != projectId).toList();
     final tasksByProject = Map<String, List<TaskModel>>.from(
         state.tasksByProject..remove(projectId));
     final incompletedTasksByProject = Map<String, List<TaskModel>>.from(
@@ -353,10 +360,15 @@ AppState appReducer(AppState state, dynamic action) {
   }
 
   if (action is PushLastUsedTaskList) {
-    var newMap = Map<String, String>.from(state.lastUsedTaskLists);
-    newMap[action.projectId] = action.taskListId;
     return state.copyWith(
-      lastUsedTaskLists: newMap,
+      lastUsedTaskLists: mergeLastUsedTaskList(
+          state.lastUsedTaskLists, action.projectId, action.taskListId),
+    );
+  }
+
+  if (action is SetLastUsedTaskLists) {
+    return state.copyWith(
+      lastUsedTaskLists: action.value,
     );
   }
 
@@ -438,8 +450,8 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is ReceiveActivityFeed) {
     return state.copyWith(
-      activityFeed: _filterActivityFeedEvents(action.activityFeed, state.projectsById)
-    );
+        activityFeed:
+            _filterActivityFeedEvents(action.activityFeed, state.projectsById));
   }
 
   if (action is SetCanRefreshActivityFeed) {
@@ -451,14 +463,16 @@ AppState appReducer(AppState state, dynamic action) {
   if (action is SetActivityFeedQueryLength) {
     return state.copyWith(
       activityFeedQueryLength: action.length,
-      canRefreshActivityFeed: action.isUserInitiated == true ? true : state.canRefreshActivityFeed,
+      canRefreshActivityFeed:
+          action.isUserInitiated == true ? true : state.canRefreshActivityFeed,
     );
   }
 
   if (action is SetSelectedActivityFeedProjectId) {
     return state.copyWith(
       selectedActivityFeedProjectId: action.projectId,
-      canRefreshActivityFeed: action.isUserInitiated == true ? true : state.canRefreshActivityFeed,
+      canRefreshActivityFeed:
+          action.isUserInitiated == true ? true : state.canRefreshActivityFeed,
     );
   }
 
@@ -712,9 +726,10 @@ Map<String, String> _updateFavirouteTaskListIds(
   return newMap;
 }
 
-
 // TODO: This is probably no longer requried. But needs proper testing after it's removed.
-List<ActivityFeedEventModel> _filterActivityFeedEvents(List<ActivityFeedEventModel> original, Map<String, ProjectModel> projectsById) {
+List<ActivityFeedEventModel> _filterActivityFeedEvents(
+    List<ActivityFeedEventModel> original,
+    Map<String, ProjectModel> projectsById) {
   return original.where((item) {
     if (projectsById.containsKey(item.projectId) == false) {
       return false;
