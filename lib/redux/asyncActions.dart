@@ -213,8 +213,6 @@ void _initializeAndFetchSharedPreferences(Store<AppState> store) async {
   final jsonDecoder = JsonDecoder();
   final lastUsedTaskListsRawString =
       prefs.getString(lastUsedTaskListIdsSharedPreferencesKey);
-      print('lastUsedTaskListsString');
-      print(lastUsedTaskListsRawString);
   if (lastUsedTaskListsRawString != null &&
       lastUsedTaskListsRawString != '') {
     final lastUsedTaskListIds = Map<String, String>.from(
