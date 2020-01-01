@@ -412,7 +412,7 @@ AppState appReducer(AppState state, dynamic action) {
         memberLookup: initialAppState.memberLookup,
         showCompletedTasks: initialAppState.showCompletedTasks,
         showOnlySelfTasks: initialAppState.showOnlySelfTasks,
-        accountConfig: Optional.fromNullable(initialAppState.accountConfig),
+        accountConfig: Optional.fromNullable(initialAppState.accountConfig.copyWith(appTheme: state.accountConfig.appTheme)), // Hold onto the current Theme.
         activityFeed: initialAppState.activityFeed,
         enableState: state.enableState.copyWith(
           isLoggedIn: false,
