@@ -171,7 +171,7 @@ ThunkAction<AppState> initializeApp() {
     homeScreenScaffoldKey?.currentState?.openDrawer();
 
     // Shared Preferences
-    _initializeSharedPreferences(store);
+    _initializeAndFetchSharedPreferences(store);
 
     // Notifications.
     initializeLocalNotifications(store);
@@ -197,7 +197,7 @@ ThunkAction<AppState> initializeApp() {
   };
 }
 
-void _initializeSharedPreferences(Store<AppState> store) async {
+void _initializeAndFetchSharedPreferences(Store<AppState> store) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   // If the state.user has already been set. That means we have been beaten by onAuthStateChange. So no need to push lastUsedTheme.
   if (store.state.user == null) {
