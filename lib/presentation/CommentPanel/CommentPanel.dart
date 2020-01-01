@@ -32,7 +32,7 @@ class CommentPanel extends StatelessWidget {
     return GestureDetector(
         onTap: onPressed,
         child: Container(
-          color: Theme.of(context).colorScheme.background,
+          //color: Theme.of(context).colorScheme.background,
           alignment: Alignment.center,
           child: _getChild(),
         ));

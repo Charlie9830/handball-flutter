@@ -39,11 +39,10 @@ class TaskListHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: 4),
       color: Theme.of(context).canvasColor,
       child: new Container(
-        margin: EdgeInsets.symmetric(horizontal: 4),
-        padding: EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+        margin: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        padding: EdgeInsets.symmetric(vertical: 0, horizontal: 0),
         decoration: BoxDecoration(
             color: customColor ?? Theme.of(context).colorScheme.surface,
             border: Border.all(
@@ -77,11 +76,7 @@ class TaskListHeader extends StatelessWidget {
             Expanded(
                 child: Text(name,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Ubuntu',
-                      fontSize: 15,
-                    ))),
+                    style: Theme.of(context).textTheme.subhead)),
             IconButton(
               icon: Icon(Icons.add_circle),
               onPressed: onAddTaskButtonPressed,

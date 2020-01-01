@@ -28,7 +28,7 @@ dependencies:
   shared_preferences: ^0.5.3+1
   redux_logging: ^0.3.0
   timeago: ^2.0.16
-  circular_check_box: ^0.0.2
+  circular_check_box: ^1.0.1
   flutter_markdown: ^0.2.0
   quiver: ^2.0.2
   in_app_purchase: ^0.2.2+4

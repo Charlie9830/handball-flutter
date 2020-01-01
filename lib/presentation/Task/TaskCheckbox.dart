@@ -18,12 +18,13 @@ class TaskCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final circularCheckboxInactiveColor = Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black;
+
     return AnimatedCrossFade(
         firstChild: Checkbox(value: isComplete, onChanged: onCheckboxChanged),
-        secondChild: CircularCheckBox(value: isSelected, onChanged: onRadioChanged),
+        secondChild: CircularCheckBox(value: isSelected, onChanged: onRadioChanged, inactiveColor: circularCheckboxInactiveColor, ),
         crossFadeState: isInMultiSelectTaskMode ? CrossFadeState.showSecond : CrossFadeState.showFirst,
         duration: Duration(milliseconds: 250),
         );
-        
   }
 }

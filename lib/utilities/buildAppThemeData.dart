@@ -10,21 +10,23 @@ ThemeData buildAppThemeData(AppThemeModel appTheme) {
 
   var brightness = appTheme.brightness;
 
-  var unAdjustedPrimaryColor = AppThemeColors.materialColors[appTheme.primaryColorIndex];
-  var primaryColor = brightness == Brightness.light ? unAdjustedPrimaryColor.shade200 : unAdjustedPrimaryColor.shade600;
-  var primaryColorBrightness = primaryColor.computeLuminance() > 0.5 ? Brightness.light : Brightness.dark;
+  var primaryColor =
+      AppThemeColors.materialColors[appTheme.primaryColorIndex];
 
-  var unAdjustedAccentColor =  AppThemeColors.accentColors[appTheme.accentColorIndex];
-  var accentColor = brightness == Brightness.light ? unAdjustedAccentColor.shade200 : unAdjustedAccentColor.shade700;
-  var accentColorBrightness = accentColor.computeLuminance() > 0.5 ? Brightness.light : Brightness.dark;
+  var accentColor =
+      AppThemeColors.accentColors[appTheme.accentColorIndex];
 
+  // final colorScheme = brightness == Brightness.dark
+  //     ? ColorScheme.dark(
+  //         primary: primaryColor, secondary: accentColor)
+  //     : ColorScheme.light(
+  //         primary: primaryColor, secondary: accentColor);
 
   return ThemeData(
-    brightness: brightness,
     primaryColor: primaryColor,
-    primaryColorBrightness: primaryColorBrightness,
     accentColor: accentColor,
-    accentColorBrightness: accentColorBrightness,
+    brightness: brightness,
+    //colorScheme: colorScheme,
     fontFamily: 'Archivo',
   );
 }

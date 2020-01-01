@@ -22,7 +22,7 @@ class Comment extends StatelessWidget {
     return Container(
       margin: EdgeInsets.fromLTRB(8, 4, 8, 4),
       decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: Theme.of(context).backgroundColor,
           borderRadius: BorderRadius.all(Radius.circular(8))),
       child: Slidable(
         delegate: new SlidableDrawerDelegate(),

@@ -17,7 +17,6 @@ class AppDrawer extends StatelessWidget {
       key: appDrawerScaffoldKey,
       extendBody: true,
       body: new Container(
-          color: Theme.of(context).colorScheme.surface,
           child: SafeArea(
             child: Column(
               children: <Widget>[

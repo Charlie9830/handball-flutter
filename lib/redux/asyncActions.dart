@@ -234,7 +234,8 @@ void _initializeAndFetchSharedPreferences(Store<AppState> store) async {
 
 ThunkAction<AppState> debugButtonPressed() {
   return (Store<AppState> store) async {
-    store.dispatch(SelectProject('a project that very much doesnt exist'));
+    final toggleBrightness = store.state.accountConfig.appTheme.brightness == Brightness.dark ? Brightness.light : Brightness.dark;
+    store.dispatch(updateAppTheme(store.state.accountConfig.appTheme.copyWith(brightness: toggleBrightness)));
   };
 }
 
