@@ -8,7 +8,7 @@ class EnableStates extends InheritedWidget {
   final Widget child;
 
   static EnableStates of(BuildContext context) {
-    return (context.inheritFromWidgetOfExactType(EnableStates)as EnableStates);
+    return (context.dependOnInheritedWidgetOfExactType());
   }
 
   @override
