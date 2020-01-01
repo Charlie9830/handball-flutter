@@ -38,6 +38,10 @@ AppState appReducer(AppState state, dynamic action) {
             )
         : state.inflatedProject;
 
+    final isSelectedProjectIdValid = action.uid != '-1' &&
+        action.uid != null &&
+        state.projectsById.containsKey(action.uid);
+
     return state.copyWith(
       selectedProjectId: action.uid,
       inflatedProject: Optional.fromNullable(inflatedProject),
@@ -46,10 +50,10 @@ AppState appReducer(AppState state, dynamic action) {
       isInMultiSelectTaskMode: false,
       multiSelectedTasks: initialAppState.multiSelectedTasks,
       enableState: state.enableState.copyWith(
-          isProjectSelected: action.uid != '-1' && action.uid != null
+          isProjectSelected: isSelectedProjectIdValid
               ? true
               : state.enableState.isProjectSelected,
-          showSelectAProjectHint: action.uid == '-1' ||
+          showSelectAProjectHint: isSelectedProjectIdValid == false || action.uid == '-1' ||
               action.uid == null && state.projects.length > 0,
           showNoProjectsHint: state.projects.length == 0,
           showNoTaskListsHint:
@@ -69,9 +73,11 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is ReceiveProject) {
     final projects = _mergeProject(state.projects, action.project);
+    final projectsById = Map<String, ProjectModel>.from(state.projectsById);
+    projectsById[action.project.uid] = action.project;
+
     final isSelectedProjectIdValid =
-        projects.indexWhere((item) => item.uid == state.selectedProjectId) !=
-            -1;
+        projectsById.containsKey(state.selectedProjectId);
 
     // Coerce inflatedProject.
     var inflatedProject =
@@ -79,20 +85,18 @@ AppState appReducer(AppState state, dynamic action) {
             ? null
             : state.inflatedProject;
 
-    final projectsById = Map<String, ProjectModel>.from(state.projectsById);
-    projectsById[action.project.uid] = action.project;
-
     return state.copyWith(
         projects: projects,
         selectedProjectId: state.selectedProjectId,
         projectsById: projectsById,
         inflatedProject: Optional.fromNullable(inflatedProject),
         enableState: state.enableState.copyWith(
-          isProjectSelected:
-              state.selectedProjectId != '-1' && isSelectedProjectIdValid,
+          isProjectSelected: state.selectedProjectId != '-1' &&
+              state.selectedProjectId != null &&
+              isSelectedProjectIdValid,
           showNoProjectsHint: projects.length == 0,
           showSelectAProjectHint: projects.length > 0 &&
-              (state.selectedProjectId == '-1' ||
+              (isSelectedProjectIdValid == false || state.selectedProjectId == '-1' ||
                   state.selectedProjectId == null),
           canMoveTaskList: projects.length > 1,
         ));
@@ -412,7 +416,10 @@ AppState appReducer(AppState state, dynamic action) {
         memberLookup: initialAppState.memberLookup,
         showCompletedTasks: initialAppState.showCompletedTasks,
         showOnlySelfTasks: initialAppState.showOnlySelfTasks,
-        accountConfig: Optional.fromNullable(initialAppState.accountConfig.copyWith(appTheme: state.accountConfig.appTheme)), // Hold onto the current Theme.
+        accountConfig: Optional.fromNullable(initialAppState.accountConfig
+            .copyWith(
+                appTheme: state
+                    .accountConfig.appTheme)), // Hold onto the current Theme.
         activityFeed: initialAppState.activityFeed,
         enableState: state.enableState.copyWith(
           isLoggedIn: false,

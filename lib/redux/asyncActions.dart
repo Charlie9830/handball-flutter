@@ -237,8 +237,6 @@ void _initializeAndFetchSharedPreferences(Store<AppState> store) async {
 ThunkAction<AppState> debugButtonPressed() {
   return (Store<AppState> store) async {
     store.dispatch(SelectProject('a project that very much doesnt exist'));
-    store.dispatch(addNewTaskWithDialog(
-        'boopdewoop', homeScreenScaffoldKey.currentContext));
   };
 }
 
