@@ -93,6 +93,9 @@ class MemberModel {
       case 'rejected invite':
         return MemberStatus.denied;
 
+      case 'left':
+        return MemberStatus.left;
+
       default:
         throw UnsupportedError('Unknown value when parsing Member.status. Value: $status');
     }

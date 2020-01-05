@@ -21,7 +21,7 @@ enum AccountState { loggedOut, loggingIn, loggedIn, registering }
 enum ShareProjectScreenType { complete, simplified }
 enum RemoteUserResultStatus { found, notFound }
 enum MemberRole { member, owner }
-enum MemberStatus { pending, added, denied }
+enum MemberStatus { pending, added, denied, left }
 
 enum TaskMetadataUpdateType { created, completed, updated }
 

@@ -5,3 +5,5 @@ final FirestoreStreamsContainer firestoreStreams = FirestoreStreamsContainer();
 
 final FlutterLocalNotificationsPlugin notificationsPlugin =
     FlutterLocalNotificationsPlugin();
+
+final deleteAccountConfirmationResult = 'DELETE_ACCOUNT';

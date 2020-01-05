@@ -17,6 +17,12 @@ class AppThemeModel {
     this.brightness = Brightness.light,
   });
 
+  AppThemeModel.fromDefault() {
+    this.primaryColorIndex = 0;
+    this.accentColorIndex = 0;
+    this.brightness = Brightness.light;
+  }
+
   AppThemeModel.fromDocMap(Map<dynamic, dynamic> docMap) {
     this.primaryColorIndex = docMap['primaryColorIndex'] ?? 0;
     this.accentColorIndex = docMap['accentColorIndex'] ?? 0;

@@ -1,4 +1,5 @@
 import 'package:handball_flutter/enums.dart';
+import 'package:handball_flutter/models/AccountConfig.dart';
 import 'package:handball_flutter/models/ActivityFeedEventModel.dart';
 import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/EnableState.dart';
@@ -67,7 +68,7 @@ final initialAppState = AppState(
   showCompletedTasks: false,
   incompletedTasksByProject: <String, List<TaskModel>>{},
   completedTasksByProject: <String, List<TaskModel>>{},
-  accountConfig: null,
+  accountConfig: AccountConfigModel.fromDefault(),
   enableState: EnableStateModel(),
   lastUndoAction: null,
   tasksById: <String, TaskModel>{},

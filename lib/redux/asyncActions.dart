@@ -39,6 +39,8 @@ import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialo
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/TaskListColorSelectDialog/TaskListColorSelectDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ArchivedProjectsBottomSheet/ArchivedProjectsBottomSheet.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
+import 'package:handball_flutter/presentation/Dialogs/DeleteAccountDialog/DeleteAccountDialog.dart';
+import 'package:handball_flutter/presentation/Dialogs/DeleteAccountDialog/DeleteAccountInProgressMask.dart';
 import 'package:handball_flutter/presentation/Dialogs/MoveListBottomSheet.dart';
 import 'package:handball_flutter/presentation/Dialogs/MoveTasksDialog/MoveTaskBottomSheet.dart';
 import 'package:handball_flutter/presentation/Screens/ListSortingScreen/ListSortingScreen.dart';
@@ -213,8 +215,7 @@ void _initializeAndFetchSharedPreferences(Store<AppState> store) async {
   final jsonDecoder = JsonDecoder();
   final lastUsedTaskListsRawString =
       prefs.getString(lastUsedTaskListIdsSharedPreferencesKey);
-  if (lastUsedTaskListsRawString != null &&
-      lastUsedTaskListsRawString != '') {
+  if (lastUsedTaskListsRawString != null && lastUsedTaskListsRawString != '') {
     final lastUsedTaskListIds = Map<String, String>.from(
         jsonDecoder.convert(lastUsedTaskListsRawString));
     store.dispatch(SetLastUsedTaskLists(value: lastUsedTaskListIds));
@@ -234,8 +235,12 @@ void _initializeAndFetchSharedPreferences(Store<AppState> store) async {
 
 ThunkAction<AppState> debugButtonPressed() {
   return (Store<AppState> store) async {
-    final toggleBrightness = store.state.accountConfig.appTheme.brightness == Brightness.dark ? Brightness.light : Brightness.dark;
-    store.dispatch(updateAppTheme(store.state.accountConfig.appTheme.copyWith(brightness: toggleBrightness)));
+    final toggleBrightness =
+        store.state.accountConfig.appTheme.brightness == Brightness.dark
+            ? Brightness.light
+            : Brightness.dark;
+    store.dispatch(updateAppTheme(store.state.accountConfig.appTheme
+        .copyWith(brightness: toggleBrightness)));
   };
 }
 
@@ -273,6 +278,37 @@ void handleAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
   //   // TODO: Handle Log in error, userDoc did not exist. User Could be a new User.
   //   print("Could not find User");
   // }
+}
+
+ThunkAction<AppState> deleteAccountWithDialog(BuildContext context) {
+  return (Store<AppState> store) async {
+    if (store.state.user == null || store.state.user.isLoggedIn == false) {
+      return;
+    }
+
+    final dialogResult = await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => DeleteAccountDialog());
+    
+    if (dialogResult is String && dialogResult == deleteAccountConfirmationResult) {
+      // User has requested an account Delete.
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => DeleteAccountInProgressMask(),
+        fullscreenDialog: true,
+      ));
+
+      // Collect current User Data and trigger the Delete.
+      final user = await auth.currentUser();
+      if (user == null) {
+        // Uh oh. Something went wrong.
+      }
+      
+      // This will log the user out. A cloud function will Trigger on auth.deleteUser and handle the rest.
+      await user.delete();
+      Navigator.of(context).popUntil((route) => route.isFirst == true);
+    }
+  };
 }
 
 ThunkAction<AppState> acceptProjectInvite(String projectId) {

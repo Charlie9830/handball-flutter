@@ -13,6 +13,10 @@ class AccountConfigModel {
     this.appTheme,
   });
 
+  AccountConfigModel.fromDefault() {
+    this.appTheme = AppThemeModel.fromDefault();
+  }
+
   AccountConfigModel.fromDoc(DocumentSnapshot doc) {
     appTheme = AppThemeModel.fromDocMap(doc.data['appTheme']);
   }

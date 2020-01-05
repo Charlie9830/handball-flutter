@@ -152,7 +152,7 @@ class AppState {
     bool showCompletedTasks,
     Map<String, List<TaskModel>> completedTasksByProject,
     Map<String, List<TaskModel>> incompletedTasksByProject,
-    Optional<AccountConfigModel> accountConfig,
+    AccountConfigModel accountConfig,
     EnableStateModel enableState,
     Optional<UndoActionModel> lastUndoAction,
     Map<String, TaskModel> tasksById,
@@ -207,7 +207,7 @@ class AppState {
           completedTasksByProject ?? this.completedTasksByProject,
       incompletedTasksByProject:
           incompletedTasksByProject ?? this.incompletedTasksByProject,
-      accountConfig: accountConfig == null ? this.accountConfig : accountConfig.orNull,
+      accountConfig: accountConfig ?? this.accountConfig,
       enableState: enableState ?? this.enableState,
       lastUndoAction: lastUndoAction == null ? this.lastUndoAction : lastUndoAction.orNull,
       tasksById: tasksById ?? this.tasksById,

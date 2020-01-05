@@ -53,7 +53,8 @@ AppState appReducer(AppState state, dynamic action) {
           isProjectSelected: isSelectedProjectIdValid
               ? true
               : state.enableState.isProjectSelected,
-          showSelectAProjectHint: isSelectedProjectIdValid == false || action.uid == '-1' ||
+          showSelectAProjectHint: isSelectedProjectIdValid == false ||
+              action.uid == '-1' ||
               action.uid == null && state.projects.length > 0,
           showNoProjectsHint: state.projects.length == 0,
           showNoTaskListsHint:
@@ -96,7 +97,8 @@ AppState appReducer(AppState state, dynamic action) {
               isSelectedProjectIdValid,
           showNoProjectsHint: projects.length == 0,
           showSelectAProjectHint: projects.length > 0 &&
-              (isSelectedProjectIdValid == false || state.selectedProjectId == '-1' ||
+              (isSelectedProjectIdValid == false ||
+                  state.selectedProjectId == '-1' ||
                   state.selectedProjectId == null),
           canMoveTaskList: projects.length > 1,
         ));
@@ -119,7 +121,7 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is ReceiveAccountConfig) {
     return state.copyWith(
-      accountConfig: Optional.fromNullable(action.accountConfig),
+      accountConfig: action.accountConfig,
     );
   }
 
@@ -416,10 +418,10 @@ AppState appReducer(AppState state, dynamic action) {
         memberLookup: initialAppState.memberLookup,
         showCompletedTasks: initialAppState.showCompletedTasks,
         showOnlySelfTasks: initialAppState.showOnlySelfTasks,
-        accountConfig: Optional.fromNullable(initialAppState.accountConfig
-            .copyWith(
-                appTheme: state
-                    .accountConfig.appTheme)), // Hold onto the current Theme.
+        accountConfig: initialAppState.accountConfig.copyWith(
+            appTheme: state.accountConfig?.appTheme?.copyWith() ??
+                initialAppState.accountConfig
+                    .appTheme), // Hold onto the current Theme if its set.
         activityFeed: initialAppState.activityFeed,
         enableState: state.enableState.copyWith(
           isLoggedIn: false,
@@ -490,16 +492,20 @@ AppState appReducer(AppState state, dynamic action) {
   }
 
   if (action is ReceiveMembers) {
-    var members =
-        _updateMembers(state.members, action.projectId, action.membersList);
+    // Filter out Members that are statused as 'left'. We don't want to reveal these members in the UI. We do however, want to store them within the memberLookup,
+    // so that we can still lookup their displayName via the UserId for Existing Tasks and elements.
+    final activeMembers = action.membersList.where((member) => member.status != MemberStatus.left).toList();
 
-    var selfMember = action.membersList.firstWhere(
+    final members =
+        _updateMembers(state.members, action.projectId, activeMembers);
+
+    final selfMember = activeMembers.firstWhere(
         (item) => item.userId == state.user.userId,
         orElse: () => null);
-    var favirouteTaskListIds = _updateFavirouteTaskListIds(
+    final favirouteTaskListIds = _updateFavirouteTaskListIds(
         state.favirouteTaskListIds, selfMember, action.projectId);
 
-    var inflatedProject = action.projectId == state.selectedProjectId
+    final inflatedProject = action.projectId == state.selectedProjectId
         ? buildInflatedProject(
             tasks: state.tasksByProject[state.selectedProjectId],
             taskLists: state.taskListsByProject[state.selectedProjectId],
