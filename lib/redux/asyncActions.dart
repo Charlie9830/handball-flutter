@@ -631,7 +631,8 @@ ThunkAction<AppState> changeAccount(
   return (Store<AppState> store) async {
     try {
       await auth.signOut();
-      await Future.delayed(Duration(seconds: 2));
+      store.dispatch(SetAccountState(accountState: AccountState.loggedOut));
+      await Future.delayed(Duration(milliseconds: 500));
       store.dispatch(signInUser(email, password, context));
     } catch (error) {
       throw error;
