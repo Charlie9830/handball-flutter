@@ -8,8 +8,8 @@ class QuickAccountChanger extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: 8.0,
-      runSpacing: 4.0,
+      spacing: 4.0,
+      runSpacing: 0.0,
       children: <Widget>[
         SizedBox(
           width: 100,

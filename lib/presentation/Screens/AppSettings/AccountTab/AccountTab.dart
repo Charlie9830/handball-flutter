@@ -30,40 +30,43 @@ class AccountTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
         alignment: Alignment.topCenter,
-        child: Column(
-          children: <Widget>[
+        child: Column(children: <Widget>[
           Expanded(
-            child: _getChild(accountState),
-          ),
+              child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              // Logged Out - We have to use a Visibility Widget to conditionally Render this so that we can maintain it's state, IE: What the user has already typed
+              // after the attempt a Log in and this widget is hidden.
+              Visibility(
+                visible: accountState == AccountState.loggedOut,
+                maintainState: true,
+                child: LoggedOut(
+                  onSignIn: onSignIn,
+                  onSignUpButtonPressed: onSignUpButtonPressed,
+                ),
+              ),
+
+              // Logged In.
+              if (accountState == AccountState.loggedIn)
+                LoggedIn(
+                  displayName: user.displayName ?? '',
+                  email: user.email ?? '',
+                  onSignOut: onSignOut,
+                  onDeleteAccount: onDeleteAccount,
+                ),
+
+              // Logging In
+              if (accountState == AccountState.loggingIn)
+                AccountProgress(activityName: 'Signing In'),
+
+              // Registering.
+              if (accountState == AccountState.registering)
+                AccountProgress(activityName: 'Creating Account')
+            ],
+          )),
           if (!kReleaseMode)
             QuickAccountChanger(onAccountChange: onAccountChange)
         ]));
-  }
-
-  Widget _getChild(AccountState accountState) {
-    switch (accountState) {
-      case AccountState.loggedOut:
-        return LoggedOut(
-          onSignIn: onSignIn,
-          onSignUpButtonPressed: onSignUpButtonPressed,
-        );
-
-      case AccountState.loggingIn:
-        return AccountProgress(activityName: 'Signing In');
-
-      case AccountState.loggedIn:
-        return LoggedIn(
-          displayName: user.displayName ?? '',
-          email: user.email ?? '',
-          onSignOut: onSignOut,
-          onDeleteAccount: onDeleteAccount,
-        );
-
-      case AccountState.registering:
-        return AccountProgress(activityName: 'Creating Account');
-
-      default:
-        return Text("Uh oh, something went wrong");
-    }
   }
 }

@@ -23,6 +23,7 @@ class _AccountReauthenticationState extends State<AccountReauthentication> {
   Widget build(BuildContext context) {
     return PredicateBuilder(
         predicate: () => widget.isAuthenticating,
+        maintainState: true,
         childIfTrue: Center(child: CircularProgressIndicator()),
         childIfFalse: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
