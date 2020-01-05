@@ -218,7 +218,7 @@ class _SignUpBaseState extends State<SignUpBase> with TickerProviderStateMixin {
         !_isValidDisplayName(_displayNameController.text)) {
       // Invalid Display Name.
       setState(() => _displayNameErrorText =
-          'Please use a Display Name with at least 2 characters');
+          'Please pick a Display Name with at least 2 characters'); // For r2. Miss you.
       return;
     }
 
