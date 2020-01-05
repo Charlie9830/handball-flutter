@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/InheritatedWidgets/EnableStates.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/AppDrawerScreenViewModel.dart';
 import 'package:handball_flutter/presentation/ProjectList.dart';
@@ -35,6 +36,7 @@ class AppDrawer extends StatelessWidget {
                     child: ProjectList(
                         projectViewModels: viewModel.projectViewModels)
                 ),
+                if (EnableStates.of(context).state.isLoggedIn)
                 UpgradeToProButton(),
               ],
             ),
