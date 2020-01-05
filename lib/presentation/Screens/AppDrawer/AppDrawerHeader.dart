@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/InheritatedWidgets/EnableStates.dart';
 
 class AppDrawerHeader extends StatelessWidget {
   final String email;
@@ -66,6 +67,7 @@ class AppDrawerHeader extends StatelessWidget {
                     ),
                     onPressed: onCreateProjectButtonPressed,
                   ),
+                  if (EnableStates.of(context).state.isLoggedIn == true)
                   IconButton(
                     icon: Icon(Icons.notifications),
                     onPressed: onActivityFeedButtonPressed,
