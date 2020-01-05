@@ -83,7 +83,7 @@ class _LoggedOutState extends State<LoggedOut> with TickerProviderStateMixin {
   }
 
   void _handleLogInButtonPressed(LoginDetails loginDetails) {
-    widget.onSignIn(loginDetails);
+    widget.onSignIn(loginDetails.email, loginDetails.password);
   }
 
   void _handleInputFieldsFocusChange(bool hasFocus) {

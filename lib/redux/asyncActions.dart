@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:handball_flutter/SharedPreferencesKeys.dart';
 import 'package:handball_flutter/configValues.dart';
 import 'package:handball_flutter/containers/AddTaskDialogContainer.dart';
@@ -290,8 +291,9 @@ ThunkAction<AppState> deleteAccountWithDialog(BuildContext context) {
         context: context,
         barrierDismissible: false,
         builder: (context) => DeleteAccountDialog());
-    
-    if (dialogResult is String && dialogResult == deleteAccountConfirmationResult) {
+
+    if (dialogResult is String &&
+        dialogResult == deleteAccountConfirmationResult) {
       // User has requested an account Delete.
       Navigator.of(context).push(MaterialPageRoute(
         builder: (context) => DeleteAccountInProgressMask(),
@@ -303,7 +305,7 @@ ThunkAction<AppState> deleteAccountWithDialog(BuildContext context) {
       if (user == null) {
         // Uh oh. Something went wrong.
       }
-      
+
       // This will log the user out. A cloud function will Trigger on auth.deleteUser and handle the rest.
       await user.delete();
       Navigator.of(context).popUntil((route) => route.isFirst == true);
@@ -574,12 +576,42 @@ ThunkAction<AppState> signInUser(
     String email, String password, BuildContext context) {
   return (Store<AppState> store) async {
     store.dispatch(SetAccountState(accountState: AccountState.loggingIn));
-
     try {
       await auth.signInWithEmailAndPassword(email: email, password: password);
-    } catch (error) {
+    } on PlatformException catch (error) {
+      var reThrow = false;
+
+      switch (error.code) {
+        case 'ERROR_INVALID_EMAIL':
+          showSnackBar(
+              targetGlobalKey: appSettingsScaffoldKey,
+              message: 'Make sure you email address is valid.');
+          break;
+
+        case 'ERROR_USER_NOT_FOUND':
+          showSnackBar(
+              targetGlobalKey: appSettingsScaffoldKey,
+              message: 'Account not found.');
+          break;
+
+        case 'ERROR_WRONG_PASSWORD':
+          showSnackBar(
+              targetGlobalKey: appSettingsScaffoldKey,
+              message: 'That password does not match the account.');
+          break;
+
+        default:
+          showSnackBar(
+              targetGlobalKey: appSettingsScaffoldKey,
+              message: 'Oops. Something went wrong.');
+          reThrow = true;
+          break;
+      }
       store.dispatch(SetAccountState(accountState: AccountState.loggedOut));
-      throw error;
+
+      if (reThrow == true) {
+        throw error;
+      }
     }
   };
 }
