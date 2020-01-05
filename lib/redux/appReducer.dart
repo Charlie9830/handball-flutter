@@ -379,12 +379,28 @@ AppState appReducer(AppState state, dynamic action) {
   }
 
   if (action is SignIn) {
+    // Due to the User Sign up edge case of the DisplayName not getting propagated to State. Make sure we don't stomp the displayName in state with an invalid value.
+    // It may have already been set ahead of time by the InjectDisplayName action.
+    final user =
+        action.user.displayName == '' || action.user.displayName == null
+            ? action.user.copyWith(displayName: state.user.displayName)
+            : action.user;
+
     return state.copyWith(
-        user: action.user,
+        user: user,
         accountState: AccountState.loggedIn,
         enableState: state.enableState.copyWith(
           isLoggedIn: true,
         ));
+  }
+
+  if (action is InjectDisplayName) {
+    // Due to an edge case for when a new user signs up, We have to update the FirebaseUser Profile after they have already signed in. So the display name,
+    // doesn't get propagated to state until the app is reloaded. So we can call this Action to inject the display name into state.
+    return state.copyWith(
+        user: state.user.displayName == '' || state.user.displayName == null
+            ? state.user.copyWith(displayName: action.displayName)
+            : state.user);
   }
 
   if (action is SignOut) {
@@ -494,7 +510,9 @@ AppState appReducer(AppState state, dynamic action) {
   if (action is ReceiveMembers) {
     // Filter out Members that are statused as 'left'. We don't want to reveal these members in the UI. We do however, want to store them within the memberLookup,
     // so that we can still lookup their displayName via the UserId for Existing Tasks and elements.
-    final activeMembers = action.membersList.where((member) => member.status != MemberStatus.left).toList();
+    final activeMembers = action.membersList
+        .where((member) => member.status != MemberStatus.left)
+        .toList();
 
     final members =
         _updateMembers(state.members, action.projectId, activeMembers);

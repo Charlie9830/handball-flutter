@@ -237,7 +237,7 @@ class _SignUpBaseState extends State<SignUpBase> with TickerProviderStateMixin {
   }
 
   void _finish(BuildContext context) {
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(_displayNameController.text);
   } 
 
   void _dropKeyboardFocus() {

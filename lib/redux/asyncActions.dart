@@ -1494,7 +1494,7 @@ List<String> _getProjectRelatedMemberIds(
 
 ThunkAction<AppState> showSignUpDialog(BuildContext context) {
   return (Store<AppState> store) async {
-    await showDialog(
+    final desiredDisplayName = await showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) {
@@ -1503,6 +1503,10 @@ ThunkAction<AppState> showSignUpDialog(BuildContext context) {
             firestore: Firestore.instance,
           );
         });
+    
+    if (desiredDisplayName is String) {
+      store.dispatch(InjectDisplayName(displayName: desiredDisplayName));
+    }
   };
 }
 

@@ -26,6 +26,14 @@ class OpenActivityFeed {}
 
 class CloseActivityFeed {}
 
+class InjectDisplayName {
+  final String displayName;
+
+  InjectDisplayName({
+    this.displayName,
+  });
+}
+
 class ReceiveAccountConfig {
   final AccountConfigModel accountConfig;
 

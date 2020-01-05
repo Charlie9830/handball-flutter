@@ -37,12 +37,7 @@ final initialAppState = AppState(
   inflatedProject: null,
   selectedTaskEntity: null,
   focusedTaskListId: '-1',
-  user: new UserModel(
-    isLoggedIn: false,
-    displayName: '',
-    userId: '-1',
-    email: '',
-  ),
+  user: UserModel.fromDefault(),
   lastUsedTaskLists: <String, String>{},
   textInputDialog: TextInputDialogModel(
     isOpen: false,
