@@ -444,6 +444,12 @@ AppState appReducer(AppState state, dynamic action) {
         ));
   }
 
+  if (action is SetAccountState) {
+    return state.copyWith(
+      accountState: action.accountState,
+    );
+  }
+
   if (action is CloseActivityFeed) {
     return state.copyWith(
       activityFeed: <ActivityFeedEventModel>[],

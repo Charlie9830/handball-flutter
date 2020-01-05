@@ -577,6 +577,9 @@ ThunkAction<AppState> signInUser(
   return (Store<AppState> store) async {
     store.dispatch(SetAccountState(accountState: AccountState.loggingIn));
     try {
+
+      await Future.delayed(Duration(seconds: 3));
+
       await auth.signInWithEmailAndPassword(email: email, password: password);
     } on PlatformException catch (error) {
       var reThrow = false;
