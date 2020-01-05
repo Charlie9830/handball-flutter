@@ -1,3 +1,4 @@
+import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/Assignment.dart';
 import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/Task.dart';
@@ -7,7 +8,7 @@ class TaskInspectorScreenViewModel {
   final List<CommentViewModel> commentPreviewViewModels;
   final List<Assignment> assignmentOptions;
   final List<Assignment> assignments;
-  final bool isAssignmentInputVisible;
+  final TaskInspectorAssignmentInputType assignmentInputType;
   final dynamic onTaskNameChange;
   final dynamic onIsHighPriorityChange;
   final dynamic onDueDateChange;
@@ -22,7 +23,7 @@ class TaskInspectorScreenViewModel {
     this.assignmentOptions,
     this.commentPreviewViewModels,
     this.onTaskNameChange,
-    this.isAssignmentInputVisible,
+    this.assignmentInputType,
     this.onIsHighPriorityChange,
     this.onDueDateChange,
     this.onNoteChange,

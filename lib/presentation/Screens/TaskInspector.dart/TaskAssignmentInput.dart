@@ -6,9 +6,14 @@ import 'package:handball_flutter/presentation/ReactiveAnimatedList.dart';
 class TaskAssignmentInput extends StatelessWidget {
   final List<Assignment> assignments;
   final List<Assignment> assignmentOptions;
+  final bool clearOnly;
   final dynamic onChange;
   const TaskAssignmentInput(
-      {Key key, this.assignments, this.assignmentOptions, this.onChange})
+      {Key key,
+      this.assignments,
+      this.clearOnly,
+      this.assignmentOptions,
+      this.onChange})
       : super(key: key);
 
   @override
@@ -21,7 +26,12 @@ class TaskAssignmentInput extends StatelessWidget {
   }
 
   void _handleTap(BuildContext context) async {
-    var result = await showDialog(
+    if (clearOnly == true) {
+      onChange(<String>[]);
+      return;
+    }
+
+    final result = await showDialog(
         barrierDismissible: false,
         context: context,
         builder: (context) => ChooseAssignmentDialog(
@@ -41,10 +51,16 @@ class TaskAssignmentInput extends StatelessWidget {
   Widget _getTitleWidget(BuildContext context) {
     if (assignments == null || assignments.length == 0) {
       return Text('Assign to');
-    } else {
+    }
+
+    if (clearOnly == true) {
+      final plural = assignments.length > 1 ? 's' : '';
+      return Text('Clear Assignment$plural');
+    }
+    
+     else {
       return ReactiveAnimatedList(
-          shrinkWrap: true,
-          children: _mapAssignments(context));
+          shrinkWrap: true, children: _mapAssignments(context));
     }
   }
 
@@ -55,19 +71,17 @@ class TaskAssignmentInput extends StatelessWidget {
 
     for (var assignment in assignments) {
       widgets.add(Padding(
-        key: Key(assignment.userId),
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget> [
-            Text(assignment.displayName),
-            IconButton(
-              icon: Icon(Icons.clear),
-              onPressed: () => _handleAssignmentClear(assignment.userId),
-            )
-          ]
-        ) 
-      ));
+          key: Key(assignment.userId),
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text(assignment.displayName),
+                IconButton(
+                  icon: Icon(Icons.clear),
+                  onPressed: () => _handleAssignmentClear(assignment.userId),
+                )
+              ])));
 
       count++;
 
@@ -93,7 +107,8 @@ class TaskAssignmentInput extends StatelessWidget {
   }
 
   void _handleAssignmentClear(String userId) {
-    var assignmentIds = assignments.map( (assignment) => assignment.userId).toList();
+    var assignmentIds =
+        assignments.map((assignment) => assignment.userId).toList();
 
     assignmentIds.remove(userId);
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/Assignment.dart';
 import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/models/Member.dart';
@@ -27,8 +28,8 @@ class TaskInspectorScreenContainer extends StatelessWidget {
     return new TaskInspectorScreenViewModel(
         onClose: () => store.dispatch(CloseTaskInspector()),
         taskEntity: selectedTaskEntity,
-        isAssignmentInputVisible:
-            _isAssignmentInputVisible(store, selectedTaskEntity),
+        assignmentInputType:
+            _getAssignmentInputType(store, selectedTaskEntity),
         assignments:
             selectedTaskEntity.getAssignments(store.state.memberLookup),
         assignmentOptions: _getAssignmentOptions(
@@ -66,11 +67,28 @@ class TaskInspectorScreenContainer extends StatelessWidget {
         onReminderChange: (newValue) => store.dispatch(updateTaskReminder(newValue, selectedTaskEntity.ownReminder?.time, selectedTaskEntity.uid, selectedTaskEntity.taskName, selectedTaskEntity.project)));
   }
 
-  bool _isAssignmentInputVisible(
+  TaskInspectorAssignmentInputType _getAssignmentInputType(
       Store<AppState> store, TaskModel selectedTaskEntity) {
-    var members = store.state.members[selectedTaskEntity.project];
+    // It is possible, that if all but one user leaves a project, that user can then get stuck with assignments on Tasks that they can't remove. So we
+    // have three possible states that dicate if and how the Assignment Input is displayed.
+    // Normal - Is displayed as normal
+    // Hidden - Is hidden as the user can't make any viable assignments
+    // ClearOnly - Allows for clearing only. So the user can clear assignments left behind by members now gone.
 
-    return members != null && members.length > 1;
+    final members = store.state.members[selectedTaskEntity.project];
+    final currentAssignmentCount = selectedTaskEntity.assignedTo.length;
+
+    if (members.length > 1) {
+      return TaskInspectorAssignmentInputType.normal;
+    }
+
+    if (members.length == 1 && currentAssignmentCount > 0) {
+      return TaskInspectorAssignmentInputType.clearOnly;
+    }
+
+    else {
+      return TaskInspectorAssignmentInputType.hidden;
+    }
   }
 
   List<Assignment> _getAssignmentOptions(List<MemberModel> projectMembers) {

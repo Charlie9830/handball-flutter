@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/Assignment.dart';
 import 'package:handball_flutter/presentation/DateSelectListTile.dart';
+import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/ReminderSelectListTile.dart';
 import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/NoteInputListItem.dart';
 import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/TaskAssignmentInput.dart';
@@ -9,7 +11,7 @@ class TaskPropertiesCard extends StatelessWidget {
   final DateTime dueDate;
   final String note;
   final String taskName;
-  final bool isAssignmentInputVisible;
+  final TaskInspectorAssignmentInputType assignmentInputType;
   final bool enableReminder;
   final DateTime reminder;
   final List<Assignment> assignments;
@@ -25,7 +27,7 @@ class TaskPropertiesCard extends StatelessWidget {
     this.note,
     this.reminder,
     this.enableReminder,
-    this.isAssignmentInputVisible,
+    this.assignmentInputType,
     this.assignmentOptions,
     this.assignments,
     this.onNoteChange,
@@ -60,12 +62,13 @@ class TaskPropertiesCard extends StatelessWidget {
             onChange: onNoteChange,
             taskName: taskName,
           ),
-          if (isAssignmentInputVisible == true)
+          if (assignmentInputType != TaskInspectorAssignmentInputType.hidden)
             TaskAssignmentInput(
-              assignments: assignments,
-              assignmentOptions: assignmentOptions,
-              onChange: onAssignmentsChange,
-            )
+                assignments: assignments,
+                assignmentOptions: assignmentOptions,
+                clearOnly: assignmentInputType == TaskInspectorAssignmentInputType.clearOnly,
+                onChange: onAssignmentsChange,
+              )
         ]));
   }
 }

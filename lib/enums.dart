@@ -75,3 +75,5 @@ enum ActivityFeedEventType {
   assignmentUpdate,
   reColorList, 
 }
+
+enum TaskInspectorAssignmentInputType { normal, hidden, clearOnly }

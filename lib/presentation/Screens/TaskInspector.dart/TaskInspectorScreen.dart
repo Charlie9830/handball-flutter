@@ -70,7 +70,7 @@ class TaskInspectorScreen extends StatelessWidget {
                     assignmentOptions: viewModel.assignmentOptions,
                     assignments: viewModel.assignments,
                     onAssignmentsChange: viewModel.onAssignmentsChange,
-                    isAssignmentInputVisible: viewModel.isAssignmentInputVisible,
+                    assignmentInputType: viewModel.assignmentInputType,
                   ),
                   Card(
                       child: Padding(
