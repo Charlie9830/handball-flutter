@@ -291,12 +291,13 @@ ThunkAction<AppState> deleteAccountWithDialog(BuildContext context) {
       return;
     }
 
-    final reauthDialogResult = await showDialog(
+    final reAuthResult = await showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => AccountReauthenticationDialog(auth: auth));
 
-    if (reauthDialogResult != true) {
+    if (reAuthResult == null ||
+        (reAuthResult is bool && reAuthResult == false)) {
       return;
     }
 
@@ -1408,7 +1409,8 @@ ThunkAction<AppState> changePasswordWithDialog(BuildContext context) {
       builder: (context) => AccountReauthenticationDialog(auth: auth),
     );
 
-    if (reAuthResult is bool && reAuthResult != true) {
+    if (reAuthResult == null ||
+        (reAuthResult is bool && reAuthResult == false)) {
       return;
     }
 
