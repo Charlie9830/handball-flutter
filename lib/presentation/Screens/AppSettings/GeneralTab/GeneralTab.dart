@@ -68,7 +68,7 @@ class GeneralTab extends StatelessWidget {
                 title: Text('End User License Agreement'),
               ),
               ListTile(
-                  title: Text('Third party licenes'),
+                  title: Text('Third party licenses'),
                   onTap: () => showLicensePage(
                       context: context, applicationName: 'Handball')),
               ListTile(
