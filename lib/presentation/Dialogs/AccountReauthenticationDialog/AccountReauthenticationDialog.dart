@@ -51,7 +51,6 @@ class _AccountReauthenticationDialogState
                     ),
                   ),
                   EmailAndPasswordInput(
-                    buttonColor: Theme.of(context).accentColor,
                     buttonText: 'Authenticate',
                     onButtonPressed: (details) =>
                         _handleAuthenticate(details, context),

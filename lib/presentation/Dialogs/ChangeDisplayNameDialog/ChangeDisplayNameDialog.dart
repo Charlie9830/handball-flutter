@@ -80,7 +80,6 @@ class _ChangeDisplayNameDialogState extends State<ChangeDisplayNameDialog> {
                         ),
                         RaisedButton(
                             child: Text('Submit'),
-                            color: Theme.of(context).accentColor,
                             onPressed: _allowSubmit
                                 ? () => _handleSubmitButtonPressed(context)
                                 : null)
