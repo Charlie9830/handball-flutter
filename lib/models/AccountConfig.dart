@@ -3,6 +3,7 @@ import 'package:handball_flutter/models/AppTheme.dart';
 
 class AccountConfigModel {
   AppThemeModel appTheme;
+  bool isDefault = false;
 
     /* 
   Update copyWith Method Below
@@ -15,6 +16,7 @@ class AccountConfigModel {
 
   AccountConfigModel.fromDefault() {
     this.appTheme = AppThemeModel.fromDefault();
+    this.isDefault = true;
   }
 
   AccountConfigModel.fromDoc(DocumentSnapshot doc) {

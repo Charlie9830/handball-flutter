@@ -337,7 +337,7 @@ ThunkAction<AppState> updateAppTheme(AppThemeModel newAppTheme) {
       return;
     }
 
-    if (store.state.accountConfig == null) {
+    if (store.state.accountConfig == null || store.state.accountConfig.isDefault) {
       // Account Config doesn't exist yet.
       var accountConfigRef =
           getAccountConfigDocumentReference(store.state.user.userId);
