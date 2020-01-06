@@ -57,8 +57,8 @@ class CloudFunctionsLayer {
       if (response.data['status'] == 'error') {
         throw CloudFunctionsRejectionError(message: response.data['message']);
       }
-    } catch (error) {
-      throw error;
+    } on CloudFunctionsException catch (error) {
+      _handleCloudFunctionsException(error);
     }
   }
 
@@ -84,8 +84,8 @@ class CloudFunctionsLayer {
           message: response.data['message'],
         );
       }
-    } catch (error) {
-      throw error;
+    } on CloudFunctionsException catch (error) {
+      _handleCloudFunctionsException(error);
     }
   }
 
@@ -114,8 +114,8 @@ class CloudFunctionsLayer {
             message:
                 'acceptProjectInvite failed. Response status returned null');
       }
-    } catch (error) {
-      throw error;
+    } on CloudFunctionsException catch (error) {
+      _handleCloudFunctionsException(error);
     }
   }
 
@@ -143,8 +143,8 @@ class CloudFunctionsLayer {
         throw CloudFunctionsRejectionError(
             message: 'denyProjectInvite failed. Response status returned null');
       }
-    } catch (error) {
-      throw error;
+    } on CloudFunctionsException catch (error) {
+      _handleCloudFunctionsException(error);
     }
   }
 
@@ -178,8 +178,8 @@ class CloudFunctionsLayer {
       } else {
         throw CloudFunctionsRejectionError(message: response.data['error']);
       }
-    } catch (error) {
-      throw error;
+    } on CloudFunctionsException catch (error) {
+      _handleCloudFunctionsException(error);
     }
   }
 
@@ -202,15 +202,17 @@ class CloudFunctionsLayer {
       }
 
       return DirectoryListing.fromMap(response.data['userData']);
-    } catch (error) {
-      throw error;
+    } on CloudFunctionsException catch (error) {
+      _handleCloudFunctionsException(error);
     }
   }
 
   void _handleCloudFunctionsException(CloudFunctionsException error) {
     if (error.code == 'INTERNAL') {
       // TODO: Could this be a specific no Connection error?
-      throw CloudFunctionsRejectionError(message: 'Could not contact server, please check your internet connection.');
+      throw CloudFunctionsRejectionError(
+          message:
+              'Could not contact server, please check your internet connection.');
     }
   }
 }
