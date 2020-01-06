@@ -36,10 +36,12 @@ import 'package:handball_flutter/models/UndoActions/MultiCompleteTasksUndoAction
 import 'package:handball_flutter/models/UndoActions/MultiDeleteTasksUndoAction.dart';
 import 'package:handball_flutter/models/UndoActions/NoAction.dart';
 import 'package:handball_flutter/models/User.dart';
+import 'package:handball_flutter/presentation/Dialogs/AccountReauthenticationDialog/AccountReauthenticationDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/TaskListColorSelectDialog/TaskListColorSelectDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ArchivedProjectsBottomSheet/ArchivedProjectsBottomSheet.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChangeDisplayNameDialog/ChangeDisplayNameDialog.dart';
+import 'package:handball_flutter/presentation/Dialogs/ChangePasswordDialog/ChangePasswordDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/DeleteAccountDialog/DeleteAccountDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/DeleteAccountDialog/DeleteAccountInProgressMask.dart';
@@ -289,6 +291,15 @@ ThunkAction<AppState> deleteAccountWithDialog(BuildContext context) {
       return;
     }
 
+    final reauthDialogResult = await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AccountReauthenticationDialog(auth: auth));
+
+    if (reauthDialogResult != true) {
+      return;
+    }
+
     final dialogResult = await showDialog(
         context: context,
         barrierDismissible: false,
@@ -337,7 +348,8 @@ ThunkAction<AppState> updateAppTheme(AppThemeModel newAppTheme) {
       return;
     }
 
-    if (store.state.accountConfig == null || store.state.accountConfig.isDefault) {
+    if (store.state.accountConfig == null ||
+        store.state.accountConfig.isDefault) {
       // Account Config doesn't exist yet.
       var accountConfigRef =
           getAccountConfigDocumentReference(store.state.user.userId);
@@ -1387,15 +1399,38 @@ ThunkAction<AppState> archiveProjectWithDialog(
   };
 }
 
+ThunkAction<AppState> changePasswordWithDialog(BuildContext context) {
+  return (Store<AppState> store) async {
+    // First Reauthenticate.
+    final reAuthResult = await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AccountReauthenticationDialog(auth: auth),
+    );
+
+    if (reAuthResult is bool && reAuthResult != true) {
+      return;
+    }
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ChangePasswordDialog(auth: auth),
+    );
+  };
+}
+
 ThunkAction<AppState> changeDisplayNameWithDialog(BuildContext context) {
   return (Store<AppState> store) async {
     final existingDisplayName = store.state.user.displayName;
 
     final result = await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => ChangeDisplayNameDialog(cloudFunctionsLayer: _cloudFunctionsLayer, existingValue: existingDisplayName, email: store.state.user.email)
-    );
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => ChangeDisplayNameDialog(
+            cloudFunctionsLayer: _cloudFunctionsLayer,
+            existingValue: existingDisplayName,
+            email: store.state.user.email));
 
     // Dialog handles the call out to Cloud Functions. Will return a string with the new Display Name if it was a success.
     if (result is String && validateDisplayName(result)) {

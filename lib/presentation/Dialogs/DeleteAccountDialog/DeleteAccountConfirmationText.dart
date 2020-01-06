@@ -23,7 +23,7 @@ class DeleteAccountConfirmationText extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 32),
+          padding: const EdgeInsets.only(bottom: 24),
           child: Text(_warning,
               style: Theme.of(context)
                   .textTheme

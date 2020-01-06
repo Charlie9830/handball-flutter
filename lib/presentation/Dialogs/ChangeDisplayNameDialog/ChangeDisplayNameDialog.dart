@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChangeDisplayNameDialog/RequestSuccess.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
+import 'package:handball_flutter/presentation/SimpleAppBar.dart';
 import 'package:handball_flutter/utilities/CloudFunctionLayer.dart';
 import 'package:handball_flutter/utilities/showSnackbar.dart';
 import 'package:handball_flutter/utilities/validateDisplayName.dart';
@@ -51,7 +52,7 @@ class _ChangeDisplayNameDialogState extends State<ChangeDisplayNameDialog> {
       child: SafeArea(
         child: Scaffold(
             key: _scaffoldKey,
-            appBar: AppBar(title: Text('Change Display Name')),
+            appBar: SimpleAppBar(),
             body: Container(
                 alignment: Alignment.center,
                 padding: EdgeInsets.all(16),
@@ -155,5 +156,12 @@ class _ChangeDisplayNameDialogState extends State<ChangeDisplayNameDialog> {
     if (_scaffoldKey.currentState != null) {
       _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(message)));
     }
+  }
+
+  @override
+  @override
+  void dispose() { 
+    _textController.dispose();
+    super.dispose();
   }
 }

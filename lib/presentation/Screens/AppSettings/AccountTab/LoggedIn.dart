@@ -6,6 +6,7 @@ class LoggedIn extends StatelessWidget {
   final dynamic onSignOut;
   final dynamic onDeleteAccount;
   final dynamic onChangeDisplayName;
+  final dynamic onChangePassword;
 
   LoggedIn({
     this.displayName,
@@ -13,6 +14,7 @@ class LoggedIn extends StatelessWidget {
     this.onSignOut,
     this.onDeleteAccount,
     this.onChangeDisplayName,
+    this.onChangePassword,
   });
 
   @override
@@ -41,9 +43,11 @@ class LoggedIn extends StatelessWidget {
               onPressed: () => onSignOut(),
             ),
             Column(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: <Widget>[
                 FlatButton(
                   child: Text('Change password'),
+                  onPressed: onChangePassword,
                 ),
                 FlatButton(
                   child: Text('Change Display Name'),

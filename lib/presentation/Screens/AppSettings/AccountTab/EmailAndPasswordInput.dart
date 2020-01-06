@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:handball_flutter/models/LogInDetails.dart';
+import 'package:handball_flutter/models/EmailAndPassword.dart';
 import 'package:handball_flutter/utilities/isValidEmail.dart';
 
 class EmailAndPasswordInput extends StatefulWidget {
@@ -59,7 +59,7 @@ class _EmailAndPasswordInputState extends State<EmailAndPasswordInput> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 8),
+          padding: const EdgeInsets.only(top: 8, bottom: 24),
           child: TextField(
             focusNode: _passwordFocusNode,
             controller: _passwordController,
@@ -80,7 +80,7 @@ class _EmailAndPasswordInputState extends State<EmailAndPasswordInput> {
   void _handleButtonPress() {
     // Notify parent if email is valid. Else ensure we are showing the invalid state.
     if (isValidEmail(_emailController.text)) {
-      widget.onButtonPressed(LoginDetails(
+      widget.onButtonPressed(EmailAndPassword(
           email: _emailController.text, password: _passwordController.text));
     } else {
       setState(() {

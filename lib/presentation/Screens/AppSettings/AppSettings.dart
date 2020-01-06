@@ -46,6 +46,7 @@ class AppSettings extends StatelessWidget {
               onAccountChange: viewModel.onAccountChange,
               onDeleteAccount: viewModel.onDeleteAccount,
               onChangeDisplayName: viewModel.onChangeDisplayName,
+              onChangePassword: viewModel.onChangePassword,
             ),
           ],
         ),

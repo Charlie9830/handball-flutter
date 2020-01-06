@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:handball_flutter/models/LogInDetails.dart';
+import 'package:handball_flutter/models/EmailAndPassword.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/AccountTab/EmailAndPasswordInput.dart';
 import 'package:handball_flutter/utilities/isValidEmail.dart';
 
@@ -82,7 +82,7 @@ class _LoggedOutState extends State<LoggedOut> with TickerProviderStateMixin {
     );
   }
 
-  void _handleLogInButtonPressed(LoginDetails loginDetails) {
+  void _handleLogInButtonPressed(EmailAndPassword loginDetails) {
     widget.onSignIn(loginDetails.email, loginDetails.password);
   }
 

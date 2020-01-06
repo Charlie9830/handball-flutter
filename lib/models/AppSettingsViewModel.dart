@@ -13,6 +13,7 @@ class AppSettingsViewModel {
   final dynamic onViewArchivedProjects;
   final dynamic onDeleteAccount;
   final dynamic onChangeDisplayName;
+  final dynamic onChangePassword;
 
   AppSettingsViewModel({
     this.initialTab,
@@ -26,5 +27,6 @@ class AppSettingsViewModel {
     this.onViewArchivedProjects,
     this.onDeleteAccount,
     this.onChangeDisplayName,
+    this.onChangePassword,
   });
 }
