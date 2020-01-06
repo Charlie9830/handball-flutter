@@ -9,6 +9,7 @@ import 'package:handball_flutter/presentation/Screens/SignUp/DecorationPainter.d
 import 'package:handball_flutter/presentation/Screens/SignUp/NavigationButtons.dart';
 import 'package:handball_flutter/presentation/Screens/SignUp/Result.dart';
 import 'package:handball_flutter/utilities/isValidEmail.dart';
+import 'package:handball_flutter/utilities/validateDisplayName.dart';
 
 // Be very careful about reordering these Enums. This widget should honor the order of this enum, but there is still
 // something somewhere that doesn't honor it correctly.
@@ -215,7 +216,7 @@ class _SignUpBaseState extends State<SignUpBase> with TickerProviderStateMixin {
 
     // Validate Display Name.
     if (currentStep == SignUpSteps.displayName &&
-        !_isValidDisplayName(_displayNameController.text)) {
+        !validateDisplayName(_displayNameController.text)) {
       // Invalid Display Name.
       setState(() => _displayNameErrorText =
           'Please pick a Display Name with at least 2 characters'); // For r2. Miss you.
@@ -290,10 +291,6 @@ class _SignUpBaseState extends State<SignUpBase> with TickerProviderStateMixin {
       }
       
     }
-  }
-
-  bool _isValidDisplayName(String displayName) {
-    return displayName != null && displayName.length > 1;
   }
 
   String _getHumanFriendlyErrorText(String errorCode) {

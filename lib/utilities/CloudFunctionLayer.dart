@@ -12,11 +12,38 @@ class CloudFunctionsLayer {
   static const _denyProjectInviteFunctionName = 'denyProjectInvite';
   static const _kickUserFromProjectFunctionName = 'kickUserFromProject';
   static const _removeRemoteProjectFunctionName = 'removeRemoteProject';
+  static const _changeDisplayNameFunctionName = 'changeDisplayName';
+
+  Future<void> changeDisplayName({
+    @required String desiredDisplayName,
+    @required String email,
+  }) async {
+    HttpsCallable callable = CloudFunctions.instance
+        .getHttpsCallable(functionName: _changeDisplayNameFunctionName);
+
+    try {
+      final response = await callable.call({
+        'desiredDisplayName': desiredDisplayName,
+        'email': email,
+      });
+
+      if (response.data['status'] == 'complete') {
+        return;
+      }
+
+      if (response.data['status'] == 'error') {
+        throw CloudFunctionsRejectionError(message: response.data['message']);
+      }
+    } on CloudFunctionsException catch (error) {
+      _handleCloudFunctionsException(error);
+    }
+  }
 
   Future<void> removeRemoteProject({
     @required String projectId,
   }) async {
-    HttpsCallable callable = CloudFunctions.instance.getHttpsCallable(functionName: _removeRemoteProjectFunctionName);
+    HttpsCallable callable = CloudFunctions.instance
+        .getHttpsCallable(functionName: _removeRemoteProjectFunctionName);
 
     try {
       var response = await callable.call({
@@ -30,7 +57,7 @@ class CloudFunctionsLayer {
       if (response.data['status'] == 'error') {
         throw CloudFunctionsRejectionError(message: response.data['message']);
       }
-    } catch( error) {
+    } catch (error) {
       throw error;
     }
   }
@@ -39,7 +66,8 @@ class CloudFunctionsLayer {
     @required String userId,
     @required String projectId,
   }) async {
-    HttpsCallable callable = CloudFunctions.instance.getHttpsCallable(functionName: _kickUserFromProjectFunctionName);
+    HttpsCallable callable = CloudFunctions.instance
+        .getHttpsCallable(functionName: _kickUserFromProjectFunctionName);
 
     try {
       var response = await callable.call({
@@ -56,8 +84,7 @@ class CloudFunctionsLayer {
           message: response.data['message'],
         );
       }
-
-    } catch(error) {
+    } catch (error) {
       throw error;
     }
   }
@@ -177,6 +204,13 @@ class CloudFunctionsLayer {
       return DirectoryListing.fromMap(response.data['userData']);
     } catch (error) {
       throw error;
+    }
+  }
+
+  void _handleCloudFunctionsException(CloudFunctionsException error) {
+    if (error.code == 'INTERNAL') {
+      // TODO: Could this be a specific no Connection error?
+      throw CloudFunctionsRejectionError(message: 'Could not contact server, please check your internet connection.');
     }
   }
 }

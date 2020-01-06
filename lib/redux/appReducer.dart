@@ -403,6 +403,12 @@ AppState appReducer(AppState state, dynamic action) {
             : state.user);
   }
 
+  if (action is UpdateDisplayName) {
+    return state.copyWith(
+      user: state.user.copyWith(displayName: action.newDisplayName)
+    );
+  }
+
   if (action is SignOut) {
     return state.copyWith(
         user: UserModel(

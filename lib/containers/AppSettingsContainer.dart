@@ -36,6 +36,7 @@ class AppSettingsContainer extends StatelessWidget {
       onAccountChange: (email, password) => store.dispatch(changeAccount(email, password, context)),
       onViewArchivedProjects: () => store.dispatch(restoreProjectWithDialog(context)),
       onDeleteAccount: () => store.dispatch(deleteAccountWithDialog(context)),
+      onChangeDisplayName: () => store.dispatch(changeDisplayNameWithDialog(context)),
     );
   }
 }

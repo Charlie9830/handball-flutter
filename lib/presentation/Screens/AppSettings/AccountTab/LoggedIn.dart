@@ -5,12 +5,14 @@ class LoggedIn extends StatelessWidget {
   final String email;
   final dynamic onSignOut;
   final dynamic onDeleteAccount;
+  final dynamic onChangeDisplayName;
 
   LoggedIn({
     this.displayName,
     this.email,
     this.onSignOut,
     this.onDeleteAccount,
+    this.onChangeDisplayName,
   });
 
   @override
@@ -45,6 +47,7 @@ class LoggedIn extends StatelessWidget {
                 ),
                 FlatButton(
                   child: Text('Change Display Name'),
+                  onPressed: onChangeDisplayName,
                 ),
                 FlatButton(
                   child: Text('Delete Account'),

@@ -39,6 +39,7 @@ import 'package:handball_flutter/models/User.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/TaskListColorSelectDialog/TaskListColorSelectDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ArchivedProjectsBottomSheet/ArchivedProjectsBottomSheet.dart';
+import 'package:handball_flutter/presentation/Dialogs/ChangeDisplayNameDialog/ChangeDisplayNameDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/DeleteAccountDialog/DeleteAccountDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/DeleteAccountDialog/DeleteAccountInProgressMask.dart';
@@ -76,6 +77,7 @@ import 'package:handball_flutter/utilities/showSnackbar.dart';
 import 'package:handball_flutter/utilities/snapshotHandlers.dart';
 import 'package:handball_flutter/utilities/taskAnimationHelpers.dart';
 import 'package:handball_flutter/utilities/truncateString.dart';
+import 'package:handball_flutter/utilities/validateDisplayName.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:intl/intl.dart';
 import 'package:redux/redux.dart';
@@ -1385,6 +1387,28 @@ ThunkAction<AppState> archiveProjectWithDialog(
   };
 }
 
+ThunkAction<AppState> changeDisplayNameWithDialog(BuildContext context) {
+  return (Store<AppState> store) async {
+    final existingDisplayName = store.state.user.displayName;
+
+    final result = await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ChangeDisplayNameDialog(cloudFunctionsLayer: _cloudFunctionsLayer, existingValue: existingDisplayName, email: store.state.user.email)
+    );
+
+    // Dialog handles the call out to Cloud Functions. Will return a string with the new Display Name if it was a success.
+    if (result is String && validateDisplayName(result)) {
+      store.dispatch(UpdateDisplayName(newDisplayName: result));
+
+      // The server will update the FirebaseUser account. But that doesn't get propagated to logged in devices until they Log out, then log back in.
+      // So we trigger the user to Reload to tell Firebase Auth to go and fetch the new Display name.
+      final user = await auth.currentUser();
+      await user.reload();
+    }
+  };
+}
+
 ThunkAction<AppState> deleteProjectWithDialog(
     String projectId, String projectName, BuildContext context) {
   return (Store<AppState> store) async {
@@ -1503,7 +1527,7 @@ ThunkAction<AppState> showSignUpDialog(BuildContext context) {
             firestore: Firestore.instance,
           );
         });
-    
+
     if (desiredDisplayName is String) {
       store.dispatch(InjectDisplayName(displayName: desiredDisplayName));
     }

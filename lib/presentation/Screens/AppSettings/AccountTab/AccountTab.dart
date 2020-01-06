@@ -15,6 +15,7 @@ class AccountTab extends StatelessWidget {
   final dynamic onSignUpButtonPressed;
   final dynamic onAccountChange;
   final dynamic onDeleteAccount;
+  final dynamic onChangeDisplayName;
 
   AccountTab({
     this.user,
@@ -24,6 +25,7 @@ class AccountTab extends StatelessWidget {
     this.onSignUpButtonPressed,
     this.onAccountChange,
     this.onDeleteAccount,
+    this.onChangeDisplayName,
   });
 
   @override
@@ -54,6 +56,7 @@ class AccountTab extends StatelessWidget {
                   email: user.email ?? '',
                   onSignOut: onSignOut,
                   onDeleteAccount: onDeleteAccount,
+                  onChangeDisplayName: onChangeDisplayName,
                 ),
 
               // Logging In

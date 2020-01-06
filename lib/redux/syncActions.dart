@@ -34,6 +34,14 @@ class InjectDisplayName {
   });
 }
 
+class UpdateDisplayName {
+  final String newDisplayName;
+
+  UpdateDisplayName({
+    this.newDisplayName
+  });
+}
+
 class ReceiveAccountConfig {
   final AccountConfigModel accountConfig;
 
