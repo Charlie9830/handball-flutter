@@ -6,10 +6,12 @@ import 'package:handball_flutter/utilities/isValidEmail.dart';
 class LoggedOut extends StatefulWidget {
   final dynamic onSignIn;
   final dynamic onSignUpButtonPressed;
+  final dynamic onForgotPasswordButtonPressed;
 
   LoggedOut({
     this.onSignIn,
     this.onSignUpButtonPressed,
+    this.onForgotPasswordButtonPressed,
   });
 
   @override
@@ -18,6 +20,7 @@ class LoggedOut extends StatefulWidget {
 
 class _LoggedOutState extends State<LoggedOut> with TickerProviderStateMixin {
   bool _isCompressed = false;
+  String _currentEnteredEmail = ''; // Keep track of this so it can be passed to the ForgotPasswordDialog as an initial value.
 
   @override
   void initState() {
@@ -64,6 +67,7 @@ class _LoggedOutState extends State<LoggedOut> with TickerProviderStateMixin {
               buttonColor: Theme.of(context).accentColor,
               onHasFocusChange: _handleInputFieldsFocusChange,
               onButtonPressed: _handleLogInButtonPressed,
+              onEmailChanged: (email) => setState(() => _currentEnteredEmail = email),
             ),
             Column(
               children: <Widget>[
@@ -73,6 +77,7 @@ class _LoggedOutState extends State<LoggedOut> with TickerProviderStateMixin {
                 ),
                 FlatButton(
                   child: Text("Forgot password?"),
+                  onPressed: () => widget.onForgotPasswordButtonPressed(_currentEnteredEmail),
                 )
               ],
             ),

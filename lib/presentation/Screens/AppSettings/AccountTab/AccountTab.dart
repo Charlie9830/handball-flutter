@@ -17,6 +17,7 @@ class AccountTab extends StatelessWidget {
   final dynamic onDeleteAccount;
   final dynamic onChangeDisplayName;
   final dynamic onChangePassword;
+  final dynamic onForgotPasswordButtonPressed;
 
   AccountTab({
     this.user,
@@ -28,6 +29,7 @@ class AccountTab extends StatelessWidget {
     this.onDeleteAccount,
     this.onChangeDisplayName,
     this.onChangePassword,
+    this.onForgotPasswordButtonPressed,
   });
 
   @override
@@ -48,6 +50,7 @@ class AccountTab extends StatelessWidget {
                 child: LoggedOut(
                   onSignIn: onSignIn,
                   onSignUpButtonPressed: onSignUpButtonPressed,
+                  onForgotPasswordButtonPressed: onForgotPasswordButtonPressed,
                 ),
               ),
 

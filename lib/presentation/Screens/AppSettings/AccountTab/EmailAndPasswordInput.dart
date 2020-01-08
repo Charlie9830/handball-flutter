@@ -7,12 +7,14 @@ class EmailAndPasswordInput extends StatefulWidget {
   final Color buttonColor;
   final dynamic onHasFocusChange;
   final dynamic onButtonPressed;
+  final dynamic onEmailChanged;
 
   EmailAndPasswordInput({
     this.buttonText,
     this.buttonColor,
     this.onHasFocusChange,
     this.onButtonPressed,
+    this.onEmailChanged,
   });
 
   @override
@@ -38,6 +40,14 @@ class _EmailAndPasswordInputState extends State<EmailAndPasswordInput> {
 
     _emailFocusNode.addListener(_handleTextFocusNodeChange);
     _passwordFocusNode.addListener(_handleTextFocusNodeChange);
+
+    _emailController.addListener(() {
+      if (widget.onEmailChanged != null) {
+        // In some cases the parent needs to keep track of the email address, so that it can be sent to the Forgot Password
+        // Dialog as an initial value.
+        widget.onEmailChanged(_emailController.text);
+      }
+    });
   }
 
   @override

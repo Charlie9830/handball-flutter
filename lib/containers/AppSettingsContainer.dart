@@ -18,7 +18,7 @@ class AppSettingsContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return new StoreConnector<AppState, AppSettingsViewModel> (
       converter: (Store<AppState> store) => _converter(store, context),
-      builder: ( context, viewModel) {
+      builder: (context, viewModel) {
         return new AppSettings(viewModel: viewModel);
       },
     );
@@ -38,6 +38,7 @@ class AppSettingsContainer extends StatelessWidget {
       onDeleteAccount: () => store.dispatch(deleteAccountWithDialog(context)),
       onChangeDisplayName: () => store.dispatch(changeDisplayNameWithDialog(context)),
       onChangePassword: () => store.dispatch(changePasswordWithDialog(context)),
+      onForgotPasswordButtonPressed: (currentlyEnteredEmail) => store.dispatch(resetPasswordWithDialog(context, currentlyEnteredEmail)),
     );
   }
 }

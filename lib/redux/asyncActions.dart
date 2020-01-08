@@ -45,6 +45,7 @@ import 'package:handball_flutter/presentation/Dialogs/ChangePasswordDialog/Chang
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/DeleteAccountDialog/DeleteAccountDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/DeleteAccountDialog/DeleteAccountInProgressMask.dart';
+import 'package:handball_flutter/presentation/Dialogs/ForgotPasswordDialog/ForgotPasswordDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/MoveListBottomSheet.dart';
 import 'package:handball_flutter/presentation/Dialogs/MoveTasksDialog/MoveTaskBottomSheet.dart';
 import 'package:handball_flutter/presentation/Screens/ListSortingScreen/ListSortingScreen.dart';
@@ -1356,6 +1357,19 @@ ThunkAction<AppState> kickUserFromProject(String userId, String projectId,
     } catch (error) {
       throw error;
     }
+  };
+}
+
+ThunkAction<AppState> resetPasswordWithDialog(
+    BuildContext context, String currentlyEnteredEmail) {
+  return (Store<AppState> store) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ForgotPasswordDialog(auth: auth, initialValue: currentlyEnteredEmail)
+    );
+    
+    // Don't really need to do anything here. ForgotPasswordDialog would have taken care of everything.R
   };
 }
 

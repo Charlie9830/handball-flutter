@@ -14,6 +14,7 @@ class AppSettingsViewModel {
   final dynamic onDeleteAccount;
   final dynamic onChangeDisplayName;
   final dynamic onChangePassword;
+  final dynamic onForgotPasswordButtonPressed;
 
   AppSettingsViewModel({
     this.initialTab,
@@ -28,5 +29,6 @@ class AppSettingsViewModel {
     this.onDeleteAccount,
     this.onChangeDisplayName,
     this.onChangePassword,
+    this.onForgotPasswordButtonPressed
   });
 }
