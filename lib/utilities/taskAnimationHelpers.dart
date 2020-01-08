@@ -54,9 +54,12 @@ void driveTaskRemovalAnimations(
         return SizeTransition(
             sizeFactor: animation,
             axis: Axis.vertical,
-            child: Task(
-              key: Key(task.uid),
-              model: TaskViewModel(data: task),
+            child: FadeTransition(
+              opacity: animation,
+              child: Task(
+                key: Key(task.uid),
+                model: TaskViewModel(data: task),
+              ),
             ));
       }, duration: Duration(milliseconds: 150));
     }
@@ -158,7 +161,6 @@ GroupedTaskDocumentChanges getGroupedTaskDocumentChanges(
 
   return groupedChanges;
 }
-
 
 bool _didMoveTaskList(
     DocumentSnapshot incomingDoc, Map<String, TaskModel> existingTasksById) {

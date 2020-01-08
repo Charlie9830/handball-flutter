@@ -24,20 +24,20 @@ class TaskList extends StatelessWidget {
     }
 
     return new StickyHeader(
-      header: header,
-      content: AnimatedList(
-        key: taskListAnimatedListStateKeys[uid],
-        physics: ClampingScrollPhysics(),
-        shrinkWrap: true,
-        initialItemCount: children.length,
-        itemBuilder: (context, index, animation) {
-          return SizeTransition(
-            sizeFactor: animation,
-            child: children[index],
-            axis: Axis.vertical,
-          );
-        }
-      )
-    );
+        header: header,
+        content: AnimatedList(
+            key: taskListAnimatedListStateKeys[uid],
+            physics: ClampingScrollPhysics(),
+            shrinkWrap: true,
+            initialItemCount: children.length,
+            itemBuilder: (context, index, animation) {
+              return SizeTransition(
+                sizeFactor: animation,
+                child: FadeTransition(
+                  opacity: animation,
+                  child: children[index]),
+                axis: Axis.vertical,
+              );
+            }));
   }
 }
