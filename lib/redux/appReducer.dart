@@ -159,6 +159,18 @@ AppState appReducer(AppState state, dynamic action) {
                         0));
   }
 
+  if (action is AddExitingTask) {
+    return state.copyWith(
+      exitingTasks: Set.from(state.exitingTasks)..add(action.taskId),
+    );
+  }
+
+  if (action is RemoveExitingTask) {
+    return state.copyWith(
+      exitingTasks: Set.from(state.exitingTasks)..remove(action.taskId),
+    );
+  }
+
   if (action is ReceiveIncompletedTasks) {
     var foldedTasks = foldTasksTogether(TasksSnapshotType.incompleted,
         action.tasks, action.originProjectId, state);

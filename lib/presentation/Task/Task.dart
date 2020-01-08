@@ -55,15 +55,12 @@ class Task extends StatelessWidget {
                                   style: TextStyle(fontFamily: 'Ubuntu')),
                             ),
                           ),
-                          PredicateBuilder(
-                              predicate: () =>
-                                  parsedDueDate.type != DueDateType.unset,
-                              childIfTrue: DueDateChit(
-                                color: parsedDueDate.type,
-                                text: parsedDueDate.text,
-                                size: DueDateChitSize.standard,
-                              ),
-                              childIfFalse: Nothing())
+                          if (parsedDueDate.type != DueDateType.unset && model.data.isComplete == false)
+                            DueDateChit(
+                              color: parsedDueDate.type,
+                              text: parsedDueDate.text,
+                              size: DueDateChitSize.standard,
+                            ),
                         ],
                       ),
                       Padding(
@@ -73,7 +70,7 @@ class Task extends StatelessWidget {
                           children: <Widget>[
                             if (model.data.ownReminder != null)
                               Icon(Icons.notifications,
-                                color: Theme.of(context).disabledColor),
+                                  color: Theme.of(context).disabledColor),
                             if (model.hasNote)
                               Icon(Icons.note,
                                   color: Theme.of(context).disabledColor),

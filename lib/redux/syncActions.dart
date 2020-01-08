@@ -37,8 +37,22 @@ class InjectDisplayName {
 class UpdateDisplayName {
   final String newDisplayName;
 
-  UpdateDisplayName({
-    this.newDisplayName
+  UpdateDisplayName({this.newDisplayName});
+}
+
+class AddExitingTask {
+  final String taskId;
+
+  AddExitingTask({
+    this.taskId,
+  });
+}
+
+class RemoveExitingTask {
+  final String taskId;
+
+  RemoveExitingTask({
+    this.taskId,
   });
 }
 

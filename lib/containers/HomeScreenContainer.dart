@@ -106,7 +106,7 @@ class HomeScreenContainer extends StatelessWidget {
 
     return tasks.map((task) {
       return TaskViewModel(
-        data: task,
+        data: store.state.exitingTasks.contains(task.uid) ? task.copyWith(isComplete: true) : task,
         isAssigned: task.isAssigned,
         assignments: task.getAssignments(store.state.memberLookup),
         onCheckboxChanged: (newValue) => store

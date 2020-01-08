@@ -1364,11 +1364,11 @@ ThunkAction<AppState> resetPasswordWithDialog(
     BuildContext context, String currentlyEnteredEmail) {
   return (Store<AppState> store) async {
     await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => ForgotPasswordDialog(auth: auth, initialValue: currentlyEnteredEmail)
-    );
-    
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => ForgotPasswordDialog(
+            auth: auth, initialValue: currentlyEnteredEmail));
+
     // Don't really need to do anything here. ForgotPasswordDialog would have taken care of everything.R
   };
 }
@@ -2594,6 +2594,13 @@ ThunkAction<AppState> multiCompleteTasks(
 ThunkAction<AppState> updateTaskComplete(String taskId, String projectId,
     String taskName, bool newValue, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
+    // Allow the Task time to Animate it's checkbox before removing it.
+    if (newValue == true) {
+      store.dispatch(AddExitingTask(taskId: taskId));
+      await Future.delayed(Duration(milliseconds: 250));
+      store.dispatch(RemoveExitingTask(taskId: taskId));
+    }
+
     final ref =
         getTasksCollectionRef(store.state.selectedProjectId).document(taskId);
 

@@ -73,6 +73,7 @@ final initialAppState = AppState(
   isRefreshingActivityFeed: false,
   selectedActivityFeedProjectId: '-1',
   canRefreshActivityFeed: false,
+  exitingTasks: <String>{},
 );
 
 final appStore =
