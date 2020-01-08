@@ -34,11 +34,11 @@ class AccountTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
         alignment: Alignment.topCenter,
-        child: Column(children: <Widget>[
+        child: Column(
+          children: <Widget>[
           Expanded(
               child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               // Logged Out - We have to use a Visibility Widget to conditionally Render this so that we can maintain it's state, IE: What the user has already typed
               // after the attempt a Log in and this widget is hidden.

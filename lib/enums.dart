@@ -49,7 +49,6 @@ enum UndoActionType {
   multiDeleteTasks,
 }
 
-
 // You serialize these by index, don't screw around with the order.
 enum ActivityFeedEventType {
   addTask,
@@ -73,7 +72,13 @@ enum ActivityFeedEventType {
   renameProject,
   renewChecklist,
   assignmentUpdate,
-  reColorList, 
+  reColorList,
 }
 
 enum TaskInspectorAssignmentInputType { normal, hidden, clearOnly }
+
+enum AccountActionsBottomSheetResult {
+  changePassword,
+  changeDisplayName,
+  deleteAccount
+}
