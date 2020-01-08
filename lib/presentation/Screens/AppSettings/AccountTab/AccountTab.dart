@@ -34,48 +34,40 @@ class AccountTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-        alignment: Alignment.topCenter,
-        child: Column(
-          children: <Widget>[
-          Expanded(
-              child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              // Logged Out - We have to use a Visibility Widget to conditionally Render this so that we can maintain it's state, IE: What the user has already typed
-              // after the attempt a Log in and this widget is hidden.
-              Visibility(
-                visible: accountState == AccountState.loggedOut,
-                maintainState: true,
-                child: LoggedOut(
-                  onSignIn: onSignIn,
-                  onSignUpButtonPressed: onSignUpButtonPressed,
-                  onForgotPasswordButtonPressed: onForgotPasswordButtonPressed,
-                ),
-              ),
+    return ListView(
+      children: <Widget>[
+      Visibility(
+        visible: accountState == AccountState.loggedOut,
+        maintainState: true,
+        child: LoggedOut(
+          onSignIn: onSignIn,
+          onSignUpButtonPressed: onSignUpButtonPressed,
+          onForgotPasswordButtonPressed: onForgotPasswordButtonPressed,
+        ),
+      ),
 
-              // Logged In.
-              if (accountState == AccountState.loggedIn)
-                LoggedIn(
-                  displayName: user.displayName ?? '',
-                  email: user.email ?? '',
-                  onSignOut: onSignOut,
-                  onDeleteAccount: onDeleteAccount,
-                  onChangeDisplayName: onChangeDisplayName,
-                  onChangePassword: onChangePassword,
-                ),
+      // Logged In.
+      if (accountState == AccountState.loggedIn)
+        LoggedIn(
+          displayName: user.displayName ?? '',
+          email: user.email ?? '',
+          onSignOut: onSignOut,
+          onDeleteAccount: onDeleteAccount,
+          onChangeDisplayName: onChangeDisplayName,
+          onChangePassword: onChangePassword,
+        ),
 
-              // Logging In
-              if (accountState == AccountState.loggingIn)
-                AccountProgress(activityName: 'Signing In'),
+      // Logging In
+      if (accountState == AccountState.loggingIn)
+        AccountProgress(activityName: 'Signing In'),
 
-              // Registering.
-              if (accountState == AccountState.registering)
-                AccountProgress(activityName: 'Creating Account')
-            ],
-          )),
-          if (!kReleaseMode)
-            QuickAccountChanger(onAccountChange: onAccountChange)
-        ]));
+      // Registering.
+      if (accountState == AccountState.registering)
+        AccountProgress(activityName: 'Creating Account'),
+
+      // Debug Quick Account Switching.
+      if (!kReleaseMode)
+        QuickAccountChanger(onAccountChange: onAccountChange)
+    ]);
   }
 }

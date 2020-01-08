@@ -27,25 +27,28 @@ class LoggedIn extends StatelessWidget {
         children: <Widget>[
           Icon(Icons.person_outline, size: 40),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
+            padding: const EdgeInsets.only(top: 24, bottom: 16),
             child: Text('Signed In',
                 style: Theme.of(context).textTheme.headline),
           ),
           Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
+              padding: EdgeInsets.only(top: 64, bottom: 64),
               child: Column(
                 children: <Widget>[
-                  Text(displayName),
-                  Text(email),
+                  Text(displayName, style: Theme.of(context).textTheme.subhead.copyWith(fontFamily: 'Ubuntu')),
+                  Text(email, style: Theme.of(context).textTheme.subhead.copyWith(fontFamily: 'Ubuntu')),
                 ],
               )),
           RaisedButton(
             child: Text('Sign Out'),
             onPressed: () => onSignOut(),
           ),
-          FlatButton(
-            child: Text('Manage Account'),
-            onPressed: () => _handleManageAccountButtonPress(context),
+          Padding(
+            padding: const EdgeInsets.only(top: 32),
+            child: FlatButton(
+              child: Text('Manage Account'),
+              onPressed: () => _handleManageAccountButtonPress(context),
+            ),
           )
         ],
       ),
