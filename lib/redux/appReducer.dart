@@ -159,15 +159,26 @@ AppState appReducer(AppState state, dynamic action) {
                         0));
   }
 
-  if (action is AddExitingTask) {
+  if (action is AddCompletingTask) {
     return state.copyWith(
-      exitingTasks: Set.from(state.exitingTasks)..add(action.taskId),
+      completingTasks: Set<String>.from(state.completingTasks)..add(action.taskId),
     );
   }
 
-  if (action is RemoveExitingTask) {
+  if (action is AddMultipleCompletingTasks) {
     return state.copyWith(
-      exitingTasks: Set.from(state.exitingTasks)..remove(action.taskId),
+        completingTasks: Set<String>.from(state.completingTasks)..addAll(action.taskIds));
+  }
+
+  if (action is RemoveCompletingTask) {
+    return state.copyWith(
+      completingTasks: Set<String>.from(state.completingTasks)..remove(action.taskId),
+    );
+  }
+
+  if (action is RemoveMultipleCompletingTasks) {
+    return state.copyWith(
+      completingTasks: Set<String>.from(state.completingTasks)..removeAll(action.taskIds),
     );
   }
 
@@ -417,8 +428,7 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is UpdateDisplayName) {
     return state.copyWith(
-      user: state.user.copyWith(displayName: action.newDisplayName)
-    );
+        user: state.user.copyWith(displayName: action.newDisplayName));
   }
 
   if (action is SignOut) {

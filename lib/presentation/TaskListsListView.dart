@@ -76,6 +76,7 @@ class TaskListsListView extends StatelessWidget {
               return Task(
                 key: Key(taskVm.data.uid),
                 model: taskVm,
+                isCompleting: taskVm.isCompleting,
                 showDivider: showDivider ,);
             }).toList()),
       );

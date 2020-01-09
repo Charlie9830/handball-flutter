@@ -40,19 +40,35 @@ class UpdateDisplayName {
   UpdateDisplayName({this.newDisplayName});
 }
 
-class AddExitingTask {
+class AddCompletingTask {
   final String taskId;
 
-  AddExitingTask({
+  AddCompletingTask({
     this.taskId,
   });
 }
 
-class RemoveExitingTask {
+class AddMultipleCompletingTasks {
+  final List<String> taskIds;
+
+  AddMultipleCompletingTasks({
+    this.taskIds
+  });
+}
+
+class RemoveCompletingTask {
   final String taskId;
 
-  RemoveExitingTask({
+  RemoveCompletingTask({
     this.taskId,
+  });
+}
+
+class RemoveMultipleCompletingTasks {
+  final List<String> taskIds;
+
+  RemoveMultipleCompletingTasks({
+  this.taskIds,
   });
 }
 

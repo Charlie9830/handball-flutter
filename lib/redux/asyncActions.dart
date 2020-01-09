@@ -401,7 +401,7 @@ ThunkAction<AppState> setShowOnlySelfTasks(bool showOnlySelfTasks) {
 
       removalAnimationUpdates.sort(TaskAnimationUpdate.removalSorter);
 
-      driveTaskRemovalAnimations(removalAnimationUpdates);
+      driveTaskRemovalAnimations(removalAnimationUpdates, store.state.memberLookup);
     } else {
       var additionAnimationUpdates = hiddenTasks.map((task) {
         return TaskAnimationUpdate(
@@ -1902,7 +1902,7 @@ ThunkAction<AppState> setShowCompletedTasks(
         ));
 
         taskAnimationUpdates.sort(TaskAnimationUpdate.removalSorter);
-        driveTaskRemovalAnimations(taskAnimationUpdates);
+        driveTaskRemovalAnimations(taskAnimationUpdates, store.state.memberLookup);
       }
     }
   };
@@ -2529,6 +2529,12 @@ ThunkAction<AppState> multiCompleteTasks(
       return;
     }
 
+    // Allow the Task time to Animate it's checkbox before removing it.
+    final taskIds = tasks.map((item) => item.uid).toList();
+    store.dispatch(AddMultipleCompletingTasks(taskIds: taskIds));
+    await Future.delayed(taskCheckboxCompleteAnimationDuration);
+    store.dispatch(RemoveMultipleCompletingTasks(taskIds: taskIds));
+
     final batch = Firestore.instance.batch();
     final projectName = _getProjectName(store.state.projects, projectId);
     final List<DocumentReference> activityFeedReferences =
@@ -2596,9 +2602,9 @@ ThunkAction<AppState> updateTaskComplete(String taskId, String projectId,
   return (Store<AppState> store) async {
     // Allow the Task time to Animate it's checkbox before removing it.
     if (newValue == true) {
-      store.dispatch(AddExitingTask(taskId: taskId));
-      await Future.delayed(Duration(milliseconds: 250));
-      store.dispatch(RemoveExitingTask(taskId: taskId));
+      store.dispatch(AddCompletingTask(taskId: taskId));
+      await Future.delayed(taskCheckboxCompleteAnimationDuration);
+      store.dispatch(RemoveCompletingTask(taskId: taskId));
     }
 
     final ref =

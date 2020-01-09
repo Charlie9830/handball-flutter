@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/presentation/ListEntryExitAnimation.dart';
 import 'package:handball_flutter/presentation/Nothing.dart';
 
 class ReactiveAnimatedList extends StatefulWidget {
@@ -46,12 +47,10 @@ class _ReactiveAnimatedListState extends State<ReactiveAnimatedList> {
       for (var index in diffedChildren.removedIndexes) {
         listStateKey.currentState.removeItem(
             index,
-            (context, animation) => SizeTransition(
-                  key: oldWidget.children[index].key,
-                  axis: Axis.vertical,
-                  sizeFactor: animation,
-                  child: oldWidget.children[index],
-                ),
+            (context, animation) => ListEntryExitAnimation(
+                key: oldWidget.children[index].key,
+                animation: animation,
+                child: oldWidget.children[index]),
             duration: Duration(milliseconds: 150));
       }
     }
@@ -70,11 +69,11 @@ class _ReactiveAnimatedListState extends State<ReactiveAnimatedList> {
             return Nothing();
           }
 
-          return SizeTransition(
-              key: widget.children[index].key,
-              child: widget.children[index],
-              axis: Axis.vertical,
-              sizeFactor: animation);
+          return ListEntryExitAnimation(
+            key: widget.children[index].key,
+            child: widget.children[index],
+            animation: animation,
+          );
         });
   }
 }
@@ -103,10 +102,16 @@ WidgetCollectionDiff diffChildren(
           widget: widget, key: widget.key, index: oldIndexCounter++))
       .toSet();
 
-  var addedIndexes =
-      newSet.difference(oldSet).map((item) => item.index).toList()..sort( (a, b) => a - b);
-  var removedIndexes =
-      oldSet.difference(newSet).map((item) => item.index).toList()..sort( (a, b) => b - a );
+  var addedIndexes = newSet
+      .difference(oldSet)
+      .map((item) => item.index)
+      .toList()
+        ..sort((a, b) => a - b);
+  var removedIndexes = oldSet
+      .difference(newSet)
+      .map((item) => item.index)
+      .toList()
+        ..sort((a, b) => b - a);
 
   return WidgetCollectionDiff(
     addedIndexes: addedIndexes,

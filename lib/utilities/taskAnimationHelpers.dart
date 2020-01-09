@@ -1,9 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/configValues.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/models/GroupedDocumentChanges.dart';
 import 'package:handball_flutter/models/InflatedProject.dart';
+import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/Task.dart';
+import 'package:handball_flutter/presentation/ListEntryExitAnimation.dart';
 import 'package:handball_flutter/presentation/Task/Task.dart';
 import 'package:handball_flutter/utilities/TaskAnimationUpdate.dart';
 
@@ -27,13 +30,13 @@ void driveTaskAdditionAnimations(
       // If the index is null, that means that the parent TaskList isn't on Device yet, Don't PANIC! We can just ignore
       // the Animation Update of that Task because once the TaskList arrives, it will be rendered in the initialRender of
       // list anyway.
-      listStateKey.currentState.insertItem(index);
+      listStateKey.currentState.insertItem(index, duration: taskEntryExitAnimationDuration);
     }
   }
 }
 
 void driveTaskRemovalAnimations(
-    List<TaskAnimationUpdate> taskRemovalAnimationUpdates) {
+    List<TaskAnimationUpdate> taskRemovalAnimationUpdates, Map<String, MemberModel> memberLookup) {
   /*
           WHAT THE F**K?
           AnimatedLists and their component removeItem() and insertItem() methods are designed to really only deal with single
@@ -42,6 +45,9 @@ void driveTaskRemovalAnimations(
           throwing an out of range index exception. The easiest way to do this is to Build the doc changes into a List of
           TaskAnimationUpdate objects, then sort them by TaskList, then index in descending order. That way, we don't have to
           adjust any following indexes as we are mutating the AnimatedList.
+
+          TODO: Could we improve the performance of this by instead of Sorting Tasks then TaskLists, as we remove each Task, check if the last task removed was before or after
+          the current one, and have an offsetInteger that gets a +1, -1 or 0 update depending on that conditional?
         */
 
   for (var update in taskRemovalAnimationUpdates) {
@@ -51,17 +57,16 @@ void driveTaskRemovalAnimations(
 
     if (index != null && listStateKey?.currentState != null) {
       listStateKey.currentState.removeItem(index, (context, animation) {
-        return SizeTransition(
-            sizeFactor: animation,
-            axis: Axis.vertical,
-            child: FadeTransition(
-              opacity: animation,
-              child: Task(
-                key: Key(task.uid),
-                model: TaskViewModel(data: task),
-              ),
-            ));
-      }, duration: Duration(milliseconds: 150));
+        return ListEntryExitAnimation(
+          key: Key(task.uid),
+          animation: animation,
+          child: Task(
+            key: Key(task.uid),
+            model: TaskViewModel(data: task, assignments: task.getAssignments(memberLookup)),
+            isCompleting: true,
+          ),
+        );
+      }, duration: taskEntryExitAnimationDuration );
     }
   }
 }

@@ -51,15 +51,15 @@ class DueDateChit extends StatelessWidget {
         break;
 
       case DueDateType.complete:
-        return Colors.grey;
+        return Colors.transparent;
         break;
 
       case DueDateType.unset:
-        return Colors.grey;
+        return Colors.transparent;
         break;
 
       default:
-        return Colors.grey;
+        return Colors.transparent;
         break;
     }
   }

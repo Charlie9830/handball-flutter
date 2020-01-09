@@ -12,13 +12,14 @@ import 'package:handball_flutter/utilities/ParseDueDate.dart';
 
 class Task extends StatelessWidget {
   final bool showDivider;
-  Task({Key key, this.model, this.showDivider = true});
+  final bool isCompleting;
+  Task({Key key, this.model, this.isCompleting = false, this.showDivider = true});
 
   final TaskViewModel model;
 
   Widget build(BuildContext context) {
     final ParsedDueDate parsedDueDate =
-        ParseDueDate(model.data.isComplete, model.data.dueDate);
+        parseDueDate(model.data.isComplete, isCompleting, model.data.dueDate);
 
     var showPriorityIndicator =
         model.isInMultiSelectMode == false && model.data.isHighPriority;
@@ -55,7 +56,8 @@ class Task extends StatelessWidget {
                                   style: TextStyle(fontFamily: 'Ubuntu')),
                             ),
                           ),
-                          if (parsedDueDate.type != DueDateType.unset && model.data.isComplete == false)
+                          if (isCompleting == true || parsedDueDate.type != DueDateType.unset &&
+                              model.data.isComplete == false) // Hold the Chit if task is Animating out (isCompleting).
                             DueDateChit(
                               color: parsedDueDate.type,
                               text: parsedDueDate.text,
@@ -76,7 +78,7 @@ class Task extends StatelessWidget {
                                   color: Theme.of(context).disabledColor),
                             if (model.data.hasUnseenComments)
                               Icon(Icons.comment),
-                            if (model.data.isAssigned)
+                            if (model.data.isAssigned || isCompleting)
                               Expanded(
                                   child: AssignmentIndicator(
                                 assignments: model.assignments,

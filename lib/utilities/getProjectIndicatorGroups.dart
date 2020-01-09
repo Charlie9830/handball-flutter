@@ -19,7 +19,7 @@ Map<String, IndicatorGroup> getProjectIndicatorGroups(
 
       map[task.project].hasUnreadComments = hasUnreadComments;
 
-      var type = ParseDueDate(task.isComplete, task.dueDate).type;
+      var type = parseDueDate(task.isComplete, false, task.dueDate).type;
       switch (type) {
         case DueDateType.later:
           map[task.project].later += 1;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/keys.dart';
+import 'package:handball_flutter/presentation/ListEntryExitAnimation.dart';
 import 'package:sticky_headers/sticky_headers.dart';
 
 class TaskList extends StatelessWidget {
@@ -31,12 +32,10 @@ class TaskList extends StatelessWidget {
             shrinkWrap: true,
             initialItemCount: children.length,
             itemBuilder: (context, index, animation) {
-              return SizeTransition(
-                sizeFactor: animation,
-                child: FadeTransition(
-                  opacity: animation,
-                  child: children[index]),
-                axis: Axis.vertical,
+              return ListEntryExitAnimation(
+                key: children[index].key,
+                animation: animation,
+                child: children[index],
               );
             }));
   }

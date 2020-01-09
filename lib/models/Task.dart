@@ -244,6 +244,7 @@ class TaskViewModel {
   final bool isInMultiSelectMode;
   final bool isMultiSelected;
   final bool isAssigned;
+  final bool isCompleting;
   final List<Assignment> assignments;
   final dynamic onRadioChanged;
   final dynamic onCheckboxChanged;
@@ -262,6 +263,7 @@ class TaskViewModel {
     @required this.data,
     this.assignments,
     this.isAssigned,
+    this.isCompleting,
     this.isInMultiSelectMode = false,
     this.isMultiSelected = false,
     this.onRadioChanged,

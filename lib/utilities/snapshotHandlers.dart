@@ -50,7 +50,8 @@ void handleTasksSnapshot(
         store.state.user.userId);
   }
 
-  if (store.state.selectedProjectId == originProjectId && store.state.inflatedProject != null) {
+  if (store.state.selectedProjectId == originProjectId &&
+      store.state.inflatedProject != null) {
     // Animation.
     var groupedDocumentChanges = getGroupedTaskDocumentChanges(
         snapshot.documentChanges,
@@ -72,10 +73,10 @@ void handleTasksSnapshot(
     }
 
     // Removal.
-    driveTaskRemovalAnimations(getTaskRemovalAnimationUpdates(
-        groupedDocumentChanges.removed,
-        preMutationTaskIndices,
-        store.state.user.userId));
+    driveTaskRemovalAnimations(
+        getTaskRemovalAnimationUpdates(groupedDocumentChanges.removed,
+            preMutationTaskIndices, store.state.user.userId),
+        store.state.memberLookup);
 
     // Additons.
     driveTaskAdditionAnimations(getTaskAdditionAnimationUpdates(
@@ -166,7 +167,9 @@ void handleProjectIdsSnapshot(QuerySnapshot snapshot, Store<AppState> store) {
     final isArchived = projectIdModel.isArchived;
     final isDeleted = projectIdModel.isDeleted;
 
-    if (change.type == DocumentChangeType.added && isArchived == false && isDeleted == false) {
+    if (change.type == DocumentChangeType.added &&
+        isArchived == false &&
+        isDeleted == false) {
       addProjectSubscription(projectId, store);
     }
 
@@ -197,7 +200,8 @@ void handleProjectSnapshot(DocumentSnapshot doc, Store<AppState> store) {
   }
 }
 
-void handleMembersSnapshot(QuerySnapshot snapshot, String projectId, Store<AppState> store) {
+void handleMembersSnapshot(
+    QuerySnapshot snapshot, String projectId, Store<AppState> store) {
   List<MemberModel> members = [];
   snapshot.documents.forEach((doc) => members.add(MemberModel.fromDoc(doc)));
 
