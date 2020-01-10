@@ -58,7 +58,7 @@ class _CommentPanelState extends State<CommentPanel> {
     }
 
     if (widget.viewModels.length == 0) {
-      return Text('Comments empty');
+      return Text('No comments.');
     }
 
     return ReactiveAnimatedList(
