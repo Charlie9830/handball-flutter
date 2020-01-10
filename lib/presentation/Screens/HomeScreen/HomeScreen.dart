@@ -56,8 +56,10 @@ class _HomeScreenState extends State<HomeScreen> {
       body: TaskListsListView(
         taskSlidableController: _taskSlidableController,
         taskListViewModels: widget.viewModel.taskListViewModels,
-        onAddNewTaskListButtonPressed: widget.viewModel.onAddNewTaskListButtonPressed,
-        onAddNewProjectButtonPressed: widget.viewModel.onAddNewProjectButtonPressed,
+        onAddNewTaskListButtonPressed:
+            widget.viewModel.onAddNewTaskListButtonPressed,
+        onAddNewProjectButtonPressed:
+            widget.viewModel.onAddNewProjectButtonPressed,
         onLogInButttonPress: widget.viewModel.onLogInHintButtonPress,
       ),
       floatingActionButton: widget.viewModel.isInMultiSelectTaskMode == true ||
@@ -74,25 +76,36 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _getStandardAppBar(BuildContext context) {
     return AppBar(
         title: Text(widget.viewModel.projectName ?? '',
-        style: TextStyle(
-          fontFamily: 'Ubuntu'
-        )),
+            style: TextStyle(fontFamily: 'Ubuntu')),
         actions: <Widget>[
-          IconButton(
+          // Debug Button
+          if (false)
+            IconButton(
               icon: Icon(Icons.bug_report),
               onPressed: widget.viewModel.onDebugButtonPressed,
             ),
+
+          if (EnableStates.of(context).state.isProjectSelected)
+            IconButton(
+              icon: Icon(Icons.playlist_add),
+              onPressed: widget.viewModel.onAddNewTaskListButtonPressed,
+            ),
+
+          // Share Button
           if (EnableStates.of(context).state.isProjectMenuEnabled)
             IconButton(
               icon: Icon(Icons.share),
               onPressed: widget.viewModel.onShareProjectButtonPressed,
             ),
+
+          // Project Menu
           if (EnableStates.of(context).state.isProjectMenuEnabled)
             ProjectMenu(
               onSetListSorting: widget.viewModel.onSetListSorting,
               listSorting: widget.viewModel.listSorting,
               showOnlySelfTasks: widget.viewModel.showOnlySelfTasks,
-              onShowOnlySelfTasksChanged: widget.viewModel.onShowOnlySelfTasksChanged,
+              onShowOnlySelfTasksChanged:
+                  widget.viewModel.onShowOnlySelfTasksChanged,
               isProjectShared: widget.viewModel.isProjectShared,
               showCompletedTasks: widget.viewModel.showCompletedTasks,
               onShowCompletedTasksChanged:
@@ -102,7 +115,6 @@ class _HomeScreenState extends State<HomeScreen> {
               onArchiveProject: widget.viewModel.onArchiveProject,
               onActivityFeedOpen: widget.viewModel.onActivityFeedOpen,
             ),
-            
         ],
         bottom: widget.viewModel.showOnlySelfTasks == true
             ? PreferredSize(
@@ -119,8 +131,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         FlatButton(
                           child: Text("Show All"),
-                          onPressed: () =>
-                              widget.viewModel.onShowOnlySelfTasksChanged(false),
+                          onPressed: () => widget.viewModel
+                              .onShowOnlySelfTasksChanged(false),
                         )
                       ],
                     )),
