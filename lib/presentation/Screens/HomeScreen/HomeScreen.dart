@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:handball_flutter/InheritatedWidgets/EnableStates.dart';
 import 'package:handball_flutter/containers/AppDrawerContainer.dart';
 import 'package:handball_flutter/keys.dart';
@@ -8,15 +9,28 @@ import 'package:handball_flutter/presentation/ProjectMenu.dart';
 import 'package:handball_flutter/presentation/Screens/HomeScreen/MultiSelectTaskAppBar.dart';
 import 'package:handball_flutter/presentation/TaskListsListView.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   final HomeScreenViewModel viewModel;
 
   HomeScreen({this.viewModel});
 
   @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  SlidableController _taskSlidableController;
+
+  @override
+  void initState() {
+    super.initState();
+    _taskSlidableController = SlidableController();
+  }
+
+  @override
   Widget build(BuildContext context) {
     double preferredSizeHeight =
-        viewModel.showOnlySelfTasks == true ? 56.0 + 48.0 : 56.0;
+        widget.viewModel.showOnlySelfTasks == true ? 56.0 + 48.0 : 56.0;
 
     return Scaffold(
       key: homeScreenScaffoldKey,
@@ -25,12 +39,12 @@ class HomeScreen extends StatelessWidget {
           child: AnimatedCrossFade(
             firstChild: _getStandardAppBar(context),
             secondChild: MultiSelectTaskAppBar(
-              onCancel: viewModel.onCancelMultiSelectTaskMode,
-              onMoveTasks: viewModel.onMoveTasksButtonPressed,
-              onCompleteTasks: viewModel.onMultiCompleteTasks,
-              onDeleteTasks: viewModel.onMultiDeleteTasks,
+              onCancel: widget.viewModel.onCancelMultiSelectTaskMode,
+              onMoveTasks: widget.viewModel.onMoveTasksButtonPressed,
+              onCompleteTasks: widget.viewModel.onMultiCompleteTasks,
+              onDeleteTasks: widget.viewModel.onMultiDeleteTasks,
             ),
-            crossFadeState: viewModel.isInMultiSelectTaskMode
+            crossFadeState: widget.viewModel.isInMultiSelectTaskMode
                 ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
             duration: Duration(milliseconds: 250),
@@ -39,17 +53,18 @@ class HomeScreen extends StatelessWidget {
         child: AppDrawerContainer(),
       ),
       body: TaskListsListView(
-        taskListViewModels: viewModel.taskListViewModels,
-        onAddNewTaskListButtonPressed: viewModel.onAddNewTaskListButtonPressed,
-        onAddNewProjectButtonPressed: viewModel.onAddNewProjectButtonPressed,
-        onLogInButttonPress: viewModel.onLogInHintButtonPress,
+        taskSlidableController: _taskSlidableController,
+        taskListViewModels: widget.viewModel.taskListViewModels,
+        onAddNewTaskListButtonPressed: widget.viewModel.onAddNewTaskListButtonPressed,
+        onAddNewProjectButtonPressed: widget.viewModel.onAddNewProjectButtonPressed,
+        onLogInButttonPress: widget.viewModel.onLogInHintButtonPress,
       ),
-      floatingActionButton: viewModel.isInMultiSelectTaskMode == true ||
+      floatingActionButton: widget.viewModel.isInMultiSelectTaskMode == true ||
               EnableStates.of(context).state.isAddTaskFabEnabled == false
           ? Nothing()
           : FloatingActionButton(
               backgroundColor: Theme.of(context).primaryColor,
-              onPressed: () => viewModel.onAddNewTaskFabButtonPressed(),
+              onPressed: () => widget.viewModel.onAddNewTaskFabButtonPressed(),
               child: Icon(Icons.add),
             ),
     );
@@ -57,38 +72,38 @@ class HomeScreen extends StatelessWidget {
 
   Widget _getStandardAppBar(BuildContext context) {
     return AppBar(
-        title: Text(viewModel.projectName ?? '',
+        title: Text(widget.viewModel.projectName ?? '',
         style: TextStyle(
           fontFamily: 'Ubuntu'
         )),
         actions: <Widget>[
           IconButton(
               icon: Icon(Icons.bug_report),
-              onPressed: viewModel.onDebugButtonPressed,
+              onPressed: widget.viewModel.onDebugButtonPressed,
             ),
           if (EnableStates.of(context).state.isProjectMenuEnabled)
             IconButton(
               icon: Icon(Icons.share),
-              onPressed: viewModel.onShareProjectButtonPressed,
+              onPressed: widget.viewModel.onShareProjectButtonPressed,
             ),
           if (EnableStates.of(context).state.isProjectMenuEnabled)
             ProjectMenu(
-              onSetListSorting: viewModel.onSetListSorting,
-              listSorting: viewModel.listSorting,
-              showOnlySelfTasks: viewModel.showOnlySelfTasks,
-              onShowOnlySelfTasksChanged: viewModel.onShowOnlySelfTasksChanged,
-              isProjectShared: viewModel.isProjectShared,
-              showCompletedTasks: viewModel.showCompletedTasks,
+              onSetListSorting: widget.viewModel.onSetListSorting,
+              listSorting: widget.viewModel.listSorting,
+              showOnlySelfTasks: widget.viewModel.showOnlySelfTasks,
+              onShowOnlySelfTasksChanged: widget.viewModel.onShowOnlySelfTasksChanged,
+              isProjectShared: widget.viewModel.isProjectShared,
+              showCompletedTasks: widget.viewModel.showCompletedTasks,
               onShowCompletedTasksChanged:
-                  viewModel.onShowCompletedTasksChanged,
-              onRenameProject: viewModel.onRenameProject,
-              onUndoAction: viewModel.onUndoAction,
-              onArchiveProject: viewModel.onArchiveProject,
-              onActivityFeedOpen: viewModel.onActivityFeedOpen,
+                  widget.viewModel.onShowCompletedTasksChanged,
+              onRenameProject: widget.viewModel.onRenameProject,
+              onUndoAction: widget.viewModel.onUndoAction,
+              onArchiveProject: widget.viewModel.onArchiveProject,
+              onActivityFeedOpen: widget.viewModel.onActivityFeedOpen,
             ),
             
         ],
-        bottom: viewModel.showOnlySelfTasks == true
+        bottom: widget.viewModel.showOnlySelfTasks == true
             ? PreferredSize(
                 preferredSize: Size.fromHeight(48),
                 child: Container(
@@ -104,7 +119,7 @@ class HomeScreen extends StatelessWidget {
                         FlatButton(
                           child: Text("Show All"),
                           onPressed: () =>
-                              viewModel.onShowOnlySelfTasksChanged(false),
+                              widget.viewModel.onShowOnlySelfTasksChanged(false),
                         )
                       ],
                     )),

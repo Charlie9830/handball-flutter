@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:handball_flutter/configValues.dart';
 import 'package:handball_flutter/presentation/CommentPanel/UnreadIndicator.dart';
 
 class Comment extends StatelessWidget {
+  final SlidableController slidableController;
   final String displayName;
   final String timeAgoText;
   final String text;
   final bool isUnread;
   final dynamic onDelete;
   const Comment(
-      {Key key,
+      {@required Key key,
+      this.slidableController,
       this.displayName = '',
       this.text = '',
       this.timeAgoText = '',
@@ -25,9 +28,12 @@ class Comment extends StatelessWidget {
           color: Theme.of(context).backgroundColor,
           borderRadius: BorderRadius.all(Radius.circular(8))),
       child: Slidable(
-        delegate: new SlidableDrawerDelegate(),
+        key: key,
+        controller: slidableController ?? SlidableController(),
+        actionPane: SlidableDrawerActionPane(),
         actionExtentRatio: 0.25,
         enabled: onDelete != null,
+        closeOnScroll: true,
         secondaryActions: <Widget>[
           IconSlideAction(
             caption: 'Delete',
@@ -37,8 +43,7 @@ class Comment extends StatelessWidget {
           )
         ],
         child: Padding(
-          padding: EdgeInsets.only(
-              left: isUnread == true ? 0 : 4, right: 8),
+          padding: EdgeInsets.only(left: isUnread == true ? 0 : 4, right: 8),
           child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,

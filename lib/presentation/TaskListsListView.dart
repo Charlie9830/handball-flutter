@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:handball_flutter/InheritatedWidgets/EnableStates.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/presentation/HintButtons/AddTaskListHintButton.dart';
@@ -10,6 +11,7 @@ import 'package:handball_flutter/presentation/TaskList/TaskListHeader.dart';
 
 class TaskListsListView extends StatelessWidget {
   final List<TaskListViewModel> taskListViewModels;
+  final SlidableController taskSlidableController;
   final dynamic onAddNewTaskListButtonPressed;
   final dynamic onAddNewProjectButtonPressed;
   final dynamic onLogInButttonPress;
@@ -17,6 +19,7 @@ class TaskListsListView extends StatelessWidget {
   TaskListsListView(
       {Key key,
       this.taskListViewModels,
+      this.taskSlidableController,
       this.onAddNewTaskListButtonPressed,
       this.onAddNewProjectButtonPressed,
       this.onLogInButttonPress})
@@ -26,7 +29,7 @@ class TaskListsListView extends StatelessWidget {
   Widget build(BuildContext context) {
     var showHintsMask = EnableStates.of(context).state.showHomeScreenMask;
 
-    var taskLists = _buildTaskLists(context, taskListViewModels);
+    var taskLists = _buildTaskLists(context, taskListViewModels, taskSlidableController);
 
     var listView = ListView(
       shrinkWrap: showHintsMask == true,
@@ -48,7 +51,7 @@ class TaskListsListView extends StatelessWidget {
   }
 
   List<Widget> _buildTaskLists(
-      BuildContext context, List<TaskListViewModel> viewModels) {
+      BuildContext context, List<TaskListViewModel> viewModels, SlidableController tasksSlidableController) {
     List<Widget> widgets = viewModels.map((vm) {
       return Container(
         child: TaskList(
@@ -75,6 +78,7 @@ class TaskListsListView extends StatelessWidget {
               var showDivider = vm.childTaskViewModels.length != 1 && taskVm != vm.childTaskViewModels.last;
               return Task(
                 key: Key(taskVm.data.uid),
+                slidableController: tasksSlidableController,
                 model: taskVm,
                 isCompleting: taskVm.isCompleting,
                 showDivider: showDivider ,);

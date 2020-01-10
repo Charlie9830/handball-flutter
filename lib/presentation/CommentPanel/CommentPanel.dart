@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:handball_flutter/models/Comment.dart';
 import 'package:handball_flutter/presentation/CommentPanel/Comment.dart';
 import 'package:handball_flutter/presentation/CommentPanel/PaginationHintButton.dart';
 import 'package:handball_flutter/presentation/ReactiveAnimatedList.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-class CommentPanel extends StatelessWidget {
+class CommentPanel extends StatefulWidget {
   final bool isGettingComments;
   final bool isPaginatingComments;
   final bool isInteractive;
@@ -28,9 +29,22 @@ class CommentPanel extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  _CommentPanelState createState() => _CommentPanelState();
+}
+
+class _CommentPanelState extends State<CommentPanel> {
+  SlidableController _slidableController;
+
+  @override
+  void initState() { 
+    super.initState();
+    _slidableController = SlidableController();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-        onTap: onPressed,
+        onTap: widget.onPressed,
         child: Container(
           //color: Theme.of(context).colorScheme.background,
           alignment: Alignment.center,
@@ -39,23 +53,23 @@ class CommentPanel extends StatelessWidget {
   }
 
   Widget _getChild() {
-    if (isGettingComments) {
+    if (widget.isGettingComments) {
       return CircularProgressIndicator();
     }
 
-    if (viewModels.length == 0) {
+    if (widget.viewModels.length == 0) {
       return Text('Comments empty');
     }
 
     return ReactiveAnimatedList(
-      controller: scrollController,
+      controller: widget.scrollController,
       physics: AlwaysScrollableScrollPhysics(),
       children: _getChildren(),
     );
   }
 
   List<Widget> _getChildren() {
-    if (viewModels.length == 0) {
+    if (widget.viewModels.length == 0) {
       return <Widget>[
         Container(
           key: Key('no-comments-key'),
@@ -64,10 +78,12 @@ class CommentPanel extends StatelessWidget {
       ];
     }
 
-    List<Widget> widgets = viewModels.reversed.map((vm) {
+    List<Widget> widgets = widget.viewModels.reversed.map((vm) {
       return Container(
         key: Key(vm.data.uid),
         child: Comment(
+          key: Key(vm.data.uid),
+          slidableController: _slidableController,
           displayName: vm.data.displayName,
           text: vm.data.text,
           timeAgoText: _getTimeAgoText(vm),
@@ -78,7 +94,7 @@ class CommentPanel extends StatelessWidget {
     }).toList();
 
     // Include the show more pagination hint.
-    if (isInteractive) {
+    if (widget.isInteractive) {
       widgets.insert(
           0,
           Container(
@@ -86,9 +102,9 @@ class CommentPanel extends StatelessWidget {
             alignment: Alignment.center,
             padding: EdgeInsets.all(8),
             child: PaginationHintButton(
-              isPaginating: isPaginatingComments,
-              isPaginationComplete: isPaginationComplete,
-              onPressed: onPaginate,
+              isPaginating: widget.isPaginatingComments,
+              isPaginationComplete: widget.isPaginationComplete,
+              onPressed: widget.onPaginate,
             ),
           ));
     }
