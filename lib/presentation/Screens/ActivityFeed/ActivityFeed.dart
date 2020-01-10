@@ -60,7 +60,7 @@ class ActivityFeed extends StatelessWidget {
             children: <Widget>[
               PredicateBuilder(
                 predicate: () =>
-                    viewModel.activityFeed.length == 0 &&
+                    viewModel.activityFeed.isEmpty &&
                     viewModel.isRefreshingActivityFeed == false,
                 childIfTrue: Container(
                   alignment: Alignment.center,

@@ -46,7 +46,7 @@ class HomeScreenContainer extends StatelessWidget {
       isInMultiSelectTaskMode: store.state.isInMultiSelectTaskMode,
       onCancelMultiSelectTaskMode: () => store
           .dispatch(SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: false)),
-      onMoveTasksButtonPressed: store.state.multiSelectedTasks.length > 0
+      onMoveTasksButtonPressed: store.state.multiSelectedTasks.isNotEmpty
           ? () => store.dispatch(moveTasksToListWithDialog(
               store.state.multiSelectedTasks.values.toList(),
               projectId,
@@ -72,11 +72,11 @@ class HomeScreenContainer extends StatelessWidget {
       onUndoAction: store.state.lastUndoAction == null
           ? null
           : () => store.dispatch(undo()),
-      onMultiCompleteTasks: store.state.multiSelectedTasks.length > 0
+      onMultiCompleteTasks: store.state.multiSelectedTasks.isNotEmpty
           ? () => store.dispatch(multiCompleteTasks(
               store.state.multiSelectedTasks.values.toList(), projectId))
           : null,
-      onMultiDeleteTasks: store.state.multiSelectedTasks.length > 0
+      onMultiDeleteTasks: store.state.multiSelectedTasks.isNotEmpty
           ? () => store.dispatch(multiDeleteTasks(
               store.state.multiSelectedTasks.values.toList(),
               projectId,
@@ -100,7 +100,7 @@ class HomeScreenContainer extends StatelessWidget {
 
   List<TaskViewModel> _buildTaskViewModels(
       List<TaskModel> tasks, Store<AppState> store, BuildContext context) {
-    if (tasks.length == 0) {
+    if (tasks.isEmpty) {
       return <TaskViewModel>[];
     }
 

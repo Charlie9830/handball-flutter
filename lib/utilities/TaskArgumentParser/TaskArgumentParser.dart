@@ -46,7 +46,7 @@ class TaskArgumentParser {
 
   Future<ArgumentMap> parseTextForArguments(String text) {
     var matches = argsPattern.allMatches(text).toList();
-    if (matches.length == 0) {
+    if (matches.isEmpty) {
       return Future.value(null);
     }
 
@@ -99,7 +99,7 @@ class TaskArgumentParser {
       }
     }
 
-    if (userIds.length == 0) {
+    if (userIds.isEmpty) {
       return null;
     }
 

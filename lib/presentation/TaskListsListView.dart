@@ -40,7 +40,7 @@ class TaskListsListView extends StatelessWidget {
         predicate: () => showHintsMask == true,
         childIfTrue: HomeScreenHintsMask(
           listView: listView,
-          firstTaskListName: taskListViewModels.length > 0
+          firstTaskListName: taskListViewModels.isNotEmpty
               ? taskListViewModels.first?.data?.taskListName
               : null,
           onAddNewProjectButtonPressed: onAddNewProjectButtonPressed,

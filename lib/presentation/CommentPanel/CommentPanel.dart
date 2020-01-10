@@ -57,7 +57,7 @@ class _CommentPanelState extends State<CommentPanel> {
       return CircularProgressIndicator();
     }
 
-    if (widget.viewModels.length == 0) {
+    if (widget.viewModels.isEmpty) {
       return Text('No comments.');
     }
 
@@ -69,7 +69,7 @@ class _CommentPanelState extends State<CommentPanel> {
   }
 
   List<Widget> _getChildren() {
-    if (widget.viewModels.length == 0) {
+    if (widget.viewModels.isEmpty) {
       return <Widget>[
         Container(
           key: Key('no-comments-key'),

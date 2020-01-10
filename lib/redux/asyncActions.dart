@@ -424,7 +424,7 @@ ThunkAction<AppState> moveTasksToListWithDialog(
     BuildContext context) {
   return (Store<AppState> store) async {
     store.dispatch(SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: false));
-    if (tasks == null || tasks.length == 0 || sortedTaskLists == null) {
+    if (tasks == null || tasks.isEmpty || sortedTaskLists == null) {
       return;
     }
 
@@ -941,7 +941,7 @@ ThunkAction<AppState> leaveSharedProject(String projectId, String projectName,
 }
 
 bool _canDeleteProject(String userId, List<MemberModel> members) {
-  if (members == null || members.length == 0) {
+  if (members == null || members.isEmpty) {
     return true;
   }
 
@@ -1056,7 +1056,7 @@ ThunkAction<AppState> closeTaskCommentsScreen(String projectId, String taskId) {
       batch.updateData(commentRef, {'seenBy': seenBy});
     }
 
-    if (commentsNeedingSeenByUpdate.length > 0) {
+    if (commentsNeedingSeenByUpdate.isNotEmpty) {
       // User viewed previously unread Comments. Update the Task level indicator.
       var currentUnseenTaskCommentMembers =
           Map<String, String>.from(selectedTaskEntity.unseenTaskCommentMembers);
@@ -1095,7 +1095,7 @@ bool _doesTaskCommentPreviewSeenByNeedUpdate(
 
 ThunkAction<AppState> paginateTaskComments(String projectId, String taskId) {
   return (Store<AppState> store) async {
-    if (store.state.taskComments.length == 0) {
+    if (store.state.taskComments.isEmpty) {
       return;
     }
 
@@ -2450,7 +2450,7 @@ ThunkAction<AppState> updateFavouriteTaskList(
 ThunkAction<AppState> multiDeleteTasks(
     List<TaskModel> tasks, String projectId, BuildContext context) {
   return (Store<AppState> store) async {
-    if (tasks == null || tasks.length == 0) {
+    if (tasks == null || tasks.isEmpty) {
       return;
     }
 
@@ -2525,7 +2525,7 @@ ThunkAction<AppState> multiDeleteTasks(
 ThunkAction<AppState> multiCompleteTasks(
     List<TaskModel> tasks, String projectId) {
   return (Store<AppState> store) async {
-    if (tasks == null || tasks.length == 0) {
+    if (tasks == null || tasks.isEmpty) {
       return;
     }
 
@@ -2904,10 +2904,10 @@ String _buildActivityFeedEventTaskDetails(bool isHighPriority, DateTime dueDate,
   final priorityString = isHighPriority == true ? 'Flagged as important. ' : '';
   final dueDateString =
       dueDate == null ? '' : 'Due on ${formatter.format(dueDate)}. ';
-  final assignmentsString = assignedTo == null || assignedTo.length == 0
+  final assignmentsString = assignedTo == null || assignedTo.isEmpty
       ? ''
       : 'Assigned to${_concatAssignmentsToDisplayNames(assignedTo, state)}';
-  final detailsString = note == null || note.length == 0
+  final detailsString = note == null || note.isEmpty
       ? ''
       : 'Details: ${truncateString(note, 32)}. ';
 

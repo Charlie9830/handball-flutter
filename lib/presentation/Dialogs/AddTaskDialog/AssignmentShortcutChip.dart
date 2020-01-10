@@ -26,7 +26,7 @@ class AssignmentShortcutChip extends StatelessWidget {
   }
 
   String _getLabelText() {
-    if (assignments.length == 0) {
+    if (assignments.isEmpty) {
       return 'Assign to';
     }
 

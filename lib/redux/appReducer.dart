@@ -55,13 +55,13 @@ AppState appReducer(AppState state, dynamic action) {
               : state.enableState.isProjectSelected,
           showSelectAProjectHint: isSelectedProjectIdValid == false ||
               action.uid == '-1' ||
-              action.uid == null && state.projects.length > 0,
-          showNoProjectsHint: state.projects.length == 0,
+              action.uid == null && state.projects.isNotEmpty,
+          showNoProjectsHint: state.projects.isEmpty,
           showNoTaskListsHint:
-              projectTaskLists == null || projectTaskLists.length == 0,
+              projectTaskLists == null || projectTaskLists.isEmpty,
           showSingleListNoTasksHint: projectTaskLists != null &&
               projectTaskLists.length == 1 &&
-              projectTasks.length == 0,
+              projectTasks.isEmpty,
           canArchiveProject: action.uid != '-1' && action.uid != null),
     );
   }
@@ -95,8 +95,8 @@ AppState appReducer(AppState state, dynamic action) {
           isProjectSelected: state.selectedProjectId != '-1' &&
               state.selectedProjectId != null &&
               isSelectedProjectIdValid,
-          showNoProjectsHint: projects.length == 0,
-          showSelectAProjectHint: projects.length > 0 &&
+          showNoProjectsHint: projects.isEmpty,
+          showSelectAProjectHint: projects.isNotEmpty &&
               (isSelectedProjectIdValid == false ||
                   state.selectedProjectId == '-1' ||
                   state.selectedProjectId == null),
@@ -247,12 +247,12 @@ AppState appReducer(AppState state, dynamic action) {
         enableState: state.enableState.copyWith(
             showNoTaskListsHint:
                 taskListsByProject[state.selectedProjectId] != null &&
-                    taskListsByProject[state.selectedProjectId].length == 0,
+                    taskListsByProject[state.selectedProjectId].isEmpty,
             showSingleListNoTasksHint:
                 taskListsByProject[state.selectedProjectId] != null &&
                     taskListsByProject[state.selectedProjectId].length == 1 &&
                     state.tasksByProject[state.selectedProjectId] != null &&
-                    state.tasksByProject[state.selectedProjectId].length == 0));
+                    state.tasksByProject[state.selectedProjectId].isEmpty));
   }
 
   if (action is ReceiveDeletedTaskLists) {
@@ -376,7 +376,7 @@ AppState appReducer(AppState state, dynamic action) {
         enableState: state.enableState.copyWith(
           canArchiveProject: selectedProjectId != '-1',
           isProjectSelected: didDeleteSelectedProject == false,
-          showNoProjectsHint: projects.length == 0,
+          showNoProjectsHint: projects.isEmpty,
           showSelectAProjectHint:
               selectedProjectId == '-1' && projects.length != 0,
         ));
@@ -673,7 +673,7 @@ Map<String, MemberModel> _updateMemberLookup(
 
 List<ProjectModel> _mergeProject(
     List<ProjectModel> existingProjects, ProjectModel incomingProject) {
-  if (existingProjects.length == 0) {
+  if (existingProjects.isEmpty) {
     return <ProjectModel>[incomingProject];
   }
 

@@ -102,7 +102,7 @@ class TaskModel {
   }
 
   bool get isAssigned {
-    return this.assignedTo != null && this.assignedTo.length > 0;
+    return this.assignedTo != null && this.assignedTo.isNotEmpty;
   }
 
   bool get isAssignedToSelf {
@@ -211,7 +211,7 @@ class TaskModel {
   }
 
   List<Map<String, dynamic>> _convertCommentPreviewToMapCollection() {
-    if (commentPreview == null || commentPreview.length == 0) {
+    if (commentPreview == null || commentPreview.isEmpty) {
       return <Map<String, dynamic>>[];
     }
 
@@ -220,7 +220,7 @@ class TaskModel {
 
   List<CommentModel> _coerceCommentPreview(
       List<dynamic> commentPreview, bool isFromCache) {
-    if (commentPreview == null || commentPreview.length == 0) {
+    if (commentPreview == null || commentPreview.isEmpty) {
       return <CommentModel>[];
     }
 

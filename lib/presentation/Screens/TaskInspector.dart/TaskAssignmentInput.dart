@@ -49,7 +49,7 @@ class TaskAssignmentInput extends StatelessWidget {
   }
 
   Widget _getTitleWidget(BuildContext context) {
-    if (assignments == null || assignments.length == 0) {
+    if (assignments == null || assignments.isEmpty) {
       return Text('Assign to');
     }
 

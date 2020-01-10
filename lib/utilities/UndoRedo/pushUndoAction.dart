@@ -110,7 +110,7 @@ _executeProjectDelete(DeleteProjectUndoActionModel undoAction) async {
 }
 
 _executeMultiDeleteTasks(MultiDeleteTasksUndoActionModel undoAction) async {
-  if (undoAction.taskRefPaths == null || undoAction.taskRefPaths.length == 0) {
+  if (undoAction.taskRefPaths == null || undoAction.taskRefPaths.isEmpty) {
     return;
   }
 

@@ -24,7 +24,7 @@ class ArchivedProjectsBottomSheet extends StatelessWidget {
             ),
             Expanded(
                 child: PredicateBuilder(
-              predicate: () => projectOptions.length > 0,
+              predicate: () => projectOptions.isNotEmpty,
               childIfTrue: ListView(
                 children: _getChildren(context),
                 physics: AlwaysScrollableScrollPhysics(),

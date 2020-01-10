@@ -48,7 +48,7 @@ undoLastAction(Store<AppState> store) async {
 }
 
 void _undoMultiDeleteTasks(MultiDeleteTasksUndoActionModel undoAction) async {
-  if (undoAction.taskRefPaths == null || undoAction.taskRefPaths.length == 0) {
+  if (undoAction.taskRefPaths == null || undoAction.taskRefPaths.isEmpty) {
     return;
   }
 

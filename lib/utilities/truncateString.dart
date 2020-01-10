@@ -1,5 +1,5 @@
 String truncateString(String input, [int desiredLength = 7]) {
-  if (input == null || input.trim().length == 0) {
+  if (input == null || input.trim().isEmpty) {
     return '';
   }
 
