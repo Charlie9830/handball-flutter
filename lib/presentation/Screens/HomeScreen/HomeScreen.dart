@@ -43,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onMoveTasks: widget.viewModel.onMoveTasksButtonPressed,
               onCompleteTasks: widget.viewModel.onMultiCompleteTasks,
               onDeleteTasks: widget.viewModel.onMultiDeleteTasks,
+              onAssignTo: widget.viewModel.onMultiAssignTasks,
             ),
             crossFadeState: widget.viewModel.isInMultiSelectTaskMode
                 ? CrossFadeState.showSecond

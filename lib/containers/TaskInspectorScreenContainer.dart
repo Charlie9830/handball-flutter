@@ -63,7 +63,7 @@ class TaskInspectorScreenContainer extends StatelessWidget {
         onOpenTaskCommentScreen: () => store
             .dispatch(openTaskCommentsScreen(selectedTaskEntity.project, selectedTaskEntity.uid)),
         commentPreviewViewModels: _buildCommentPreviewViewModels(selectedTaskEntity?.commentPreview, store.state.user.userId),
-        onAssignmentsChange: (newAssignmentIds) => store.dispatch(updateTaskAssignments(newAssignmentIds, selectedTaskEntity.assignedTo, selectedTaskEntity.uid, selectedTaskEntity.project, selectedTaskEntity.taskName, selectedTaskEntity.metadata)),
+        onAssignmentsChange: (newAssignmentIds) => store.dispatch(updateTaskAssignments(newAssignmentIds, selectedTaskEntity.uid, selectedTaskEntity.project, selectedTaskEntity.taskName, selectedTaskEntity.metadata)),
         onReminderChange: (newValue) => store.dispatch(updateTaskReminder(newValue, selectedTaskEntity.ownReminder?.time, selectedTaskEntity.uid, selectedTaskEntity.taskName, selectedTaskEntity.project)));
   }
 

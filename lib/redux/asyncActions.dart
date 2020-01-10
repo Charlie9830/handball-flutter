@@ -43,6 +43,7 @@ import 'package:handball_flutter/presentation/Dialogs/ArchivedProjectsBottomShee
 import 'package:handball_flutter/presentation/Dialogs/ChangeDisplayNameDialog/ChangeDisplayNameDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChangePasswordDialog/ChangePasswordDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
+import 'package:handball_flutter/presentation/Dialogs/ChooseAssignmentDialog/ChooseAssignmentDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/DeleteAccountDialog/DeleteAccountDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/DeleteAccountDialog/DeleteAccountInProgressMask.dart';
 import 'package:handball_flutter/presentation/Dialogs/ForgotPasswordDialog/ForgotPasswordDialog.dart';
@@ -401,7 +402,8 @@ ThunkAction<AppState> setShowOnlySelfTasks(bool showOnlySelfTasks) {
 
       removalAnimationUpdates.sort(TaskAnimationUpdate.removalSorter);
 
-      driveTaskRemovalAnimations(removalAnimationUpdates, store.state.memberLookup);
+      driveTaskRemovalAnimations(
+          removalAnimationUpdates, store.state.memberLookup);
     } else {
       var additionAnimationUpdates = hiddenTasks.map((task) {
         return TaskAnimationUpdate(
@@ -732,7 +734,6 @@ ThunkAction<AppState> updateTaskNote(
 
 ThunkAction<AppState> updateTaskAssignments(
     List<String> newAssignments,
-    List<String> oldAssignments,
     String taskId,
     String projectId,
     String taskName,
@@ -1902,7 +1903,8 @@ ThunkAction<AppState> setShowCompletedTasks(
         ));
 
         taskAnimationUpdates.sort(TaskAnimationUpdate.removalSorter);
-        driveTaskRemovalAnimations(taskAnimationUpdates, store.state.memberLookup);
+        driveTaskRemovalAnimations(
+            taskAnimationUpdates, store.state.memberLookup);
       }
     }
   };
@@ -2518,6 +2520,39 @@ ThunkAction<AppState> multiDeleteTasks(
       await batch.commit();
     } catch (error) {
       throw error;
+    }
+  };
+}
+
+ThunkAction<AppState> multiAssignTasksWithDialog(
+    List<TaskModel> tasks, String projectId, BuildContext context) {
+  return (Store<AppState> store) async {
+    if (store.state.members[projectId] == null) {
+      return;
+    }
+
+    final assignmentOptions = store.state.members[projectId].map((member) => Assignment.fromMemberModel(member)).toList();
+
+    if (assignmentOptions.isEmpty) {
+      return;
+    } 
+
+    final result = await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => ChooseAssignmentDialog(initialAssignedOptions: <Assignment>[], options: assignmentOptions,)
+    );
+
+    store.dispatch(SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: false));
+
+    if (result == null) {
+      return;
+    }
+
+    if (result is List<String>) {
+      for (var task in tasks) {
+        store.dispatch(updateTaskAssignments(result, task.uid, task.project, task.taskName, task.metadata));
+      }
     }
   };
 }

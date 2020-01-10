@@ -27,6 +27,7 @@ class HomeScreenViewModel {
   final dynamic onDebugButtonPressed;
   final dynamic onArchiveProject;
   final dynamic onActivityFeedOpen;
+  final dynamic onMultiAssignTasks;
 
   HomeScreenViewModel({
     this.projectId,
@@ -54,5 +55,6 @@ class HomeScreenViewModel {
     this.onDebugButtonPressed,
     this.onArchiveProject,
     this.onActivityFeedOpen,
+    this.onMultiAssignTasks,
     });
 }

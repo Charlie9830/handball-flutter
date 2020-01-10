@@ -3,6 +3,7 @@ import 'package:flutter_redux/flutter_redux.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/HomeScreenViewModel.dart';
 import 'package:handball_flutter/models/InflatedTaskList.dart';
+import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
@@ -82,6 +83,8 @@ class HomeScreenContainer extends StatelessWidget {
               projectId,
               context))
           : null,
+      onMultiAssignTasks: store.state.multiSelectedTasks.isNotEmpty && _canAssignTasks(store.state.members[projectId]) ?
+      () => store.dispatch(multiAssignTasksWithDialog(store.state.multiSelectedTasks.values.toList(), projectId, context)) : null,
       onDebugButtonPressed: () => store.dispatch(debugButtonPressed()),
       onArchiveProject: () => store.dispatch(
               archiveProjectWithDialog(projectId, projectName, context)),
@@ -89,6 +92,16 @@ class HomeScreenContainer extends StatelessWidget {
         openActivityFeed(projectId, ActivityFeedQueryLength.day)
       )
     );
+  }
+
+  bool _canAssignTasks(List<MemberModel> projectMembers) {
+    if (projectMembers == null) {
+      return false;
+    }
+
+    if (projectMembers.length > 1) {
+      return true;
+    }
   }
 
   String _getProjectName(String projectId, List<ProjectModel> projects) {
