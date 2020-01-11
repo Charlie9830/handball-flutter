@@ -9,6 +9,7 @@ class LoggedIn extends StatelessWidget {
   final dynamic onDeleteAccount;
   final dynamic onChangeDisplayName;
   final dynamic onChangePassword;
+  final dynamic onChangeEmailAddress;
 
   LoggedIn({
     this.displayName,
@@ -17,6 +18,7 @@ class LoggedIn extends StatelessWidget {
     this.onDeleteAccount,
     this.onChangeDisplayName,
     this.onChangePassword,
+    this.onChangeEmailAddress
   });
 
   @override
@@ -73,6 +75,10 @@ class LoggedIn extends StatelessWidget {
 
         case AccountActionsBottomSheetResult.deleteAccount:
           onDeleteAccount();
+          break;
+
+        case AccountActionsBottomSheetResult.changeEmailAddress:
+          onChangeEmailAddress();
           break;
       }
     }

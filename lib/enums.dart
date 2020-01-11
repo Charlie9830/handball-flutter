@@ -80,5 +80,6 @@ enum TaskInspectorAssignmentInputType { normal, hidden, clearOnly }
 enum AccountActionsBottomSheetResult {
   changePassword,
   changeDisplayName,
-  deleteAccount
+  deleteAccount,
+  changeEmailAddress,
 }

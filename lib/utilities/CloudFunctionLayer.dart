@@ -13,6 +13,32 @@ class CloudFunctionsLayer {
   static const _kickUserFromProjectFunctionName = 'kickUserFromProject';
   static const _removeRemoteProjectFunctionName = 'removeRemoteProject';
   static const _changeDisplayNameFunctionName = 'changeDisplayName';
+  static const _changeEmailAddressFunctionName = 'changeEmailAddress';
+
+  Future<void> changeEmailAddress({
+    @required String oldEmail,
+    @required String newEmail,
+  }) async {
+    HttpsCallable callable = CloudFunctions.instance
+        .getHttpsCallable(functionName: _changeEmailAddressFunctionName);
+
+    try {
+      final response = await callable.call({
+        'newEmailAddress': newEmail,
+        'oldEmailAddress': oldEmail,
+      });
+
+      if (response.data['status'] == 'complete') {
+        return;
+      }
+
+      if (response.data['status'] == 'error') {
+        throw CloudFunctionsRejectionError(message: response.data['message']);
+      }
+    } on CloudFunctionsException catch (error) {
+      _handleCloudFunctionsException(error);
+    }
+  }
 
   Future<void> changeDisplayName({
     @required String desiredDisplayName,

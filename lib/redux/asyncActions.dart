@@ -41,6 +41,7 @@ import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/AddTaskDialo
 import 'package:handball_flutter/presentation/Dialogs/AddTaskDialog/TaskListColorSelectDialog/TaskListColorSelectDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ArchivedProjectsBottomSheet/ArchivedProjectsBottomSheet.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChangeDisplayNameDialog/ChangeDisplayNameDialog.dart';
+import 'package:handball_flutter/presentation/Dialogs/ChangeEmailDialog/ChangeEmailDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChangePasswordDialog/ChangePasswordDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChecklistSettingsDialog/ChecklistSettingsDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChooseAssignmentDialog/ChooseAssignmentDialog.dart';
@@ -1415,6 +1416,31 @@ ThunkAction<AppState> archiveProjectWithDialog(
   };
 }
 
+ThunkAction<AppState> changeEmailWithDialog(BuildContext context) {
+  return (Store<AppState> store) async {
+    // FIrst Reauthenticate.
+    final reAuthResult = await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AccountReauthenticationDialog(auth: auth),
+    );
+
+    if (reAuthResult == null ||
+        (reAuthResult is bool && reAuthResult == false)) {
+      return;
+    }
+
+    // The dialog will handle everything for us.
+    await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => ChangeEmailDialog(
+            auth: auth,
+            cloudFunctionsLayer: _cloudFunctionsLayer,
+            oldEmail: store.state.user.email));
+  };
+}
+
 ThunkAction<AppState> changePasswordWithDialog(BuildContext context) {
   return (Store<AppState> store) async {
     // First Reauthenticate.
@@ -2531,17 +2557,21 @@ ThunkAction<AppState> multiAssignTasksWithDialog(
       return;
     }
 
-    final assignmentOptions = store.state.members[projectId].map((member) => Assignment.fromMemberModel(member)).toList();
+    final assignmentOptions = store.state.members[projectId]
+        .map((member) => Assignment.fromMemberModel(member))
+        .toList();
 
     if (assignmentOptions.isEmpty) {
       return;
-    } 
+    }
 
     final result = await showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => ChooseAssignmentDialog(initialAssignedOptions: <Assignment>[], options: assignmentOptions,)
-    );
+        context: context,
+        barrierDismissible: true,
+        builder: (context) => ChooseAssignmentDialog(
+              initialAssignedOptions: <Assignment>[],
+              options: assignmentOptions,
+            ));
 
     store.dispatch(SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: false));
 
@@ -2551,7 +2581,8 @@ ThunkAction<AppState> multiAssignTasksWithDialog(
 
     if (result is List<String>) {
       for (var task in tasks) {
-        store.dispatch(updateTaskAssignments(result, task.uid, task.project, task.taskName, task.metadata));
+        store.dispatch(updateTaskAssignments(
+            result, task.uid, task.project, task.taskName, task.metadata));
       }
     }
   };

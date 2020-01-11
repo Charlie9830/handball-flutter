@@ -39,6 +39,7 @@ class AppSettingsContainer extends StatelessWidget {
       onChangeDisplayName: () => store.dispatch(changeDisplayNameWithDialog(context)),
       onChangePassword: () => store.dispatch(changePasswordWithDialog(context)),
       onForgotPasswordButtonPressed: (currentlyEnteredEmail) => store.dispatch(resetPasswordWithDialog(context, currentlyEnteredEmail)),
+      onChangeEmailAddress: () => store.dispatch(changeEmailWithDialog(context)),
     );
   }
 }

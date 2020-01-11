@@ -19,6 +19,11 @@ class AccountActionsBottomSheet extends StatelessWidget {
           title: Text('Change Display Name'),
           onTap: () => Navigator.of(context).pop(AccountActionsBottomSheetResult.changeDisplayName),
         ),
+        ListTile(
+          leading: Icon(Icons.alternate_email),
+          title: Text('Change Email Address'),
+          onTap: () => Navigator.of(context).pop(AccountActionsBottomSheetResult.changeEmailAddress),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: FlatButton(
