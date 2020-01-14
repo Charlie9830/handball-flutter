@@ -10,6 +10,7 @@ import 'package:handball_flutter/models/TopLevelViewModel.dart';
 import 'package:handball_flutter/presentation/Dialogs/DeleteAccountDialog/DeleteAccountConfirmation.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/Screens/SplashScreen/SplashScreen.dart';
+import 'package:handball_flutter/presentation/Screens/SplashScreen/TourScreen.dart/TourScreenBase.dart';
 import 'package:handball_flutter/redux/asyncActions.dart';
 import 'package:handball_flutter/utilities/buildAppThemeData.dart';
 import 'package:handball_flutter/utilities/quickActionsLayer/quickActionsLayer.dart';

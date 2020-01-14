@@ -53,6 +53,7 @@ import 'package:handball_flutter/presentation/Dialogs/MoveListBottomSheet.dart';
 import 'package:handball_flutter/presentation/Dialogs/MoveTasksDialog/MoveTaskBottomSheet.dart';
 import 'package:handball_flutter/presentation/Screens/ListSortingScreen/ListSortingScreen.dart';
 import 'package:handball_flutter/presentation/Screens/SignUp/SignUpBase.dart';
+import 'package:handball_flutter/presentation/Screens/SplashScreen/TourScreen.dart/TourScreenBase.dart';
 import 'package:handball_flutter/redux/appState.dart';
 import 'package:handball_flutter/redux/syncActions.dart';
 import 'package:handball_flutter/utilities/CloudFunctionLayer.dart';
@@ -1649,8 +1650,16 @@ ThunkAction<AppState> showSignUpDialog(BuildContext context) {
         });
 
     if (desiredDisplayName is String) {
-      store.dispatch(SetSplashScreenState(state: SplashScreenState.home));
       store.dispatch(InjectDisplayName(displayName: desiredDisplayName));
+
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => TourScreenBase(),
+      );
+
+      store.dispatch(SetSplashScreenState(state: SplashScreenState.home));
+      homeScreenScaffoldKey?.currentState?.openDrawer();
     }
   };
 }

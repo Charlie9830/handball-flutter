@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/presentation/Screens/SplashScreen/styleMixins.dart';
 
-class OnboardingPage extends StatelessWidget {
+class TourPage extends StatelessWidget {
   final Image image;
   final String headline;
   final String detail;
 
-  const OnboardingPage({Key key, this.image, this.headline, this.detail})
+  const TourPage({Key key, this.image, this.headline, this.detail})
       : super(key: key);
 
   @override
