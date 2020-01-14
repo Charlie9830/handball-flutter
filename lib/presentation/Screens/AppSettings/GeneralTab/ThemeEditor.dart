@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/enums.dart';
 import 'package:handball_flutter/models/ThemeEditorViewModel.dart';
+import 'package:handball_flutter/presentation/Screens/AppSettings/GeneralTab/BrightnessSelector.dart';
 import 'package:handball_flutter/presentation/Screens/AppSettings/GeneralTab/MaterialColorPicker.dart';
 
 class ThemeEditor extends StatelessWidget {
@@ -11,11 +12,9 @@ class ThemeEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        SwitchListTile(
-          secondary: Icon(Icons.brightness_medium),
-          title: Text('Dark mode'),
-          value: viewModel.data.brightness == Brightness.dark,
-          onChanged: (value) => _handleBrightnessSwitchChange(value), 
+        BrightnessSelector(
+          themeBrightness: viewModel.data.themeBrightness,
+          onChange: _handleThemeBrightnessChanged,
         ),
         MaterialColorPicker(
           title: 'Primary Color',
@@ -39,9 +38,9 @@ class ThemeEditor extends StatelessWidget {
     ));
   }
 
-  void _handleBrightnessSwitchChange(bool isDark) {
+  void _handleThemeBrightnessChanged(ThemeBrightness newBrightness) {
     viewModel.onThemeChanged(viewModel.data.copyWith(
-      brightness: isDark == true ? Brightness.dark : Brightness.light
+      themeBrightness: newBrightness,
     ));
   }
 }

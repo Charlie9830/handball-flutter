@@ -75,6 +75,8 @@ enum ActivityFeedEventType {
   reColorList,
 }
 
+enum ThemeBrightness { light, dark, device }
+
 enum TaskInspectorAssignmentInputType { normal, hidden, clearOnly }
 
 enum AccountActionsBottomSheetResult {

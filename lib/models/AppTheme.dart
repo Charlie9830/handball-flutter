@@ -1,11 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/enums.dart';
 
 class AppThemeModel {
   int primaryColorIndex;
   int accentColorIndex;
-  Brightness brightness;
+  ThemeBrightness themeBrightness;
 
   /* 
   Update copyWith Method Below
@@ -14,19 +15,19 @@ class AppThemeModel {
   AppThemeModel({
     this.primaryColorIndex = 0,
     this.accentColorIndex = 0,
-    this.brightness = Brightness.light,
+    this.themeBrightness = ThemeBrightness.device,
   });
 
   AppThemeModel.fromDefault() {
     this.primaryColorIndex = 0;
     this.accentColorIndex = 0;
-    this.brightness = Brightness.light;
+    this.themeBrightness = ThemeBrightness.device;
   }
 
   AppThemeModel.fromDocMap(Map<dynamic, dynamic> docMap) {
     this.primaryColorIndex = docMap['primaryColorIndex'] ?? 0;
     this.accentColorIndex = docMap['accentColorIndex'] ?? 0;
-    this.brightness = _parseBrightness(docMap['brightness']);
+    this.themeBrightness = _parseBrightness(docMap['themeBrightness']);
   }
   
   AppThemeModel.fromJSON(String json) {
@@ -35,7 +36,7 @@ class AppThemeModel {
 
     this.primaryColorIndex = map['primaryColorIndex'] ?? 0;
     this.accentColorIndex = map['accentColorIndex'] ?? 0;
-    this.brightness = _parseBrightness(map['brightness']);
+    this.themeBrightness = _parseBrightness(map['themeBrightness']);
   }
 
   String toJSON() {
@@ -47,48 +48,61 @@ class AppThemeModel {
     return {
       'primaryColorIndex': this.primaryColorIndex,
       'accentColorIndex': this.accentColorIndex,
-      'brightness': _convertBrightnessToString(this.brightness),
+      'themeBrightness': _convertThemeBrightnessToString(this.themeBrightness),
     };
   }
 
   AppThemeModel copyWith({
     int primaryColorIndex,
     int accentColorIndex,
-    Brightness brightness,
+    ThemeBrightness themeBrightness,
+    bool overridePlatformBrightness,
   }) {
     return AppThemeModel(
       primaryColorIndex: primaryColorIndex ?? this.primaryColorIndex,
       accentColorIndex: accentColorIndex ?? this.accentColorIndex,
-      brightness: brightness ?? this.brightness,
+      themeBrightness: themeBrightness ?? this.themeBrightness,
     );
   }
 
-  String _convertBrightnessToString(Brightness brightness) {
+  String _convertThemeBrightnessToString(ThemeBrightness brightness) {
     switch (brightness) {
-      case Brightness.dark:
+      case ThemeBrightness.light:
+        return 'light';
+      case ThemeBrightness.dark:
         return 'dark';
-      case Brightness.light:
-        return 'light';
+      case ThemeBrightness.device:
+        return 'device';
       default:
-        return 'light';
+        return 'device';
     }
   }
 
-  Brightness _parseBrightness(String brightness) {
+  ThemeBrightness _parseBrightness(String brightness) {
     if (brightness == null || brightness == '') {
-      return Brightness.light;
+      return ThemeBrightness.device;
     }
 
     if (brightness == 'light') {
-      return Brightness.light;
-    } else {
-      return Brightness.dark;
+      return ThemeBrightness.light;
+    } 
+    
+    if (brightness == 'device') {
+      return ThemeBrightness.device;
+    }
+
+    if (brightness == 'dark') {
+      return ThemeBrightness.dark;
+    }
+
+    else {
+      return ThemeBrightness.device;
     }
   }
 
   void debugPrint() {
     print('***App Theme ****');
-    print('Brightness: $brightness');
+    print('Brightness: $themeBrightness');
     print('Primary Color Index: $primaryColorIndex');
     print('Accent Color Index: $accentColorIndex');
     print('');

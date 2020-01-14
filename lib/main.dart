@@ -63,11 +63,15 @@ class _AppState extends State<App> with WidgetsBindingObserver {
           ),
 
           builder: (BuildContext context, TopLevelViewModel viewModel) {
+            final themeDataTuple = buildAppThemeData(viewModel.data);
+
             return EnableStates(
               state: viewModel.enableState,
               child: MaterialApp(
                 title: 'Handball',
-                theme: buildAppThemeData(viewModel.data),
+                theme: themeDataTuple.light,
+                darkTheme: themeDataTuple.dark,
+                themeMode: _getThemeMode(viewModel.data.themeBrightness),
                 navigatorKey: navigatorKey,
                 home: PredicateBuilder(
                   predicate: () => viewModel.splashScreenState == SplashScreenState.home,
@@ -78,6 +82,23 @@ class _AppState extends State<App> with WidgetsBindingObserver {
             ));
           },
         ));
+  }
+
+  ThemeMode _getThemeMode(ThemeBrightness themeBrightness) {
+    switch(themeBrightness) {
+      case ThemeBrightness.light:
+        return ThemeMode.light;
+
+      case ThemeBrightness.dark:
+        return ThemeMode.dark;
+
+      case ThemeBrightness.device:
+        return ThemeMode.system;
+
+      default:
+        return ThemeMode.system;
+
+    }
   }
 
   @override
