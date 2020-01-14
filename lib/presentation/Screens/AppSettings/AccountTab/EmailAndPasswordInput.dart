@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/models/EmailAndPassword.dart';
 import 'package:handball_flutter/utilities/isValidEmail.dart';
@@ -83,6 +84,16 @@ class _EmailAndPasswordInputState extends State<EmailAndPasswordInput> {
           onPressed: _handleButtonPress,
           color: widget.buttonColor,
         ),
+        if (!kReleaseMode)
+        OutlineButton(
+          child: Text('User A'),
+          color: Theme.of(context).accentColor,
+          onPressed: () {
+            _emailController.text = 'a@test.com';
+            _passwordController.text = 'adingusshrew';
+            _handleButtonPress();
+          },
+        )
       ],
     );
   }

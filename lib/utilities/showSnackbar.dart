@@ -2,19 +2,21 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 showSnackBar(
-    {@required GlobalKey<ScaffoldState> targetGlobalKey,
+    {GlobalKey<ScaffoldState> targetGlobalKey,
+    ScaffoldState scaffoldState,
     @required String message,
     int autoHideSeconds = 6,
     String actionLabel,
     dynamic onClosed}) async {
-  if (targetGlobalKey?.currentState == null) {
+  if (targetGlobalKey?.currentState == null && scaffoldState == null) {
     throw ArgumentError(
-        'targetGlobalKey or targetGlobalKey.currentState must not be null');
+        'If targetGlobalKey is null, then scaffoldState must not be. And vice versa.');
   }
 
-  // Close any currently open Snackbars on targetGlobalKey.
-  targetGlobalKey.currentState
-      .hideCurrentSnackBar(reason: SnackBarClosedReason.hide);
+  final currentState = targetGlobalKey?.currentState ?? scaffoldState;
+
+  // Close any currently open Snackbars on currentState.
+  currentState.hideCurrentSnackBar(reason: SnackBarClosedReason.hide);
 
   var duration =
       autoHideSeconds == 0 ? null : Duration(seconds: autoHideSeconds);
@@ -22,11 +24,11 @@ showSnackBar(
       ? null
       : SnackBarAction(
           label: actionLabel,
-          onPressed: () => targetGlobalKey.currentState
-              .hideCurrentSnackBar(reason: SnackBarClosedReason.action),
+          onPressed: () => currentState.hideCurrentSnackBar(
+              reason: SnackBarClosedReason.action),
         );
 
-  var featureController = targetGlobalKey.currentState.showSnackBar(SnackBar(
+  var featureController = currentState.showSnackBar(SnackBar(
     content: Text(message ?? ''),
     action: snackBarAction,
     duration: duration,

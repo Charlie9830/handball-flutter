@@ -48,6 +48,14 @@ class AddCompletingTask {
   });
 }
 
+class SetSplashScreenState {
+  final SplashScreenState state;
+
+  SetSplashScreenState({
+    this.state,
+  });
+}
+
 class AddMultipleCompletingTasks {
   final List<String> taskIds;
 

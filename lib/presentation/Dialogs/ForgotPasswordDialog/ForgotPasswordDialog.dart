@@ -5,6 +5,7 @@ import 'package:handball_flutter/presentation/Dialogs/ForgotPasswordDialog/Forgo
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/SimpleAppBar.dart';
 import 'package:handball_flutter/utilities/isValidEmail.dart';
+import 'package:handball_flutter/utilities/showSnackbar.dart';
 
 class ForgotPasswordDialog extends StatefulWidget {
   final FirebaseAuth auth;
@@ -22,7 +23,6 @@ class ForgotPasswordDialog extends StatefulWidget {
 class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
   TextEditingController _controller;
   String _errorText;
-  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _isAwaitingResponse = false;
   bool _isSuccessfull = false;
 
@@ -39,47 +39,48 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
   Widget build(BuildContext context) {
     return SafeArea(
         child: Scaffold(
-            key: _scaffoldKey,
             appBar: SimpleAppBar(),
-            body: Container(
-                alignment: Alignment.center,
-                padding: EdgeInsets.all(16),
-                child: PredicateBuilder(
-                  predicate: () => _isSuccessfull,
-                  childIfTrue: ForgotPasswordSuccess(
-                      emailAddress: _controller.text,
-                      onFinishButtonPressed: () => Navigator.of(context).pop()),
-                  childIfFalse: PredicateBuilder(
-                    predicate: () => _isAwaitingResponse,
-                    maintainState: true,
-                    childIfTrue: CircularProgressIndicator(),
-                    childIfFalse: Column(
-                      children: <Widget>[
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 32.0),
-                          child: Text(
-                              "Please enter your email address below to receive a Password reset email."),
-                        ),
-                        TextField(
-                          controller: _controller,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(
-                            hintText: 'Email',
-                            errorText: _errorText,
+            body: Builder(
+                          builder: (innerContext) => Container(
+                  alignment: Alignment.center,
+                  padding: EdgeInsets.all(16),
+                  child: PredicateBuilder(
+                    predicate: () => _isSuccessfull,
+                    childIfTrue: ForgotPasswordSuccess(
+                        emailAddress: _controller.text,
+                        onFinishButtonPressed: () => Navigator.of(innerContext).pop()),
+                    childIfFalse: PredicateBuilder(
+                      predicate: () => _isAwaitingResponse,
+                      maintainState: true,
+                      childIfTrue: CircularProgressIndicator(),
+                      childIfFalse: Column(
+                        children: <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 32.0),
+                            child: Text(
+                                "Please enter your email address below to receive a Password reset email."),
                           ),
-                          onSubmitted: (_) => _validateAndSetErrorText,
-                        ),
-                        RaisedButton(
-                          child: Text('Submit'),
-                          onPressed: () => _handleSubmitButtonPressed(context),
-                        )
-                      ],
+                          TextField(
+                            controller: _controller,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: InputDecoration(
+                              hintText: 'Email',
+                              errorText: _errorText,
+                            ),
+                            onSubmitted: (_) => _validateAndSetErrorText,
+                          ),
+                          RaisedButton(
+                            child: Text('Submit'),
+                            onPressed: () => _handleSubmitButtonPressed(innerContext),
+                          )
+                        ],
+                      ),
                     ),
-                  ),
-                ))));
+                  )),
+            )));
   }
 
-  void _handleSubmitButtonPressed(BuildContext context) async {
+  void _handleSubmitButtonPressed(BuildContext innerContext) async {
     final email = _controller.text;
 
     if (!isValidEmail(email)) {
@@ -104,12 +105,11 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
       });
 
       if (error.code == 'ERROR_USER_NOT_FOUND') {
-        _showSnackBar(context, 'Email address does not match any accounts.');
+        showSnackBar(message: 'Email address does not match any accounts.', scaffoldState: Scaffold.of(context));
       }
 
       if (error.code == 'ERROR_INVALID_EMAIL') {
-        _showSnackBar(
-            context, 'Invalid email. Please check the address and try again.');
+        showSnackBar(message: 'Invalid email. Please check the address and try again.', scaffoldState: Scaffold.of(context));
       }
     }
   }
@@ -125,12 +125,6 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
       setState(() {
         _errorText = 'Invalid email';
       });
-    }
-  }
-
-  void _showSnackBar(BuildContext context, String message) {
-    if (_scaffoldKey.currentState != null) {
-      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(message)));
     }
   }
 }

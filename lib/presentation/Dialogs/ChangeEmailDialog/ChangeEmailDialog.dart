@@ -6,6 +6,7 @@ import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/SimpleAppBar.dart';
 import 'package:handball_flutter/utilities/CloudFunctionLayer.dart';
 import 'package:handball_flutter/utilities/isValidEmail.dart';
+import 'package:handball_flutter/utilities/showSnackbar.dart';
 
 class ChangeEmailDialog extends StatefulWidget {
   final CloudFunctionsLayer cloudFunctionsLayer;
@@ -27,7 +28,6 @@ class _ChangeEmailDialogState extends State<ChangeEmailDialog> {
   bool _isAwaitingRequest = false;
   bool _success = false;
   String _errorText;
-  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -39,42 +39,46 @@ class _ChangeEmailDialogState extends State<ChangeEmailDialog> {
   Widget build(BuildContext context) {
     return SafeArea(
         child: Scaffold(
-            key: _scaffoldKey,
             appBar: SimpleAppBar(),
-            body: Container(
-              alignment: Alignment.center,
-              padding: EdgeInsets.all(16),
-              child: PredicateBuilder(
-                predicate: () => _success == true,
-                childIfTrue: ChangeEmailSuccess(
-                    newEmail: _controller.text,
-                    onFinishButtonPressed: () => Navigator.of(context).pop()),
-                childIfFalse: PredicateBuilder(
-                  predicate: () => _isAwaitingRequest,
-                  maintainState: true,
-                  childIfTrue: CircularProgressIndicator(),
-                  childIfFalse: Column(
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Text('Please enter a new email address below.'),
-                      ),
-                      TextField(
-                        controller: _controller,
-                        autofocus: true,
-                        keyboardType: TextInputType.emailAddress,
-                        onSubmitted: (_) => _validateEmail(_controller.text),
-                        decoration: InputDecoration(
-                            hintText: 'Email address', errorText: _errorText),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16.0),
-                        child: RaisedButton(
-                          child: Text('Submit'),
-                          onPressed: () => _handleSubmitButtonPressed(context),
+            body: Builder(
+              builder: (innerContext) => Container(
+                alignment: Alignment.center,
+                padding: EdgeInsets.all(16),
+                child: PredicateBuilder(
+                  predicate: () => _success == true,
+                  childIfTrue: ChangeEmailSuccess(
+                      newEmail: _controller.text,
+                      onFinishButtonPressed: () =>
+                          Navigator.of(innerContext).pop()),
+                  childIfFalse: PredicateBuilder(
+                    predicate: () => _isAwaitingRequest,
+                    maintainState: true,
+                    childIfTrue: CircularProgressIndicator(),
+                    childIfFalse: Column(
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child:
+                              Text('Please enter a new email address below.'),
                         ),
-                      )
-                    ],
+                        TextField(
+                          controller: _controller,
+                          autofocus: true,
+                          keyboardType: TextInputType.emailAddress,
+                          onSubmitted: (_) => _validateEmail(_controller.text),
+                          decoration: InputDecoration(
+                              hintText: 'Email address', errorText: _errorText),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0),
+                          child: RaisedButton(
+                            child: Text('Submit'),
+                            onPressed: () =>
+                                _handleSubmitButtonPressed(innerContext),
+                          ),
+                        )
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -98,9 +102,9 @@ class _ChangeEmailDialogState extends State<ChangeEmailDialog> {
     final oldEmail = widget.oldEmail;
 
     if (newEmail == oldEmail) {
-      _showSnackBar(
-          context, 'You are already registered with that email address.');
-
+      showSnackBar(
+          message: 'You are already registered with that email address.',
+          scaffoldState: Scaffold.of(context));
       return;
     }
 
@@ -134,13 +138,7 @@ class _ChangeEmailDialogState extends State<ChangeEmailDialog> {
         _isAwaitingRequest = false;
       });
 
-      _showSnackBar(context, error.message);
-    }
-  }
-
-  void _showSnackBar(BuildContext context, String message) {
-    if (_scaffoldKey.currentState != null) {
-      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(message)));
+      showSnackBar(message: error.message, scaffoldState: Scaffold.of(context));
     }
   }
 

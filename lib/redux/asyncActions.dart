@@ -48,6 +48,7 @@ import 'package:handball_flutter/presentation/Dialogs/ChooseAssignmentDialog/Cho
 import 'package:handball_flutter/presentation/Dialogs/DeleteAccountDialog/DeleteAccountDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/DeleteAccountDialog/DeleteAccountInProgressMask.dart';
 import 'package:handball_flutter/presentation/Dialogs/ForgotPasswordDialog/ForgotPasswordDialog.dart';
+import 'package:handball_flutter/presentation/Dialogs/LogInDialog/LogInDialog.dart';
 import 'package:handball_flutter/presentation/Dialogs/MoveListBottomSheet.dart';
 import 'package:handball_flutter/presentation/Dialogs/MoveTasksDialog/MoveTaskBottomSheet.dart';
 import 'package:handball_flutter/presentation/Screens/ListSortingScreen/ListSortingScreen.dart';
@@ -64,6 +65,7 @@ import 'package:handball_flutter/utilities/UndoRedo/parseUndoAction.dart';
 import 'package:handball_flutter/utilities/UndoRedo/pushUndoAction.dart';
 import 'package:handball_flutter/utilities/UndoRedo/undoLastAction.dart';
 import 'package:handball_flutter/utilities/activivtyFeedUpdaters.dart';
+import 'package:handball_flutter/utilities/authExceptionHandlers.dart';
 import 'package:handball_flutter/utilities/buildInflatedProject.dart';
 import 'package:handball_flutter/utilities/checklistHelpers.dart';
 import 'package:handball_flutter/utilities/convertMemberRole.dart';
@@ -178,8 +180,6 @@ ThunkAction<AppState> initializeApp() {
     auth.onAuthStateChanged
         .listen((user) => handleAuthStateChanged(store, user));
 
-    homeScreenScaffoldKey?.currentState?.openDrawer();
-
     // Shared Preferences
     _initializeAndFetchSharedPreferences(store);
 
@@ -207,6 +207,33 @@ ThunkAction<AppState> initializeApp() {
   };
 }
 
+void _updateSplashScreen(FirebaseAuth auth, bool wasLoggedIn,
+    bool hasLoggedInBefore, Store<AppState> store) async {
+  final currentUser = await auth.currentUser();
+
+  if (wasLoggedIn == true && currentUser != null) {
+    // Existing User.
+    store.dispatch(SetSplashScreenState(state: SplashScreenState.home));
+    homeScreenScaffoldKey?.currentState?.openDrawer();
+    return;
+  }
+
+  if (hasLoggedInBefore == false &&
+      wasLoggedIn == false &&
+      currentUser == null) {
+    // New User
+    store.dispatch(SetSplashScreenState(state: SplashScreenState.onboarding));
+    return;
+  }
+
+  if (hasLoggedInBefore == true &&
+      wasLoggedIn == false &&
+      currentUser == null) {
+    // Returning user but they are logged out.
+    store.dispatch(SetSplashScreenState(state: SplashScreenState.loggedOut));
+  }
+}
+
 void _initializeAndFetchSharedPreferences(Store<AppState> store) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   // If the state.user has already been set. That means we have been beaten by onAuthStateChange. So no need to push lastUsedTheme.
@@ -218,6 +245,13 @@ void _initializeAndFetchSharedPreferences(Store<AppState> store) async {
           accountConfig: AccountConfigModel(appTheme: lastUsedTheme)));
     }
   }
+
+  // Splash Screen
+  _updateSplashScreen(
+      auth,
+      prefs.getBool(wasLoggedInSharedPreferencesKey) ?? false,
+      prefs.containsKey(hasLoggedInBeforeSharedPreferencesKey),
+      store);
 
   // Fetch lastUsedTaskListIds.
   final jsonDecoder = JsonDecoder();
@@ -243,13 +277,24 @@ void _initializeAndFetchSharedPreferences(Store<AppState> store) async {
 
 ThunkAction<AppState> debugButtonPressed() {
   return (Store<AppState> store) async {
-    final toggleBrightness =
-        store.state.accountConfig.appTheme.brightness == Brightness.dark
-            ? Brightness.light
-            : Brightness.dark;
-    store.dispatch(updateAppTheme(store.state.accountConfig.appTheme
-        .copyWith(brightness: toggleBrightness)));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    await prefs.reload();
+    showSnackBar(
+        message: 'SharedPreferences Cleared.',
+        targetGlobalKey: homeScreenScaffoldKey);
   };
+}
+
+void _persistAuthState(bool isLoggedIn) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  if (isLoggedIn == true) {
+    prefs.setBool(wasLoggedInSharedPreferencesKey, isLoggedIn);
+    prefs.setBool(hasLoggedInBeforeSharedPreferencesKey, true);
+  } else {
+    prefs.setBool(wasLoggedInSharedPreferencesKey, isLoggedIn);
+  }
 }
 
 void handleAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
@@ -258,6 +303,7 @@ void handleAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
     await firestoreStreams.cancelAll();
     firestoreStreams.projectSubscriptions.clear();
     notificationsPlugin.cancelAll();
+    _persistAuthState(false);
     return;
   }
 
@@ -269,6 +315,7 @@ void handleAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
           email: user.email)));
 
   subscribeToDatabase(store, user.uid);
+  _persistAuthState(true);
 
   // TODO: Sort this code out below. You are trying to extract the User document. But if it is the users first time Logging in. It won't exist yet.
   // We could use that to detect first Account Log in and activation.
@@ -286,6 +333,30 @@ void handleAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
   //   // TODO: Handle Log in error, userDoc did not exist. User Could be a new User.
   //   print("Could not find User");
   // }
+}
+
+ThunkAction<AppState> showLogInDialog(BuildContext context) {
+  return (Store<AppState> store) async {
+    if (store.state.user != null && store.state.user.isLoggedIn) {
+      // Don't show this Dialog if we are already Logged in.
+      return;
+    }
+
+    final result = await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => LogInDialog(
+              auth: auth,
+              hideSignUpButton: true,
+            ));
+
+    if (result is bool && result == true) {
+      // Log in was Successful.
+      store.dispatch(SetSplashScreenState(state: SplashScreenState.home));
+      homeScreenScaffoldKey?.currentState?.openDrawer();
+      return;
+    }
+  };
 }
 
 ThunkAction<AppState> deleteAccountWithDialog(BuildContext context) {
@@ -598,39 +669,8 @@ ThunkAction<AppState> signInUser(
     try {
       await auth.signInWithEmailAndPassword(email: email, password: password);
     } on PlatformException catch (error) {
-      var reThrow = false;
-
-      switch (error.code) {
-        case 'ERROR_INVALID_EMAIL':
-          showSnackBar(
-              targetGlobalKey: appSettingsScaffoldKey,
-              message: 'Make sure you email address is valid.');
-          break;
-
-        case 'ERROR_USER_NOT_FOUND':
-          showSnackBar(
-              targetGlobalKey: appSettingsScaffoldKey,
-              message: 'Account not found.');
-          break;
-
-        case 'ERROR_WRONG_PASSWORD':
-          showSnackBar(
-              targetGlobalKey: appSettingsScaffoldKey,
-              message: 'That password does not match the account.');
-          break;
-
-        default:
-          showSnackBar(
-              targetGlobalKey: appSettingsScaffoldKey,
-              message: 'Oops. Something went wrong.');
-          reThrow = true;
-          break;
-      }
       store.dispatch(SetAccountState(accountState: AccountState.loggedOut));
-
-      if (reThrow == true) {
-        throw error;
-      }
+      handleAuthException(error, appSettingsScaffoldKey);
     }
   };
 }
@@ -638,7 +678,9 @@ ThunkAction<AppState> signInUser(
 ThunkAction<AppState> signOutUser() {
   return (Store<AppState> store) async {
     try {
-      auth.signOut();
+      await auth.signOut();
+      store.dispatch(SetSplashScreenState(state: SplashScreenState.loggedOut));
+      store.dispatch(CloseAppSettings());
     } catch (error) {
       throw error;
     }
@@ -1371,7 +1413,7 @@ ThunkAction<AppState> resetPasswordWithDialog(
         builder: (context) => ForgotPasswordDialog(
             auth: auth, initialValue: currentlyEnteredEmail));
 
-    // Don't really need to do anything here. ForgotPasswordDialog would have taken care of everything.R
+    // Don't really need to do anything here. ForgotPasswordDialog would have taken care of everything.
   };
 }
 
@@ -1607,6 +1649,7 @@ ThunkAction<AppState> showSignUpDialog(BuildContext context) {
         });
 
     if (desiredDisplayName is String) {
+      store.dispatch(SetSplashScreenState(state: SplashScreenState.home));
       store.dispatch(InjectDisplayName(displayName: desiredDisplayName));
     }
   };

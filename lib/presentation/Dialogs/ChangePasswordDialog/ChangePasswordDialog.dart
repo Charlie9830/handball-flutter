@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:handball_flutter/presentation/Dialogs/ChangePasswordDialog/ChangePasswordSuccess.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/SimpleAppBar.dart';
+import 'package:handball_flutter/utilities/showSnackbar.dart';
 
 class ChangePasswordDialog extends StatefulWidget {
   final FirebaseAuth auth;
@@ -20,7 +21,6 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   TextEditingController _controller;
   bool _isAwaitingRequest = false;
   bool _success = false;
-  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -32,34 +32,35 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   Widget build(BuildContext context) {
     return SafeArea(
         child: Scaffold(
-            key: _scaffoldKey,
             appBar: SimpleAppBar(),
-            body: Container(
-              alignment: Alignment.center,
-              padding: EdgeInsets.all(16),
-              child: PredicateBuilder(
-                predicate: () => _success == true,
-                childIfTrue: ChangePasswordSuccess(
-                    onFinishButtonPressed: () => Navigator.of(context).pop()),
-                childIfFalse: PredicateBuilder(
-                  predicate: () => _isAwaitingRequest,
-                  maintainState: true,
-                  childIfTrue: CircularProgressIndicator(),
-                  childIfFalse: Column(
-                    children: <Widget>[
-                      TextField(
-                        controller: _controller,
-                        autofocus: true,
-                        obscureText: true,
-                        keyboardType: TextInputType.text,
-                        decoration:
-                            InputDecoration(hintText: 'Enter a new Password'),
-                      ),
-                      RaisedButton(
-                        child: Text('Submit'),
-                        onPressed: () => _handleSubmitButtonPressed(context),
-                      )
-                    ],
+            body: Builder(
+              builder: (innerContext) => Container(
+                alignment: Alignment.center,
+                padding: EdgeInsets.all(16),
+                child: PredicateBuilder(
+                  predicate: () => _success == true,
+                  childIfTrue: ChangePasswordSuccess(
+                      onFinishButtonPressed: () => Navigator.of(innerContext).pop()),
+                  childIfFalse: PredicateBuilder(
+                    predicate: () => _isAwaitingRequest,
+                    maintainState: true,
+                    childIfTrue: CircularProgressIndicator(),
+                    childIfFalse: Column(
+                      children: <Widget>[
+                        TextField(
+                          controller: _controller,
+                          autofocus: true,
+                          obscureText: true,
+                          keyboardType: TextInputType.text,
+                          decoration:
+                              InputDecoration(hintText: 'Enter a new Password'),
+                        ),
+                        RaisedButton(
+                          child: Text('Submit'),
+                          onPressed: () => _handleSubmitButtonPressed(innerContext),
+                        )
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -74,7 +75,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
     final user = await widget.auth.currentUser();
 
     if (user == null) {
-      _showSnackBar(context, 'Uh oh, something went wrong.');
+      showSnackBar(message: 'Uh oh, something went wrong.', scaffoldState: Scaffold.of(context));
     }
 
     try {
@@ -89,21 +90,14 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
       });
 
       if (error.code == 'ERROR_WEAK_PASSWORD') {
-        _showSnackBar(context,
-            'Password is too weak, try using a password with at least 6 characters.');
+        showSnackBar(message: 'Password strength is too weak. Try using a password with at least 6 characters.', scaffoldState: Scaffold.of(context));
       }
 
       if (error.code == 'ERROR_REQUIRES_RECENT_LOGIN') {
-        _showSnackBar(context, 'Oops, please authenticate your account again.');
+        showSnackBar(message: 'Please reauthenticate your account again.', scaffoldState: Scaffold.of(context));
       }
 
       throw error;
-    }
-  }
-
-  void _showSnackBar(BuildContext context, String message) {
-    if (_scaffoldKey.currentState != null) {
-      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(message)));
     }
   }
 

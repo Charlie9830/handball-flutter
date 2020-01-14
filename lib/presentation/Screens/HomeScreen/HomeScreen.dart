@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextStyle(fontFamily: 'Ubuntu')),
         actions: <Widget>[
           // Debug Button
-          if (false)
+          if (true)
             IconButton(
               icon: Icon(Icons.bug_report),
               onPressed: widget.viewModel.onDebugButtonPressed,

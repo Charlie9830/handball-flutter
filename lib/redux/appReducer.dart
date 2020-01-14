@@ -161,24 +161,28 @@ AppState appReducer(AppState state, dynamic action) {
 
   if (action is AddCompletingTask) {
     return state.copyWith(
-      completingTasks: Set<String>.from(state.completingTasks)..add(action.taskId),
+      completingTasks: Set<String>.from(state.completingTasks)
+        ..add(action.taskId),
     );
   }
 
   if (action is AddMultipleCompletingTasks) {
     return state.copyWith(
-        completingTasks: Set<String>.from(state.completingTasks)..addAll(action.taskIds));
+        completingTasks: Set<String>.from(state.completingTasks)
+          ..addAll(action.taskIds));
   }
 
   if (action is RemoveCompletingTask) {
     return state.copyWith(
-      completingTasks: Set<String>.from(state.completingTasks)..remove(action.taskId),
+      completingTasks: Set<String>.from(state.completingTasks)
+        ..remove(action.taskId),
     );
   }
 
   if (action is RemoveMultipleCompletingTasks) {
     return state.copyWith(
-      completingTasks: Set<String>.from(state.completingTasks)..removeAll(action.taskIds),
+      completingTasks: Set<String>.from(state.completingTasks)
+        ..removeAll(action.taskIds),
     );
   }
 
@@ -629,6 +633,12 @@ AppState appReducer(AppState state, dynamic action) {
           // On appInitialization, we don't let the user Trigger an Undo, even if there is a lastUndoAction available.
           // Otherwise, they could undo something they did from a previous session.
         ));
+  }
+
+  if (action is SetSplashScreenState) {
+    return state.copyWith(
+      splashScreenState: action.state,
+    );
   }
 
   return state;

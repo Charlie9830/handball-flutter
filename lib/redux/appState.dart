@@ -63,6 +63,7 @@ class AppState {
   final bool isRefreshingActivityFeed;
   final String selectedActivityFeedProjectId;
   final bool canRefreshActivityFeed;
+  final SplashScreenState splashScreenState;
 
   final TextInputDialogModel textInputDialog;
 
@@ -114,6 +115,7 @@ class AppState {
     this.canRefreshActivityFeed,
     this.projectsById,
     this.completingTasks,
+    this.splashScreenState,
   });
 
   AppState copyWith({
@@ -165,6 +167,7 @@ class AppState {
     String selectedActivityFeedProjectId,
     bool canRefreshActivityFeed,
     Set<String> completingTasks,
+    SplashScreenState splashScreenState,
   }) {
     return AppState(
       projectIds: projectIds ?? this.projectIds,
@@ -221,6 +224,7 @@ class AppState {
       selectedActivityFeedProjectId: selectedActivityFeedProjectId ?? this.selectedActivityFeedProjectId,
       canRefreshActivityFeed: canRefreshActivityFeed ?? this.canRefreshActivityFeed,
       completingTasks: completingTasks ?? this.completingTasks,
+      splashScreenState: splashScreenState ?? this.splashScreenState,
     );
   }
 }

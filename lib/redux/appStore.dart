@@ -74,6 +74,7 @@ final initialAppState = AppState(
   selectedActivityFeedProjectId: '-1',
   canRefreshActivityFeed: false,
   completingTasks: <String>{},
+  splashScreenState: SplashScreenState.loading,
 );
 
 final appStore =

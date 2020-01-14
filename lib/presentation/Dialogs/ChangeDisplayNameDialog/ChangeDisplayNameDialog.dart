@@ -28,7 +28,6 @@ class _ChangeDisplayNameDialogState extends State<ChangeDisplayNameDialog> {
   bool _isAwaitingRequestCompletion = false;
   bool _didRequestSucceed = false;
   bool _allowSubmit = false;
-  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -51,42 +50,45 @@ class _ChangeDisplayNameDialogState extends State<ChangeDisplayNameDialog> {
       onWillPop: () => _handleWillPopScope(context),
       child: SafeArea(
         child: Scaffold(
-            key: _scaffoldKey,
             appBar: SimpleAppBar(),
-            body: Container(
-                alignment: Alignment.center,
-                padding: EdgeInsets.all(16),
-                child: PredicateBuilder(
-                  predicate: () => _isAwaitingRequestCompletion == true,
-                  maintainState: true,
-                  childIfTrue: CircularProgressIndicator(),
-                  childIfFalse: PredicateBuilder(
-                    predicate: () => _didRequestSucceed == true,
-                    childIfTrue: RequestSuccess(
-                      newDisplayName: _textController.text.trim(),
-                      onFinishButtonPressed: () => _handleFinishButtonPressed(context),),
-                    childIfFalse: Column(
-                      children: <Widget>[
-                        Text(
-                            'Changes to your Display Name can take several minutes to propagate and will not apply to events already existing within the Activity Feed.'),
-                        TextField(
-                          controller: _textController,
-                          autofocus: true,
-                          onSubmitted: (_) => _handleTextFieldSubmit(),
-                          decoration: InputDecoration(
-                            hintText: 'Enter a new Display Name',
-                            errorText: _errorText,
+            body: Builder(
+              builder: (innerContext) => Container(
+                  alignment: Alignment.center,
+                  padding: EdgeInsets.all(16),
+                  child: PredicateBuilder(
+                    predicate: () => _isAwaitingRequestCompletion == true,
+                    maintainState: true,
+                    childIfTrue: CircularProgressIndicator(),
+                    childIfFalse: PredicateBuilder(
+                      predicate: () => _didRequestSucceed == true,
+                      childIfTrue: RequestSuccess(
+                        newDisplayName: _textController.text.trim(),
+                        onFinishButtonPressed: () =>
+                            _handleFinishButtonPressed(innerContext),
+                      ),
+                      childIfFalse: Column(
+                        children: <Widget>[
+                          Text(
+                              'Changes to your Display Name can take several minutes to propagate and will not apply to events already existing within the Activity Feed.'),
+                          TextField(
+                            controller: _textController,
+                            autofocus: true,
+                            onSubmitted: (_) => _handleTextFieldSubmit(),
+                            decoration: InputDecoration(
+                              hintText: 'Enter a new Display Name',
+                              errorText: _errorText,
+                            ),
                           ),
-                        ),
-                        RaisedButton(
-                            child: Text('Submit'),
-                            onPressed: _allowSubmit
-                                ? () => _handleSubmitButtonPressed(context)
-                                : null)
-                      ],
+                          RaisedButton(
+                              child: Text('Submit'),
+                              onPressed: _allowSubmit
+                                  ? () => _handleSubmitButtonPressed(innerContext)
+                                  : null)
+                        ],
+                      ),
                     ),
-                  ),
-                ))),
+                  )),
+            )),
       ),
     );
   }
@@ -138,7 +140,7 @@ class _ChangeDisplayNameDialogState extends State<ChangeDisplayNameDialog> {
       setState(() {
         _isAwaitingRequestCompletion = false;
       });
-      _showSnackBar(context, e.message);
+      showSnackBar(message: e.message, scaffoldState: Scaffold.of(context));
     }
   }
 
@@ -151,15 +153,11 @@ class _ChangeDisplayNameDialogState extends State<ChangeDisplayNameDialog> {
     });
   }
 
-  void _showSnackBar(BuildContext context, String message) {
-    if (_scaffoldKey.currentState != null) {
-      _scaffoldKey.currentState.showSnackBar(SnackBar(content: Text(message)));
-    }
-  }
+
 
   @override
   @override
-  void dispose() { 
+  void dispose() {
     _textController.dispose();
     super.dispose();
   }

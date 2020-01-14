@@ -83,3 +83,10 @@ enum AccountActionsBottomSheetResult {
   deleteAccount,
   changeEmailAddress,
 }
+
+enum SplashScreenState {
+  loading,
+  onboarding,
+  loggedOut,
+  home,
+}
