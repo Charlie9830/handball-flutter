@@ -3,7 +3,7 @@ import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/presentation/ListEntryExitAnimation.dart';
 import 'package:sticky_headers/sticky_headers.dart';
 
-class TaskList extends StatelessWidget {
+class TaskList extends StatefulWidget {
   final String uid;
   final Widget header;
   final List<Widget> children;
@@ -19,24 +19,37 @@ class TaskList extends StatelessWidget {
   });
 
   @override
+  _TaskListState createState() => _TaskListState();
+}
+
+class _TaskListState extends State<TaskList> {
+  @override
   Widget build(BuildContext context) {
-    if (taskListAnimatedListStateKeys[uid] == null) {
-      taskListAnimatedListStateKeys[uid] = GlobalKey<AnimatedListState>();
+    if (taskListAnimatedListStateKeys[widget.uid] == null) {
+      taskListAnimatedListStateKeys[widget.uid] =
+          GlobalKey<AnimatedListState>();
     }
 
     return new StickyHeader(
-        header: header,
+        header: widget.header,
         content: AnimatedList(
-            key: taskListAnimatedListStateKeys[uid],
+            key: taskListAnimatedListStateKeys[widget.uid],
             physics: ClampingScrollPhysics(),
             shrinkWrap: true,
-            initialItemCount: children.length,
+            initialItemCount: widget.children.length,
             itemBuilder: (context, index, animation) {
               return ListEntryExitAnimation(
-                key: children[index].key,
+                key: widget.children[index].key,
                 animation: animation,
-                child: children[index],
+                child: widget.children[index],
               );
             }));
+  }
+
+  @override
+  void dispose() {
+    print('Disposing ${widget.uid}');
+    taskListAnimatedListStateKeys.remove(widget.uid);
+    super.dispose();
   }
 }
