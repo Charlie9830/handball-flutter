@@ -12,6 +12,7 @@ import 'package:handball_flutter/presentation/TaskList/TaskListHeader.dart';
 class TaskListsListView extends StatelessWidget {
   final List<TaskListViewModel> taskListViewModels;
   final SlidableController taskSlidableController;
+  final double topPadding;
   final dynamic onAddNewTaskListButtonPressed;
   final dynamic onAddNewProjectButtonPressed;
   final dynamic onLogInButttonPress;
@@ -19,6 +20,7 @@ class TaskListsListView extends StatelessWidget {
   TaskListsListView(
       {Key key,
       this.taskListViewModels,
+      this.topPadding,
       this.taskSlidableController,
       this.onAddNewTaskListButtonPressed,
       this.onAddNewProjectButtonPressed,
@@ -31,10 +33,13 @@ class TaskListsListView extends StatelessWidget {
 
     var taskLists = _buildTaskLists(context, taskListViewModels, taskSlidableController);
 
-    var listView = ListView(
+    var listView = Padding(
+      padding: EdgeInsets.only(top: topPadding),
+      child: ListView(
+      padding: EdgeInsets.only(top: 0), // Stops ListView interferring with the Padding Parent above.
       shrinkWrap: showHintsMask == true,
       children: taskLists,
-    );
+    ));
 
     return PredicateBuilder(
         predicate: () => showHintsMask == true,

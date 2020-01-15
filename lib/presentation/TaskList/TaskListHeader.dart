@@ -39,7 +39,6 @@ class TaskListHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Theme.of(context).canvasColor,
       child: new Container(
         margin: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         padding: EdgeInsets.symmetric(vertical: 0, horizontal: 0),
@@ -48,7 +47,7 @@ class TaskListHeader extends StatelessWidget {
             border: Border.all(
               color: Theme.of(context).colorScheme.onSurface,
             ),
-            borderRadius: BorderRadius.all(Radius.circular(8))),
+            borderRadius: BorderRadius.all(Radius.circular(16))),
         child: Row(
           children: <Widget>[
             TaskListSettingsMenu(

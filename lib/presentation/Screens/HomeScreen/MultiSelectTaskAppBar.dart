@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/presentation/Screens/HomeScreen/HomeScreenAppBar.dart';
 
 class MultiSelectTaskAppBar extends StatelessWidget {
   final dynamic onCancel;
@@ -18,14 +19,13 @@ class MultiSelectTaskAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
+    return HomeScreenAppBar(
       backgroundColor: Theme.of(context).colorScheme.secondary,
-      automaticallyImplyLeading: false,
       leading: IconButton(
         icon: Icon(Icons.close),
         onPressed: onCancel,
       ),
-      title: Text('Select Tasks'),
+      title: 'Select Tasks',
       actions: <Widget>[
         IconButton(
           icon: Icon(Icons.move_to_inbox),
