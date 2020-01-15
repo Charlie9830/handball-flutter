@@ -48,7 +48,6 @@ class _TaskListState extends State<TaskList> {
 
   @override
   void dispose() {
-    print('Disposing ${widget.uid}');
     taskListAnimatedListStateKeys.remove(widget.uid);
     super.dispose();
   }
