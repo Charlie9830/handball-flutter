@@ -11,22 +11,22 @@ class PageIndicator extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
-      children: _getChildren(),
+      children: _getChildren(context),
     );
   }
 
-  List<Widget> _getChildren() {
+  List<Widget> _getChildren(BuildContext context) {
     List<Widget> indicators = [];
     final int _currentPageIndex = currentPageIndex ?? 0;
     
     for (int i = 0; i < pageQty; i++) {
-      indicators.add(_buildIndicator(i == _currentPageIndex));
+      indicators.add(_buildIndicator(i == _currentPageIndex, context));
     }
 
     return indicators;
   }
 
-  Widget _buildIndicator(bool isActive) {
+  Widget _buildIndicator(bool isActive, BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: AnimatedContainer(
@@ -34,7 +34,7 @@ class PageIndicator extends StatelessWidget {
         width: isActive ? 32 : 16,
         height: 8,
         decoration: BoxDecoration(
-          color: isActive ? Colors.white : Colors.white38,
+          color: isActive ? Theme.of(context).focusColor : Theme.of(context).disabledColor,
           borderRadius: BorderRadius.circular(4)
         ),
       ),

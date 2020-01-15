@@ -31,7 +31,7 @@ class _WelcomeScreenBaseState extends State<WelcomeScreenBase> {
     return Container(
       height: MediaQuery.of(context).size.height,
       width: MediaQuery.of(context).size.width,
-      color: Color.fromARGB(255, 0, 11, 19),
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Column(children: <Widget>[
         Expanded(
             child: PageView(

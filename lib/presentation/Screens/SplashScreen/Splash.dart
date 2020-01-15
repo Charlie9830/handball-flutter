@@ -9,10 +9,13 @@ class Splash extends StatelessWidget {
       height: MediaQuery.of(context).size.height,
       width: MediaQuery.of(context).size.width,
       alignment: Alignment.center,
-      color: Color.fromARGB(255, 0, 11, 19),
-      child: Image(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Material(
+        elevation: 15,
+        borderRadius: BorderRadius.circular(8),
+        child: Image(
           image: AssetImage('assets/images/app_icon.png'),
           width: MediaQuery.of(context).size.width / 3),
-    );
+    ));
   }
 }

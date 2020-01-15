@@ -11,8 +11,8 @@ class OnboardingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final headlineMixin = headlineTextStyleMixin;
-    final detailMixin = detailTextStyleMixin;
+    final headlineMixin = getHeadlineTextStyleMixin(Theme.of(context).brightness);
+    final detailMixin = getDetailTextStyleMixin(Theme.of(context).brightness);
 
     return Container(
       alignment: Alignment.center,

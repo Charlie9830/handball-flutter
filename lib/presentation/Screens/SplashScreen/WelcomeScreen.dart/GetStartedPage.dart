@@ -13,11 +13,12 @@ class GetStartedPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final headlineMixin = headlineTextStyleMixin;
+    final headlineMixin = getHeadlineTextStyleMixin(Theme.of(context).brightness);
 
     return Container(
       height: MediaQuery.of(context).size.height,
       width: MediaQuery.of(context).size.width,
+      color: Theme.of(context).scaffoldBackgroundColor,
       alignment: Alignment.center,
       child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -41,11 +42,7 @@ class GetStartedPage extends StatelessWidget {
               ),
             ),
             FlatButton(
-              child: Text('Sign in to an existing account',
-                  style: Theme.of(context)
-                      .textTheme
-                      .button
-                      .copyWith(color: Colors.white)),
+              child: Text('Sign in to an existing account'),
               onPressed: onSignInButtonPressed,
             )
           ]),

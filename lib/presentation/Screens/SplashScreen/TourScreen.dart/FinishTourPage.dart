@@ -8,7 +8,7 @@ class FinishTourPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final headlineMixin = headlineTextStyleMixin;
+    final headlineMixin = getHeadlineTextStyleMixin(Theme.of(context).brightness);
 
     return Container(
       alignment: Alignment.center,
