@@ -10,12 +10,14 @@ class Result extends StatelessWidget {
   final String message;
   final dynamic onBackButtonPressed;
   final dynamic onStartButtonPressed;
+  final dynamic onTourButtonPressed;
 
   Result({
     this.result,
     this.message,
     this.onBackButtonPressed,
     this.onStartButtonPressed,
+    this.onTourButtonPressed,
   });
 
   @override
@@ -40,6 +42,7 @@ class Result extends StatelessWidget {
         return Success(
           message: message,
           onStartButtonPressed: onStartButtonPressed,
+          onTourButtonPressed: onTourButtonPressed,
         );
 
       default:

@@ -23,6 +23,7 @@ import 'package:handball_flutter/models/ProjectIdModel.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Reminder.dart';
 import 'package:handball_flutter/models/ServerCleanupJobs/CleanupTaskListMove.dart';
+import 'package:handball_flutter/models/SignUpDialogResult.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:handball_flutter/models/TaskListSettings.dart';
@@ -1639,7 +1640,7 @@ List<String> _getProjectRelatedMemberIds(
 
 ThunkAction<AppState> showSignUpDialog(BuildContext context) {
   return (Store<AppState> store) async {
-    final desiredDisplayName = await showDialog(
+    final dialogResult = await showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) {
@@ -1649,17 +1650,28 @@ ThunkAction<AppState> showSignUpDialog(BuildContext context) {
           );
         });
 
-    if (desiredDisplayName is String) {
-      store.dispatch(InjectDisplayName(displayName: desiredDisplayName));
+    if (dialogResult is SignUpDialogResult) {
+      store.dispatch(
+          InjectDisplayName(displayName: dialogResult.choosenDisplayName));
 
-      await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => TourScreenBase(),
-      );
+      if (dialogResult.showTour == true) {
+        // User would like to take a Tour.
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => TourScreenBase(),
+        );
 
-      store.dispatch(SetSplashScreenState(state: SplashScreenState.home));
-      homeScreenScaffoldKey?.currentState?.openDrawer();
+        store.dispatch(SetSplashScreenState(state: SplashScreenState.home));
+        homeScreenScaffoldKey?.currentState?.openDrawer();
+        return;
+      }
+
+      else {
+        // User wants to jump right in.
+        store.dispatch(SetSplashScreenState(state: SplashScreenState.home));
+        homeScreenScaffoldKey?.currentState?.openDrawer();
+      }
     }
   };
 }

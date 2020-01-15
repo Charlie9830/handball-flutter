@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:handball_flutter/models/DirectoryListing.dart';
+import 'package:handball_flutter/models/SignUpDialogResult.dart';
 import 'package:handball_flutter/presentation/Nothing.dart';
 import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/Screens/SignUp/DecorationPainter.dart';
@@ -170,11 +171,11 @@ class _SignUpBaseState extends State<SignUpBase> with TickerProviderStateMixin {
 
         case SignUpSteps.result:
           return Result(
-            result: result,
-            message: resultMessage,
-            onBackButtonPressed: () => _movePrev(context),
-            onStartButtonPressed: () => _finish(context),
-          );
+              result: result,
+              message: resultMessage,
+              onBackButtonPressed: () => _movePrev(context),
+              onStartButtonPressed: () => _finish(context, false),
+              onTourButtonPressed: () => _finish(context, true));
 
         default:
           throw UnimplementedError(
@@ -229,17 +230,16 @@ class _SignUpBaseState extends State<SignUpBase> with TickerProviderStateMixin {
       // Step Next.
       var newIndex = _tabController.index + 1;
       _tabController.index = newIndex;
-    }
-
-    else {
+    } else {
       // Try to Register (Takes us to result page).
       _tryRegister();
     }
   }
 
-  void _finish(BuildContext context) {
-    Navigator.of(context).pop(_displayNameController.text);
-  } 
+  void _finish(BuildContext context, withTour) {
+    Navigator.of(context).pop(SignUpDialogResult(
+        choosenDisplayName: _displayNameController.text, showTour: withTour));
+  }
 
   void _dropKeyboardFocus() {
     _emailFocusNode.unfocus();
@@ -289,7 +289,6 @@ class _SignUpBaseState extends State<SignUpBase> with TickerProviderStateMixin {
       else {
         throw error;
       }
-      
     }
   }
 
