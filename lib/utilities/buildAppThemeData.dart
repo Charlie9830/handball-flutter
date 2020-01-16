@@ -5,21 +5,48 @@ import 'package:handball_flutter/models/ThemeDataTuple.dart';
 import 'package:handball_flutter/utilities/Colors/AppThemeColors.dart';
 
 ThemeDataTuple buildAppThemeData(AppThemeModel appTheme) {
-  var defaultTheme = ThemeData();
+  final defaultTheme = ThemeData();
   if (appTheme == null) {
     return ThemeDataTuple(
         dark: defaultTheme, light: defaultTheme); // Default Theme
   }
 
-  var primaryColor = AppThemeColors.materialColors[appTheme.primaryColorIndex];
-
-  var accentColor = AppThemeColors.accentColors[appTheme.accentColorIndex];
+  final primaryColor = AppThemeColors.materialColors[appTheme.primaryColorIndex];
+  final accentColor = AppThemeColors.accentColors[appTheme.accentColorIndex];
 
   // final colorScheme = brightness == Brightness.dark
   //     ? ColorScheme.dark(
   //         primary: primaryColor, secondary: accentColor)
   //     : ColorScheme.light(
   //         primary: primaryColor, secondary: accentColor);
+  
+  // baseDarkTheme and baseLightTheme are used to inform the Child Themes, eg: ButtonTheme.
+  final baseDarkTheme = ThemeData(
+    primaryColor: primaryColor,
+    accentColor: accentColor,
+    brightness: Brightness.dark,
+  );
+
+  final baseLightTheme = ThemeData(
+    primaryColor: primaryColor,
+    accentColor: accentColor,
+    brightness: Brightness.light,
+  );
+
+  final buttonShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(8)
+  );
+
+  final buttonDarkTheme = baseDarkTheme.buttonTheme.copyWith(
+    colorScheme: baseDarkTheme.colorScheme,
+    shape: buttonShape
+  );
+
+  final buttonLightTheme = baseLightTheme.buttonTheme.copyWith(
+    colorScheme: baseLightTheme.colorScheme,
+    shape: buttonShape,
+  );
+  
 
   return ThemeDataTuple(
     // Dark
@@ -28,6 +55,7 @@ ThemeDataTuple buildAppThemeData(AppThemeModel appTheme) {
       accentColor: accentColor,
       brightness: Brightness.dark,
       fontFamily: 'Archivo',
+      buttonTheme: buttonDarkTheme,
     ),
 
     // Light
@@ -36,6 +64,7 @@ ThemeDataTuple buildAppThemeData(AppThemeModel appTheme) {
       accentColor: accentColor,
       brightness: Brightness.light,
       fontFamily: 'Archivo',
+      buttonTheme: buttonLightTheme,
     ),
   );
 }

@@ -19,7 +19,7 @@ class AppSettings extends StatelessWidget {
       initialIndex: _getInitialTabIndex(),
       child: Scaffold(
         key: appSettingsScaffoldKey,
-        appBar: AppBar(
+        appBar: AppBar(            
             title: Text('Settings'),
             leading: IconButton(
               icon: Icon(Icons.arrow_back),
