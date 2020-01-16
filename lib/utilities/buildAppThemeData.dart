@@ -20,7 +20,7 @@ ThemeDataTuple buildAppThemeData(AppThemeModel appTheme) {
   //     : ColorScheme.light(
   //         primary: primaryColor, secondary: accentColor);
   
-  // baseDarkTheme and baseLightTheme are used to inform the Child Themes, eg: ButtonTheme.
+  // baseDarkTheme and baseLightTheme are used to inform the Child Themes, eg: ButtonTheme, PopupMenuTheme.
   final baseDarkTheme = ThemeData(
     primaryColor: primaryColor,
     accentColor: accentColor,
@@ -46,6 +46,19 @@ ThemeDataTuple buildAppThemeData(AppThemeModel appTheme) {
     colorScheme: baseLightTheme.colorScheme,
     shape: buttonShape,
   );
+
+  final popupMenuDarkTheme = PopupMenuThemeData(
+    color: baseDarkTheme.popupMenuTheme.color,
+    elevation: baseDarkTheme.popupMenuTheme.elevation,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+  );
+
+  final popupMenuLightTheme = PopupMenuThemeData(
+    color: baseLightTheme.popupMenuTheme.color,
+    elevation: baseLightTheme.popupMenuTheme.elevation,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+  );
+
   
 
   return ThemeDataTuple(
@@ -56,6 +69,8 @@ ThemeDataTuple buildAppThemeData(AppThemeModel appTheme) {
       brightness: Brightness.dark,
       fontFamily: 'Archivo',
       buttonTheme: buttonDarkTheme,
+      popupMenuTheme: popupMenuDarkTheme,
+      
     ),
 
     // Light
@@ -65,6 +80,7 @@ ThemeDataTuple buildAppThemeData(AppThemeModel appTheme) {
       brightness: Brightness.light,
       fontFamily: 'Archivo',
       buttonTheme: buttonLightTheme,
+      popupMenuTheme: popupMenuLightTheme,
     ),
   );
 }
