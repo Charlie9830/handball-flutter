@@ -44,6 +44,7 @@ class MultiSelectTaskAppBar extends StatelessWidget {
                   // Assign to
                   PopupMenuItem(
                       value: 'assign-to',
+                      enabled: onAssignTo != null,
                       child: ListTile(
                         leading: Icon(
                           Icons.person,
