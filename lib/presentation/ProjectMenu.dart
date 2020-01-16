@@ -42,7 +42,10 @@ class ProjectMenu extends StatelessWidget {
               child: Row(children: <Widget>[
                 Padding(
                   padding: const EdgeInsets.only(right: 8.0),
-                  child: Icon(Icons.undo),
+                  child: Icon(
+                    Icons.undo,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
                 Text('Undo')
               ]),
@@ -84,7 +87,10 @@ class ProjectMenu extends StatelessWidget {
                 children: <Widget>[
                   Padding(
                     padding: const EdgeInsets.only(right: 8.0),
-                    child: Icon(Icons.archive),
+                    child: Icon(
+                      Icons.archive,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                   Text('Archive Project'),
                 ],
@@ -97,7 +103,10 @@ class ProjectMenu extends StatelessWidget {
                 children: <Widget>[
                   Padding(
                     padding: const EdgeInsets.only(right: 8.0),
-                    child: Icon(Icons.notifications),
+                    child: Icon(
+                      Icons.notifications,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                   Text('Activity Feed'),
                 ],
@@ -119,7 +128,7 @@ class ProjectMenu extends StatelessWidget {
         break;
 
       case 'show-self-tasks':
-        onShowOnlySelfTasksChanged(!showOnlySelfTasks); 
+        onShowOnlySelfTasksChanged(!showOnlySelfTasks);
         break;
 
       case 'show-completed-tasks':

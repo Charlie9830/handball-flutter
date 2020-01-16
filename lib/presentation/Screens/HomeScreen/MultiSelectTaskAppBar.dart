@@ -38,38 +38,43 @@ class MultiSelectTaskAppBar extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(right: 8),
           child: PopupMenuButton(
-            child: Icon(Icons.more_vert),
-            itemBuilder: (context) {
-              return <PopupMenuItem<dynamic>>[
-                // Assign to
-                PopupMenuItem(
-                    value: 'assign-to',
+              child: Icon(Icons.more_vert),
+              itemBuilder: (context) {
+                return <PopupMenuItem<dynamic>>[
+                  // Assign to
+                  PopupMenuItem(
+                      value: 'assign-to',
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.person,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        title: Text('Assign to'),
+                      )),
+
+                  // Delete Tasks
+                  PopupMenuItem(
+                    enabled: onDeleteTasks != null,
+                    value: 'delete-tasks',
                     child: ListTile(
-                      leading: Icon(Icons.person),
-                      title: Text('Assign to'),
-                    )),
-
-                // Delete Tasks
-                PopupMenuItem(
-                  enabled: onDeleteTasks != null,
-                  value: 'delete-tasks',
-                  child: ListTile(
-                    leading: Icon(Icons.delete_sweep),
-                    title: Text('Delete selected'),
+                      leading: Icon(
+                        Icons.delete_sweep,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      title: Text('Delete selected'),
+                    ),
                   ),
-                ),
-              ];
-            },
-            onSelected: (value) {
-              if (value == 'assign-to') {
-                onAssignTo();
-              }
+                ];
+              },
+              onSelected: (value) {
+                if (value == 'assign-to') {
+                  onAssignTo();
+                }
 
-              if (value == 'delete-tasks') {
-                onDeleteTasks();
-              }
-            }
-          ),
+                if (value == 'delete-tasks') {
+                  onDeleteTasks();
+                }
+              }),
         ),
       ],
     );

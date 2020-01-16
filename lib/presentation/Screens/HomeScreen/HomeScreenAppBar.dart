@@ -25,18 +25,35 @@ class HomeScreenAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final _backgroundColor =
         this.backgroundColor ?? Theme.of(context).primaryColor;
-    final bgColorLuminance = _backgroundColor.computeLuminance();
-    final iconTheme = bgColorLuminance > 0.5
-        ? Theme.of(context).primaryIconTheme.copyWith(color: Colors.black)
-       : Theme.of(context).primaryIconTheme.copyWith(color: Colors.white);
-    
-    final textStyle = bgColorLuminance > 0.5 ? Theme.of(context).primaryTextTheme.title.copyWith(
-      color: Colors.black,
-      fontFamily: 'Ubuntu'
-    ) : Theme.of(context).primaryTextTheme.title.copyWith(
-      color: Colors.white,
-      fontFamily: 'Ubuntu'
-    );
+
+    // If using the default Background Color (PrimaryColor) then Set IconTheme and TextTheme to use onPrimary. Else
+    // calculate the luminance and set to White or Black accordingly.
+    IconThemeData iconTheme;
+    TextStyle textStyle;
+
+    if (this.backgroundColor == null ||
+        this.backgroundColor == Theme.of(context).primaryColor) {
+      iconTheme = Theme.of(context).primaryIconTheme;
+      textStyle = Theme.of(context)
+          .primaryTextTheme
+          .title
+          .copyWith(color: Theme.of(context).colorScheme.onPrimary);
+    } else {
+      final bgColorLuminance = _backgroundColor.computeLuminance();
+      iconTheme = bgColorLuminance > 0.5
+          ? Theme.of(context).primaryIconTheme.copyWith(color: Colors.black)
+          : Theme.of(context).primaryIconTheme.copyWith(color: Colors.white);
+
+      textStyle = bgColorLuminance > 0.5
+          ? Theme.of(context)
+              .primaryTextTheme
+              .title
+              .copyWith(color: Colors.black, fontFamily: 'Ubuntu')
+          : Theme.of(context)
+              .primaryTextTheme
+              .title
+              .copyWith(color: Colors.white, fontFamily: 'Ubuntu');
+    }
 
     return IconTheme(
       data: iconTheme,
@@ -77,9 +94,11 @@ class HomeScreenAppBar extends StatelessWidget implements PreferredSizeWidget {
                                         Scaffold.of(context).openDrawer(),
                                   ),
                               Expanded(
-                                child: Text(title ?? '',
-                                    style: textStyle,
-                                    overflow: TextOverflow.ellipsis,),
+                                child: Text(
+                                  title ?? '',
+                                  style: textStyle,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
