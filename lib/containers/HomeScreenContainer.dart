@@ -102,6 +102,8 @@ class HomeScreenContainer extends StatelessWidget {
     if (projectMembers.length > 1) {
       return true;
     }
+
+    return false;
   }
 
   String _getProjectName(String projectId, List<ProjectModel> projects) {
