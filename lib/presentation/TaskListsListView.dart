@@ -33,13 +33,11 @@ class TaskListsListView extends StatelessWidget {
 
     var taskLists = _buildTaskLists(context, taskListViewModels, taskSlidableController);
 
-    var listView = Padding(
-      padding: EdgeInsets.only(top: topPadding),
-      child: ListView(
-      padding: EdgeInsets.only(top: 0), // Stops ListView interferring with the Padding Parent above.
-      shrinkWrap: showHintsMask == true,
-      children: taskLists,
-    ));
+    var listView = ListView(
+    padding: EdgeInsets.all(0),
+    shrinkWrap: showHintsMask == true,
+    children: taskLists,
+    );
 
     return PredicateBuilder(
         predicate: () => showHintsMask == true,
