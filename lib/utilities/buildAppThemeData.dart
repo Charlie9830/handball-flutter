@@ -11,7 +11,8 @@ ThemeDataTuple buildAppThemeData(AppThemeModel appTheme) {
         dark: defaultTheme, light: defaultTheme); // Default Theme
   }
 
-  final primaryColor = AppThemeColors.materialColors[appTheme.primaryColorIndex];
+  final primaryColor =
+      AppThemeColors.materialColors[appTheme.primaryColorIndex];
   final accentColor = AppThemeColors.accentColors[appTheme.accentColorIndex];
 
   // final colorScheme = brightness == Brightness.dark
@@ -19,7 +20,7 @@ ThemeDataTuple buildAppThemeData(AppThemeModel appTheme) {
   //         primary: primaryColor, secondary: accentColor)
   //     : ColorScheme.light(
   //         primary: primaryColor, secondary: accentColor);
-  
+
   // baseDarkTheme and baseLightTheme are used to inform the Child Themes, eg: ButtonTheme, PopupMenuTheme.
   final baseDarkTheme = ThemeData(
     primaryColor: primaryColor,
@@ -33,14 +34,11 @@ ThemeDataTuple buildAppThemeData(AppThemeModel appTheme) {
     brightness: Brightness.light,
   );
 
-  final buttonShape = RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(8)
-  );
+  final buttonShape =
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(8));
 
-  final buttonDarkTheme = baseDarkTheme.buttonTheme.copyWith(
-    colorScheme: baseDarkTheme.colorScheme,
-    shape: buttonShape
-  );
+  final buttonDarkTheme = baseDarkTheme.buttonTheme
+      .copyWith(colorScheme: baseDarkTheme.colorScheme, shape: buttonShape);
 
   final buttonLightTheme = baseLightTheme.buttonTheme.copyWith(
     colorScheme: baseLightTheme.colorScheme,
@@ -59,8 +57,6 @@ ThemeDataTuple buildAppThemeData(AppThemeModel appTheme) {
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
   );
 
-  
-
   return ThemeDataTuple(
     // Dark
     dark: ThemeData(
@@ -70,7 +66,11 @@ ThemeDataTuple buildAppThemeData(AppThemeModel appTheme) {
       fontFamily: 'Archivo',
       buttonTheme: buttonDarkTheme,
       popupMenuTheme: popupMenuDarkTheme,
-      
+      snackBarTheme: baseDarkTheme.snackBarTheme.copyWith(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: (Radius.circular(16))))),
     ),
 
     // Light
@@ -81,6 +81,11 @@ ThemeDataTuple buildAppThemeData(AppThemeModel appTheme) {
       fontFamily: 'Archivo',
       buttonTheme: buttonLightTheme,
       popupMenuTheme: popupMenuLightTheme,
+      snackBarTheme: baseLightTheme.snackBarTheme.copyWith(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: (Radius.circular(16))))),
     ),
   );
 }
