@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:handball_flutter/keys.dart';
 import 'package:handball_flutter/presentation/ListEntryExitAnimation.dart';
+import 'package:handball_flutter/presentation/Nothing.dart';
 import 'package:sticky_headers/sticky_headers.dart';
 
 class TaskList extends StatefulWidget {
@@ -38,6 +39,16 @@ class _TaskListState extends State<TaskList> {
             shrinkWrap: true,
             initialItemCount: widget.children.length,
             itemBuilder: (context, index, animation) {
+              if (index >= widget.children.length) {
+                // Welcome back. The AnimatedTask System broke again didn't it?. You are probably wondering why you return
+                // a Nothing Widget here instead of throwing an out of range exception.
+                // It's because dispatching a sync action to the Redux store doesn't actually gaurantee Flutter will rebuild. 
+                // This means that this builder could be getting called on stale data.
+                // More info in the issue you posted about it to Flutter_Redux here.
+                // https://github.com/brianegan/flutter_redux/issues/165
+                return Nothing();
+              }
+
               return ListEntryExitAnimation(
                 key: widget.children[index].key,
                 animation: animation,
