@@ -279,12 +279,9 @@ void _initializeAndFetchSharedPreferences(Store<AppState> store) async {
 
 ThunkAction<AppState> debugButtonPressed() {
   return (Store<AppState> store) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    await prefs.reload();
-    showSnackBar(
-        message: 'SharedPreferences Cleared.',
-        targetGlobalKey: homeScreenScaffoldKey);
+    final selectedProjectId = store.state.selectedProjectId;
+    store.dispatch(SelectProject('-1'));
+    store.dispatch(SelectProject(selectedProjectId));
   };
 }
 

@@ -94,8 +94,8 @@ int _taskSorterPriority(TaskModel a, TaskModel b) {
 }
 
 int _taskDueDateSorter(TaskModel a, TaskModel b) {
-  var dueDateA = a.dueDate == null ? 0 : a.dueDate.millisecondsSinceEpoch;
-  var dueDateB = b.dueDate == null ? 0 : b.dueDate.millisecondsSinceEpoch;
+  double dueDateA = a.dueDate == null ? double.infinity : a.dueDate.millisecondsSinceEpoch.toDouble();
+  double dueDateB = b.dueDate == null ? double.infinity : b.dueDate.millisecondsSinceEpoch.toDouble();
 
   if (dueDateA < dueDateB) {
     return -1;
@@ -113,11 +113,11 @@ int _taskDateAddedSorter(TaskModel a, TaskModel b) {
   var dateAddedB = b.dateAdded == null ? 0 : b.dateAdded.millisecondsSinceEpoch;
 
   if (dateAddedA < dateAddedB) {
-    return -1;
+    return 1;
   }
 
   if (dateAddedA > dateAddedB) {
-    return 0;
+    return -1;
   }
 
   return 0;

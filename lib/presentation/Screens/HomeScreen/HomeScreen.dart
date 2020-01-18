@@ -101,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
       title: widget.viewModel.projectName,
       actions: <Widget>[
         // Debug Button
-        if (false)
+        if (true)
           IconButton(
             icon: Icon(Icons.bug_report),
             onPressed: widget.viewModel.onDebugButtonPressed,
