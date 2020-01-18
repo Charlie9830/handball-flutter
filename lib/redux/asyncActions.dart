@@ -499,8 +499,9 @@ ThunkAction<AppState> moveTasksToListWithDialog(
     List<TaskListModel> sortedTaskLists,
     BuildContext context) {
   return (Store<AppState> store) async {
-    store.dispatch(SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: false));
     if (tasks == null || tasks.isEmpty || sortedTaskLists == null) {
+      store
+          .dispatch(SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: false));
       return;
     }
 
@@ -545,6 +546,9 @@ ThunkAction<AppState> moveTasksToListWithDialog(
       var actuallyMovingTasks = tasks
           .where((item) => item.taskList != destinationTaskListId)
           .toList();
+
+      store
+          .dispatch(SetIsInMultiSelectTaskMode(isInMultiSelectTaskMode: false));
 
       try {
         moveTasks(actuallyMovingTasks, destinationTaskListId, projectId, batch,
@@ -1665,9 +1669,7 @@ ThunkAction<AppState> showSignUpDialog(BuildContext context) {
         store.dispatch(SetSplashScreenState(state: SplashScreenState.home));
         homeScreenScaffoldKey?.currentState?.openDrawer();
         return;
-      }
-
-      else {
+      } else {
         // User wants to jump right in.
         store.dispatch(SetSplashScreenState(state: SplashScreenState.home));
         homeScreenScaffoldKey?.currentState?.openDrawer();
