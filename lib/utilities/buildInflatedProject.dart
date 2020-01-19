@@ -5,6 +5,7 @@ import 'package:handball_flutter/models/ProjectModel.dart';
 import 'package:handball_flutter/models/Task.dart';
 import 'package:handball_flutter/models/TaskList.dart';
 import 'package:meta/meta.dart';
+import 'package:collection/collection.dart' as collection;
 
 InflatedProjectModel buildInflatedProject(
     {@required List<TaskModel> tasks,
@@ -44,14 +45,16 @@ InflatedProjectModel buildInflatedProject(
 
 List<TaskModel> _sortTasks(Iterable<TaskModel> tasks, TaskSorting sorting) {
   switch (sorting) {
+    case TaskSorting.auto:
+      return _autoSort(tasks);
     case TaskSorting.completed:
       return List.from(tasks)..sort(_taskSorterCompleted);
 
     case TaskSorting.priority:
-      return List.from(tasks)..sort(_taskSorterPriority);
+      return List.from(tasks)..sort((a, b) => _taskSorterPriority(a, b, true));
 
     case TaskSorting.dueDate:
-      return List.from(tasks)..sort(_taskDueDateSorter);
+      return List.from(tasks)..sort((a, b) => _taskDueDateSorter(a, b, true));
 
     case TaskSorting.dateAdded:
       return List.from(tasks)..sort(_taskDateAddedSorter);
@@ -65,6 +68,45 @@ List<TaskModel> _sortTasks(Iterable<TaskModel> tasks, TaskSorting sorting) {
     default:
       return List.from(tasks);
   }
+}
+
+List<TaskModel> _autoSort(Iterable<TaskModel> tasks) {
+  if (tasks.isEmpty) {
+    return List<TaskModel>.from(tasks);
+  }
+
+  final preSortedTasks = List<TaskModel>.from(tasks)..sort(_taskPreSorterAuto);
+
+  final groups =
+      collection.groupBy(preSortedTasks, (item) => _getGroupKey(item));
+
+  return <TaskModel>[
+    if (groups.containsKey('priority')) ...groups['priority'],
+    if (groups.containsKey('dueDate')) ...groups['dueDate'],
+    if (groups.containsKey('normal')) ...groups['normal']
+  ];
+}
+
+String _getGroupKey(TaskModel task) {
+  if (task.isHighPriority) {
+    return 'priority';
+  }
+
+  if (task.dueDate != null) {
+    return 'dueDate';
+  } else {
+    return 'normal';
+  }
+}
+
+int _taskPreSorterAuto(TaskModel a, TaskModel b) {
+  final result = _taskDueDateSorter(a, b, false) - _taskSorterPriority(a, b, false);
+  
+  if (result != 0) {
+    return result;
+  }
+
+  return _taskDateAddedSorter(a, b);
 }
 
 int _taskSorterAlphabetical(TaskModel a, TaskModel b) {
@@ -82,20 +124,27 @@ int _taskSorterCompleted(TaskModel a, TaskModel b) {
   }
 }
 
-int _taskSorterPriority(TaskModel a, TaskModel b) {
+int _taskSorterPriority(TaskModel a, TaskModel b, bool fallBack) {
   if (a.isHighPriority) {
     return -1;
   }
   if (b.isHighPriority) {
     return 1;
-  } else {
+  }
+  if (fallBack) {
     return _taskDateAddedSorter(a, b);
   }
+
+  return 0;
 }
 
-int _taskDueDateSorter(TaskModel a, TaskModel b) {
-  double dueDateA = a.dueDate == null ? double.infinity : a.dueDate.millisecondsSinceEpoch.toDouble();
-  double dueDateB = b.dueDate == null ? double.infinity : b.dueDate.millisecondsSinceEpoch.toDouble();
+int _taskDueDateSorter(TaskModel a, TaskModel b, bool fallBack) {
+  double dueDateA = a.dueDate == null
+      ? double.infinity
+      : a.dueDate.millisecondsSinceEpoch.toDouble();
+  double dueDateB = b.dueDate == null
+      ? double.infinity
+      : b.dueDate.millisecondsSinceEpoch.toDouble();
 
   if (dueDateA < dueDateB) {
     return -1;
@@ -105,7 +154,11 @@ int _taskDueDateSorter(TaskModel a, TaskModel b) {
     return 1;
   }
 
-  return _taskDateAddedSorter(a, b);
+  if (fallBack) {
+    return _taskDateAddedSorter(a, b);
+  }
+
+  return 0;
 }
 
 int _taskDateAddedSorter(TaskModel a, TaskModel b) {

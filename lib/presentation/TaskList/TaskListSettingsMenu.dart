@@ -48,6 +48,11 @@ class TaskListSettingsMenu extends StatelessWidget {
             ),
             PopupMenuDivider(),
             CheckedPopupMenuItem(
+              child: Text('Auto'),
+              value: TaskSorting.auto,
+              checked: sorting == TaskSorting.auto,
+            ),
+            CheckedPopupMenuItem(
               child: Text('Completed'),
               value: TaskSorting.completed,
               checked: sorting == TaskSorting.completed,

@@ -4,14 +4,15 @@ enum DueDateType { unset, complete, later, soon, today, overdue }
 enum DueDateChitSize { standard, small }
 
 enum TaskSorting {
+  auto,
   completed,
   priority,
   dueDate,
   dateAdded,
   assignee,
-  alphabetically
+  alphabetically,
 }
-const defaultTaskSorting = TaskSorting.dateAdded;
+const defaultTaskSorting = TaskSorting.auto;
 
 enum TaskListSorting { dateAdded, custom }
 const defaultTaskListSorting = TaskListSorting.dateAdded;

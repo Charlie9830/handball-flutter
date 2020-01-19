@@ -61,6 +61,9 @@ class TaskListSettingsModel {
       case TaskSorting.alphabetically:
         return 'alphabetically';
 
+      case TaskSorting.auto:
+        return 'auto';
+
       default:
         return 'dateAdded';
     }
@@ -74,6 +77,9 @@ class TaskListSettingsModel {
     switch (sortBy) {
       case '':
         return defaultTaskSorting;
+      
+      case 'auto':
+        return TaskSorting.auto;
 
       case 'completed':
         return TaskSorting.completed;
