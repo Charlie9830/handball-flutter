@@ -5,6 +5,7 @@ import 'package:handball_flutter/models/Task.dart';
 
 class TaskInspectorScreenViewModel {
   final TaskModel taskEntity;
+  final String currentTaskListName;
   final List<CommentViewModel> commentPreviewViewModels;
   final List<Assignment> assignmentOptions;
   final List<Assignment> assignments;
@@ -17,9 +18,11 @@ class TaskInspectorScreenViewModel {
   final dynamic onOpenTaskCommentScreen;
   final dynamic onAssignmentsChange;
   final dynamic onReminderChange;
+  final dynamic onTaskListInputOpen;
 
   TaskInspectorScreenViewModel({
     this.taskEntity,
+    this.currentTaskListName,
     this.assignmentOptions,
     this.commentPreviewViewModels,
     this.onTaskNameChange,
@@ -32,5 +35,6 @@ class TaskInspectorScreenViewModel {
     this.assignments,
     this.onAssignmentsChange,
     this.onReminderChange,
+    this.onTaskListInputOpen,
   });
 }

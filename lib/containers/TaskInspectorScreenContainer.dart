@@ -28,8 +28,9 @@ class TaskInspectorScreenContainer extends StatelessWidget {
     return new TaskInspectorScreenViewModel(
         onClose: () => store.dispatch(CloseTaskInspector()),
         taskEntity: selectedTaskEntity,
-        assignmentInputType:
-            _getAssignmentInputType(store, selectedTaskEntity),
+        currentTaskListName:
+            _getCurrentTaskListName(store.state, selectedTaskEntity),
+        assignmentInputType: _getAssignmentInputType(store, selectedTaskEntity),
         assignments:
             selectedTaskEntity.getAssignments(store.state.memberLookup),
         assignmentOptions: _getAssignmentOptions(
@@ -55,16 +56,28 @@ class TaskInspectorScreenContainer extends StatelessWidget {
             selectedTaskEntity.project,
             selectedTaskEntity.metadata)),
         onIsHighPriorityChange: () => store.dispatch(updateTaskPriority(
-            !selectedTaskEntity.isHighPriority,
-            selectedTaskEntity.uid,
-            selectedTaskEntity.project,
-            selectedTaskEntity.taskName,
-            selectedTaskEntity.metadata)),
-        onOpenTaskCommentScreen: () => store
-            .dispatch(openTaskCommentsScreen(selectedTaskEntity.project, selectedTaskEntity.uid)),
+            !selectedTaskEntity.isHighPriority, selectedTaskEntity.uid, selectedTaskEntity.project, selectedTaskEntity.taskName, selectedTaskEntity.metadata)),
+        onOpenTaskCommentScreen: () => store.dispatch(openTaskCommentsScreen(selectedTaskEntity.project, selectedTaskEntity.uid)),
         commentPreviewViewModels: _buildCommentPreviewViewModels(selectedTaskEntity?.commentPreview, store.state.user.userId),
         onAssignmentsChange: (newAssignmentIds) => store.dispatch(updateTaskAssignments(newAssignmentIds, selectedTaskEntity.uid, selectedTaskEntity.project, selectedTaskEntity.taskName, selectedTaskEntity.metadata)),
-        onReminderChange: (newValue) => store.dispatch(updateTaskReminder(newValue, selectedTaskEntity.ownReminder?.time, selectedTaskEntity.uid, selectedTaskEntity.taskName, selectedTaskEntity.project)));
+        onReminderChange: (newValue) => store.dispatch(updateTaskReminder(newValue, selectedTaskEntity.ownReminder?.time, selectedTaskEntity.uid, selectedTaskEntity.taskName, selectedTaskEntity.project)),
+        onTaskListInputOpen: () => store.dispatch(moveTasksToListWithDialog([selectedTaskEntity], selectedTaskEntity.project, store.state.inflatedProject.inflatedTaskLists.map((item) => item.data).toList(), context)));
+  }
+
+  String _getCurrentTaskListName(AppState state, TaskModel selectedTaskEntity) {
+    if (state.taskListsByProject[selectedTaskEntity.project] != null) {
+      final taskList = state.taskListsByProject[selectedTaskEntity.project]
+          .firstWhere((item) => item.uid == selectedTaskEntity.taskList,
+              orElse: () => null);
+
+      if (taskList == null) {
+        return '';
+      }
+
+      return taskList.taskListName;
+    }
+
+    return '';
   }
 
   TaskInspectorAssignmentInputType _getAssignmentInputType(
@@ -84,9 +97,7 @@ class TaskInspectorScreenContainer extends StatelessWidget {
 
     if (members.length == 1 && currentAssignmentCount > 0) {
       return TaskInspectorAssignmentInputType.clearOnly;
-    }
-
-    else {
+    } else {
       return TaskInspectorAssignmentInputType.hidden;
     }
   }

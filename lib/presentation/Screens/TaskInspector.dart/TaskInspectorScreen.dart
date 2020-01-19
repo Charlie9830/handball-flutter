@@ -59,6 +59,7 @@ class TaskInspectorScreen extends StatelessWidget {
                         ),
                       ]),
                   TaskPropertiesCard(
+                    currentTaskListName: viewModel.currentTaskListName,
                     dueDate: viewModel.taskEntity.dueDate,
                     onDueDateChange: viewModel.onDueDateChange,
                     reminder: viewModel.taskEntity.ownReminder?.time,
@@ -71,6 +72,7 @@ class TaskInspectorScreen extends StatelessWidget {
                     assignments: viewModel.assignments,
                     onAssignmentsChange: viewModel.onAssignmentsChange,
                     assignmentInputType: viewModel.assignmentInputType,
+                    onTaskListInputOpen: viewModel.onTaskListInputOpen,
                   ),
                   Card(
                       child: Padding(

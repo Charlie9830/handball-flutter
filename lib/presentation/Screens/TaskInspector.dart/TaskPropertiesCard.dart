@@ -6,8 +6,10 @@ import 'package:handball_flutter/presentation/PredicateBuilder.dart';
 import 'package:handball_flutter/presentation/ReminderSelectListTile.dart';
 import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/NoteInputListItem.dart';
 import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/TaskAssignmentInput.dart';
+import 'package:handball_flutter/presentation/Screens/TaskInspector.dart/TaskListInput.dart';
 
 class TaskPropertiesCard extends StatelessWidget {
+  final String currentTaskListName;
   final DateTime dueDate;
   final String note;
   final String taskName;
@@ -20,6 +22,7 @@ class TaskPropertiesCard extends StatelessWidget {
   final dynamic onNoteChange;
   final dynamic onAssignmentsChange;
   final dynamic onReminderChange;
+  final dynamic onTaskListInputOpen;
 
   TaskPropertiesCard({
     this.dueDate,
@@ -34,6 +37,8 @@ class TaskPropertiesCard extends StatelessWidget {
     this.taskName,
     this.onAssignmentsChange,
     this.onReminderChange,
+    this.currentTaskListName,
+    this.onTaskListInputOpen,
   });
 
   @override
@@ -41,6 +46,10 @@ class TaskPropertiesCard extends StatelessWidget {
     return Card(
         color: Theme.of(context).cardColor,
         child: Column(children: <Widget>[
+          TaskListInput(
+            currentTaskListName: currentTaskListName,
+            onOpen: onTaskListInputOpen,
+          ),
           DateSelectListTile(
             firstDate: DateTime.now().subtract(Duration(days: 360)),
             lastDate: DateTime.now().add(Duration(days: 360)),
@@ -48,15 +57,15 @@ class TaskPropertiesCard extends StatelessWidget {
             onChange: onDueDateChange,
             hintText: 'Pick due date',
           ),
-            ReminderSelectListTile(
-              enabled: enableReminder,
-              firstDate: DateTime.now().subtract(Duration(days: 1)),
-              lastDate: DateTime.now().add(Duration(days: 360)),
-              hintText: 'Set a reminder',
-              isClearable: true,
-              initialDate: reminder,
-              onChange: onReminderChange,
-            ),
+          ReminderSelectListTile(
+            enabled: enableReminder,
+            firstDate: DateTime.now().subtract(Duration(days: 1)),
+            lastDate: DateTime.now().add(Duration(days: 360)),
+            hintText: 'Set a reminder',
+            isClearable: true,
+            initialDate: reminder,
+            onChange: onReminderChange,
+          ),
           NoteInputListItem(
             note: note,
             onChange: onNoteChange,
@@ -64,11 +73,12 @@ class TaskPropertiesCard extends StatelessWidget {
           ),
           if (assignmentInputType != TaskInspectorAssignmentInputType.hidden)
             TaskAssignmentInput(
-                assignments: assignments,
-                assignmentOptions: assignmentOptions,
-                clearOnly: assignmentInputType == TaskInspectorAssignmentInputType.clearOnly,
-                onChange: onAssignmentsChange,
-              )
+              assignments: assignments,
+              assignmentOptions: assignmentOptions,
+              clearOnly: assignmentInputType ==
+                  TaskInspectorAssignmentInputType.clearOnly,
+              onChange: onAssignmentsChange,
+            )
         ]));
   }
 }
