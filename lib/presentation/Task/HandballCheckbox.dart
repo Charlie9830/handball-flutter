@@ -7,7 +7,7 @@ const double _unCheckedRadius = 0;
 const double height = 20;
 const double width = 20;
 
-const double padding = 24;
+const double padding = 28;
 
 class HandballCheckbox extends StatefulWidget {
   final bool checked;
@@ -71,7 +71,7 @@ class _HandballCheckboxState extends State<HandballCheckbox>
   @override
   Widget build(BuildContext context) {
     final unCheckedBackgroundColor = Colors.transparent;
-    final checkedBackgrounColor = Theme.of(context).accentColor;
+    final checkedBackgrounColor = Theme.of(context).colorScheme.secondaryVariant;
 
     final backgroundAnimation = _backgroundTween.animate(CurvedAnimation(
       parent: _backgroundAnimationController,
