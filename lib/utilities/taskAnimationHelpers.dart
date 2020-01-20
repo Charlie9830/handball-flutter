@@ -63,7 +63,6 @@ void driveTaskRemovalAnimations(
           child: Task(
             key: Key(task.uid),
             model: TaskViewModel(data: task, assignments: task.getAssignments(memberLookup)),
-            isCompleting: true,
           ),
         );
       }, duration: taskEntryExitAnimationDuration );

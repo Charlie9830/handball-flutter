@@ -2658,12 +2658,6 @@ ThunkAction<AppState> multiCompleteTasks(
       return;
     }
 
-    // Allow the Task time to Animate it's checkbox before removing it.
-    final taskIds = tasks.map((item) => item.uid).toList();
-    store.dispatch(AddMultipleCompletingTasks(taskIds: taskIds));
-    await Future.delayed(taskCheckboxCompleteAnimationDuration);
-    store.dispatch(RemoveMultipleCompletingTasks(taskIds: taskIds));
-
     final batch = Firestore.instance.batch();
     final projectName = _getProjectName(store.state.projects, projectId);
     final List<DocumentReference> activityFeedReferences =
@@ -2729,13 +2723,6 @@ ThunkAction<AppState> multiCompleteTasks(
 ThunkAction<AppState> updateTaskComplete(String taskId, String projectId,
     String taskName, bool newValue, TaskMetadata existingMetadata) {
   return (Store<AppState> store) async {
-    // Allow the Task time to Animate it's checkbox before removing it.
-    if (newValue == true) {
-      store.dispatch(AddCompletingTask(taskId: taskId));
-      await Future.delayed(taskCheckboxCompleteAnimationDuration);
-      store.dispatch(RemoveCompletingTask(taskId: taskId));
-    }
-
     final ref =
         getTasksCollectionRef(store.state.selectedProjectId).document(taskId);
 

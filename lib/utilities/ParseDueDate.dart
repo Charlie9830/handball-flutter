@@ -11,9 +11,9 @@ class ParsedDueDate {
   });
 }
 
-ParsedDueDate parseDueDate(bool isComplete, bool isCompleting, DateTime dueDate) {
+ParsedDueDate parseDueDate(bool isComplete, DateTime dueDate) {
   // Show completed state unless the Task isCompleting (Being Animated out).
-  if (isComplete == true && isCompleting == false) { 
+  if (isComplete == true) { 
     return ParsedDueDate(
           type: DueDateType.complete,
           text: '',

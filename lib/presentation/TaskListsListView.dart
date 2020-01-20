@@ -83,7 +83,6 @@ class TaskListsListView extends StatelessWidget {
                 key: Key(taskVm.data.uid),
                 slidableController: tasksSlidableController,
                 model: taskVm,
-                isCompleting: taskVm.isCompleting,
                 showDivider: showDivider ,);
             }).toList()),
       );

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:handball_flutter/presentation/Nothing.dart';
-import 'package:handball_flutter/presentation/PredicateBuilder.dart';
+import 'package:handball_flutter/configValues.dart';
 
 const double _checkedRadius = 1;
 const double _unCheckedRadius = 0;
@@ -37,7 +36,7 @@ class _HandballCheckboxState extends State<HandballCheckbox>
     _isChecked = widget.checked;
 
     _backgroundAnimationController = AnimationController(
-        duration: Duration(milliseconds: 350),
+        duration: taskCheckboxAnimationDuration,
         vsync: this,
         value: widget.checked ? _checkedRadius : _unCheckedRadius,
         upperBound: _checkedRadius,
@@ -46,7 +45,7 @@ class _HandballCheckboxState extends State<HandballCheckbox>
     _backgroundTween = Tween<double>(begin: 1, end: 0);
 
     _checkAnimiationController = AnimationController(
-        duration: Duration(milliseconds: 350),
+        duration: taskCheckboxAnimationDuration,
         vsync: this,
         value: widget.checked ? 1.0 : 0.0,
         upperBound: 1.0,
@@ -98,9 +97,7 @@ class _HandballCheckboxState extends State<HandballCheckbox>
               width: width,
               decoration: BoxDecoration(
                   border: Border.all(
-                      color:
-                          Theme.of(context).unselectedWidgetColor,
-                      width: 1),
+                      color: Theme.of(context).unselectedWidgetColor, width: 1),
                   borderRadius: BorderRadius.all(Radius.circular(4)),
                   gradient: RadialGradient(
                     colors: <Color>[
@@ -111,8 +108,7 @@ class _HandballCheckboxState extends State<HandballCheckbox>
                     radius: backgroundAnimation.value,
                   )),
               child: ScaleTransition(
-                  scale: checkAnimation,
-                  child: Icon(Icons.check, size: 16)),
+                  scale: checkAnimation, child: Icon(Icons.check, size: 16)),
             );
           },
         ),
@@ -120,7 +116,7 @@ class _HandballCheckboxState extends State<HandballCheckbox>
     );
   }
 
-  void _handleTap() {
+  void _handleTap() async {
     final newValue = !_isChecked;
     setState(() {
       _isChecked = newValue;
@@ -130,6 +126,13 @@ class _HandballCheckboxState extends State<HandballCheckbox>
       _driveToChecked();
     } else {
       _driveToUnchecked();
+    }
+
+    // Pause to allow the Animation to run its course.
+    // We also animated a Task being uncompleted. But this only possible if the user has elected to 'Show Compelted Tasks'.
+    // If we paused for effect on an uncompelting task it blinks into the wrong state for a few moments.
+    if (newValue == true) {
+      await Future.delayed(taskCheckboxAnimationDuration);
     }
 
     widget.onChanged(newValue);

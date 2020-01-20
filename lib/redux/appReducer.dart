@@ -159,32 +159,6 @@ AppState appReducer(AppState state, dynamic action) {
                         0));
   }
 
-  if (action is AddCompletingTask) {
-    return state.copyWith(
-      completingTasks: Set<String>.from(state.completingTasks)
-        ..add(action.taskId),
-    );
-  }
-
-  if (action is AddMultipleCompletingTasks) {
-    return state.copyWith(
-        completingTasks: Set<String>.from(state.completingTasks)
-          ..addAll(action.taskIds));
-  }
-
-  if (action is RemoveCompletingTask) {
-    return state.copyWith(
-      completingTasks: Set<String>.from(state.completingTasks)
-        ..remove(action.taskId),
-    );
-  }
-
-  if (action is RemoveMultipleCompletingTasks) {
-    return state.copyWith(
-      completingTasks: Set<String>.from(state.completingTasks)
-        ..removeAll(action.taskIds),
-    );
-  }
 
   if (action is ReceiveIncompletedTasks) {
     var foldedTasks = foldTasksTogether(TasksSnapshotType.incompleted,

@@ -40,43 +40,11 @@ class UpdateDisplayName {
   UpdateDisplayName({this.newDisplayName});
 }
 
-class AddCompletingTask {
-  final String taskId;
-
-  AddCompletingTask({
-    this.taskId,
-  });
-}
-
 class SetSplashScreenState {
   final SplashScreenState state;
 
   SetSplashScreenState({
     this.state,
-  });
-}
-
-class AddMultipleCompletingTasks {
-  final List<String> taskIds;
-
-  AddMultipleCompletingTasks({
-    this.taskIds
-  });
-}
-
-class RemoveCompletingTask {
-  final String taskId;
-
-  RemoveCompletingTask({
-    this.taskId,
-  });
-}
-
-class RemoveMultipleCompletingTasks {
-  final List<String> taskIds;
-
-  RemoveMultipleCompletingTasks({
-  this.taskIds,
   });
 }
 

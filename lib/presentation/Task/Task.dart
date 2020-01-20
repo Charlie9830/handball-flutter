@@ -14,19 +14,13 @@ import 'package:handball_flutter/utilities/ParseDueDate.dart';
 class Task extends StatelessWidget {
   final SlidableController slidableController;
   final bool showDivider;
-  final bool isCompleting;
-  Task(
-      {Key key,
-      this.model,
-      this.isCompleting = false,
-      this.showDivider = true,
-      this.slidableController});
+  Task({Key key, this.model, this.showDivider = true, this.slidableController});
 
   final TaskViewModel model;
 
   Widget build(BuildContext context) {
     final ParsedDueDate parsedDueDate =
-        parseDueDate(model.data.isComplete, isCompleting, model.data.dueDate);
+        parseDueDate(model.data.isComplete, model.data.dueDate);
 
     var showPriorityIndicator =
         model.isInMultiSelectMode == false && model.data.isHighPriority;
@@ -39,10 +33,9 @@ class Task extends StatelessWidget {
       enabled: model.isInMultiSelectMode == false,
       closeOnScroll: true,
       dismissal: SlidableDismissal(
-        child: SlidableDrawerDismissal(),
-        dismissThresholds: bothSidesDismissThresholds,
-        onWillDismiss: _handleWillDismiss
-      ),
+          child: SlidableDrawerDismissal(),
+          dismissThresholds: bothSidesDismissThresholds,
+          onWillDismiss: _handleWillDismiss),
       child: InkWell(
           onTap: model.onTap,
           onLongPress: model.onLongPress,
@@ -74,10 +67,8 @@ class Task extends StatelessWidget {
                                     style: TextStyle(fontFamily: 'Ubuntu')),
                               ),
                             ),
-                            if (isCompleting == true ||
-                                parsedDueDate.type != DueDateType.unset &&
-                                    model.data.isComplete ==
-                                        false) // Hold the Chit if task is Animating out (isCompleting).
+                            if (parsedDueDate.type != DueDateType.unset &&
+                                model.data.isComplete == false)
                               DueDateChit(
                                 color: parsedDueDate.type,
                                 text: parsedDueDate.text,
@@ -98,7 +89,7 @@ class Task extends StatelessWidget {
                                     color: Theme.of(context).disabledColor),
                               if (model.data.hasUnseenComments)
                                 Icon(Icons.comment),
-                              if (model.data.isAssigned || isCompleting)
+                              if (model.data.isAssigned)
                                 Expanded(
                                     child: AssignmentIndicator(
                                   assignments: model.assignments,

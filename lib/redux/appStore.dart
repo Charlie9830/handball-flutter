@@ -73,7 +73,6 @@ final initialAppState = AppState(
   isRefreshingActivityFeed: false,
   selectedActivityFeedProjectId: '-1',
   canRefreshActivityFeed: false,
-  completingTasks: <String>{},
   splashScreenState: SplashScreenState.loading,
 );
 

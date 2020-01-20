@@ -33,7 +33,6 @@ class AppState {
   final Map<String, List<TaskModel>> tasksByProject;
   final Map<String, List<TaskModel>> completedTasksByProject;
   final Map<String, List<TaskModel>> incompletedTasksByProject;
-  final Set<String> completingTasks; // Tasks in the process of Animating their Checkboxes to a Checked state.
   final List<TaskListModel> taskLists;
   final Map<String, TaskListModel> deletedTaskLists;
   final Map<String, List<TaskListModel>> taskListsByProject;
@@ -114,7 +113,6 @@ class AppState {
     this.selectedActivityFeedProjectId,
     this.canRefreshActivityFeed,
     this.projectsById,
-    this.completingTasks,
     this.splashScreenState,
   });
 
@@ -166,7 +164,6 @@ class AppState {
     bool isRefreshingActivityFeed,
     String selectedActivityFeedProjectId,
     bool canRefreshActivityFeed,
-    Set<String> completingTasks,
     SplashScreenState splashScreenState,
   }) {
     return AppState(
@@ -223,7 +220,6 @@ class AppState {
       isRefreshingActivityFeed: isRefreshingActivityFeed ?? this.isRefreshingActivityFeed,
       selectedActivityFeedProjectId: selectedActivityFeedProjectId ?? this.selectedActivityFeedProjectId,
       canRefreshActivityFeed: canRefreshActivityFeed ?? this.canRefreshActivityFeed,
-      completingTasks: completingTasks ?? this.completingTasks,
       splashScreenState: splashScreenState ?? this.splashScreenState,
     );
   }
