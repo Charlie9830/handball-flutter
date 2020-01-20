@@ -60,33 +60,43 @@ ThemeDataTuple buildAppThemeData(AppThemeModel appTheme) {
   return ThemeDataTuple(
     // Dark
     dark: ThemeData(
-      primaryColor: primaryColor,
-      accentColor: accentColor,
-      brightness: Brightness.dark,
-      fontFamily: 'Archivo',
-      buttonTheme: buttonDarkTheme,
-      popupMenuTheme: popupMenuDarkTheme,
-      snackBarTheme: baseDarkTheme.snackBarTheme.copyWith(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: (Radius.circular(16))))),
-    ),
+        primaryColor: primaryColor,
+        accentColor: accentColor,
+        brightness: Brightness.dark,
+        fontFamily: 'Archivo',
+        buttonTheme: buttonDarkTheme,
+        popupMenuTheme: popupMenuDarkTheme,
+        snackBarTheme: baseDarkTheme.snackBarTheme.copyWith(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: (Radius.circular(16))))),
+        bottomSheetTheme: baseDarkTheme.bottomSheetTheme.copyWith(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        )))),
 
     // Light
     light: ThemeData(
-      primaryColor: primaryColor,
-      accentColor: accentColor,
-      brightness: Brightness.light,
-      fontFamily: 'Archivo',
-      buttonTheme: buttonLightTheme,
-      popupMenuTheme: popupMenuLightTheme,
-      snackBarTheme: baseLightTheme.snackBarTheme.copyWith(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: (Radius.circular(16))))),
-    ),
+        primaryColor: primaryColor,
+        accentColor: accentColor,
+        brightness: Brightness.light,
+        fontFamily: 'Archivo',
+        buttonTheme: buttonLightTheme,
+        popupMenuTheme: popupMenuLightTheme,
+        snackBarTheme: baseLightTheme.snackBarTheme.copyWith(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: (Radius.circular(16))))),
+        bottomSheetTheme: baseLightTheme.bottomSheetTheme.copyWith(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        )))),
   );
 }
 
