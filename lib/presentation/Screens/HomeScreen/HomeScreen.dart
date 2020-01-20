@@ -72,8 +72,12 @@ class _HomeScreenState extends State<HomeScreen> {
       key: homeScreenScaffoldKey,
       extendBodyBehindAppBar:
           false, // Don't make this true. See Explanation above.
-      drawer: Drawer(
-        child: AppDrawerContainer(),
+
+      drawer: ClipPath(
+        clipper: _DrawerClipper(),
+        child: Drawer(
+          child: AppDrawerContainer(),
+        ),
       ),
       body: Stack(
         children: <Widget>[
@@ -158,4 +162,25 @@ class _HomeScreenState extends State<HomeScreen> {
           )),
     );
   }
+}
+
+
+
+class _DrawerClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.lineTo(size.width - 40, 0);
+    path.quadraticBezierTo(size.width, 0, size.width, 40);
+    path.lineTo(size.width, size.height - 40);
+    path.quadraticBezierTo(
+        size.width, size.height, size.width - 40, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => true;
 }

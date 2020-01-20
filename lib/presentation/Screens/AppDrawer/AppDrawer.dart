@@ -19,28 +19,28 @@ class AppDrawer extends StatelessWidget {
       extendBody: true,
       body: new Container(
           child: SafeArea(
-            child: Column(
-              children: <Widget>[
-                AppDrawerHeader(
-                  email: viewModel.email,
-                  displayName: viewModel.displayName,
-                  onCreateProjectButtonPressed:
-                      viewModel.onAddNewProjectButtonPress,
-                  onSettingsButtonPressed: viewModel.onAppSettingsOpen,
-                  onActivityFeedButtonPressed: viewModel.onActivityFeedButtonPressed,
-                ),
-                ProjectInviteList(
-                  viewModels: viewModel.projectInviteViewModels,
-                ),
-                Expanded(
-                    child: ProjectList(
-                        projectViewModels: viewModel.projectViewModels)
-                ),
-                if (EnableStates.of(context).state.isLoggedIn)
-                UpgradeToProButton(),
-              ],
+        child: Column(
+          children: <Widget>[
+            AppDrawerHeader(
+              email: viewModel.email,
+              displayName: viewModel.displayName,
+              onCreateProjectButtonPressed:
+                  viewModel.onAddNewProjectButtonPress,
+              onSettingsButtonPressed: viewModel.onAppSettingsOpen,
+              onActivityFeedButtonPressed:
+                  viewModel.onActivityFeedButtonPressed,
             ),
-          )),
+            ProjectInviteList(
+              viewModels: viewModel.projectInviteViewModels,
+            ),
+            Expanded(
+                child: ProjectList(
+                    projectViewModels: viewModel.projectViewModels)),
+            if (EnableStates.of(context).state.isLoggedIn)
+              UpgradeToProButton(),
+          ],
+        ),
+      )),
     );
   }
 }
