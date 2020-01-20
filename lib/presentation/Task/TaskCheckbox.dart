@@ -1,5 +1,6 @@
 import 'package:circular_check_box/circular_check_box.dart';
 import 'package:flutter/material.dart';
+import 'package:handball_flutter/presentation/Task/HandballCheckbox.dart';
 
 class TaskCheckbox extends StatelessWidget {
   final bool isInMultiSelectTaskMode;
@@ -18,13 +19,23 @@ class TaskCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final circularCheckboxInactiveColor = Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black;
+    final circularCheckboxInactiveColor =
+        Theme.of(context).brightness == Brightness.dark
+            ? Colors.white
+            : Colors.black;
 
     return AnimatedCrossFade(
-        firstChild: Checkbox(value: isComplete, onChanged: onCheckboxChanged),
-        secondChild: CircularCheckBox(value: isSelected, onChanged: onRadioChanged, inactiveColor: circularCheckboxInactiveColor, ),
-        crossFadeState: isInMultiSelectTaskMode ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-        duration: Duration(milliseconds: 250),
-        );
+      firstChild:
+          HandballCheckbox(checked: isComplete, onChanged: onCheckboxChanged),
+      secondChild: CircularCheckBox(
+        value: isSelected,
+        onChanged: onRadioChanged,
+        inactiveColor: circularCheckboxInactiveColor,
+      ),
+      crossFadeState: isInMultiSelectTaskMode
+          ? CrossFadeState.showSecond
+          : CrossFadeState.showFirst,
+      duration: Duration(milliseconds: 250),
+    );
   }
 }
