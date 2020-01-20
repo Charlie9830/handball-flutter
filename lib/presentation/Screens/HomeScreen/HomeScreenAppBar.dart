@@ -34,10 +34,7 @@ class HomeScreenAppBar extends StatelessWidget implements PreferredSizeWidget {
     if (this.backgroundColor == null ||
         this.backgroundColor == Theme.of(context).primaryColor) {
       iconTheme = Theme.of(context).primaryIconTheme;
-      textStyle = Theme.of(context)
-          .primaryTextTheme
-          .title
-          .copyWith(color: Theme.of(context).colorScheme.onPrimary);
+      textStyle = Theme.of(context).primaryTextTheme.title.copyWith();
     } else {
       final bgColorLuminance = _backgroundColor.computeLuminance();
       iconTheme = bgColorLuminance > 0.5
