@@ -621,13 +621,22 @@ ThunkAction<AppState> inviteUserToProject(
       return;
     }
 
+    email = email.trim();
+
     store.dispatch(SetIsInvitingUser(isInvitingUser: true));
     var response = await _cloudFunctionsLayer.getRemoteUserData(email);
 
     if (response == null) {
-      store.dispatch(SetIsInvitingUser(isInvitingUser: false));
       // No user found.
-      // TODO: Implement Firebase Dynamic Links to dispatch an email to the intended user, inviting them to the app.
+      print('Sending App and Project invite');
+      await _cloudFunctionsLayer.sendAppAndProjectInvite(
+        projectName: projectName,
+        sourceDisplayName: store.state.user.displayName,
+        targetEmail: email,
+      );
+
+      store.dispatch(SetIsInvitingUser(isInvitingUser: false));
+      
     } else {
       // User was located in the directory.
       try {

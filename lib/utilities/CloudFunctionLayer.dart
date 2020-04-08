@@ -14,6 +14,7 @@ class CloudFunctionsLayer {
   static const _removeRemoteProjectFunctionName = 'removeRemoteProject';
   static const _changeDisplayNameFunctionName = 'changeDisplayName';
   static const _changeEmailAddressFunctionName = 'changeEmailAddress';
+  static const _sendAppAndProjectInviteFunctionName = 'sendAppAndProjectInvite';
 
   Future<void> changeEmailAddress({
     @required String oldEmail,
@@ -172,6 +173,37 @@ class CloudFunctionsLayer {
     } on CloudFunctionsException catch (error) {
       _handleCloudFunctionsException(error);
     }
+  }
+
+  Future<void> sendAppAndProjectInvite({
+    @required String projectName,
+    @required String sourceDisplayName,
+    @required String targetEmail,
+  }) async {
+    HttpsCallable callable = CloudFunctions.instance.getHttpsCallable(functionName: _sendAppAndProjectInviteFunctionName);
+
+    try {
+      final response = await callable.call(<String, dynamic>{
+        'projectName': projectName,
+        'sourceDisplayName': sourceDisplayName,
+        'targetEmail': targetEmail
+      });
+
+      if (response.data['status'] == null) {
+        throw CloudFunctionsRejectionError(message: 'sendAppAndProjectInvite failed. Response status returned null');
+      }
+
+      if (response.data['status'] == 'error') {
+        print('Cloud Function returned an Error');
+        print(response.data['message']);
+      }
+      // TODO: Implement proper response handling.
+    } on CloudFunctionsException catch(error) {
+      // TODO: Implement proper error handling.
+      print(error.message);
+      
+    }
+
   }
 
   Future<void> sendProjectInvite({
