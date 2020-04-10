@@ -13,7 +13,7 @@ class StatusText extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (status) {
       case MemberStatus.pending:
-        return Text('Pending', style: TextStyle(color: Colors.amber));
+        return Text('Invite sent', style: TextStyle(color: Colors.amber));
 
       case MemberStatus.added:
         return Text('Added', style: TextStyle(color: Colors.green));

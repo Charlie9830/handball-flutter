@@ -79,7 +79,7 @@ class ShareProjectContainer extends StatelessWidget {
       List<MemberModel> members, String selfUserId) {
     return members
         .where((item) =>
-            item.status == MemberStatus.added && item.userId != selfUserId)
+            (item.status == MemberStatus.added || item.status == MemberStatus.pending) && item.userId != selfUserId)
         .toList();
   }
 
