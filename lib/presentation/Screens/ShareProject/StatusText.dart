@@ -15,6 +15,9 @@ class StatusText extends StatelessWidget {
       case MemberStatus.pending:
         return Text('Invite sent', style: TextStyle(color: Colors.amber));
 
+      case MemberStatus.unjoined:
+        return Text('Invite sent', style: TextStyle(color: Colors.amber));
+
       case MemberStatus.added:
         return Text('Added', style: TextStyle(color: Colors.green));
 

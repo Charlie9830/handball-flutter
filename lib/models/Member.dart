@@ -63,6 +63,12 @@ class MemberModel {
       case MemberStatus.denied:
         return 'rejected invite';
       
+      case MemberStatus.left:
+        return 'left';
+
+      case MemberStatus.unjoined:
+        return 'unjoined';
+      
       default:
         throw UnsupportedError('Cannot convert Member.status to String. Value: $status');
     }
@@ -95,6 +101,9 @@ class MemberModel {
 
       case 'left':
         return MemberStatus.left;
+
+      case 'unjoined':
+        return MemberStatus.unjoined;
 
       default:
         throw UnsupportedError('Unknown value when parsing Member.status. Value: $status');

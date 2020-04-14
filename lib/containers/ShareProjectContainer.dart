@@ -26,7 +26,7 @@ class ShareProjectContainer extends StatelessWidget {
     return ShareProjectViewModel(
       projectEntity: store.state.projectShareMenuEntity,
       memberViewModels: _buildMemberViewModels(members, store, context),
-      type: members.length > 1 && _getOtherActiveMembers(members, store.state.user.userId).isNotEmpty
+      type: members.length > 1 && _getOtherMembers(members, store.state.user.userId).isNotEmpty
           ? ShareProjectScreenType.complete
           : ShareProjectScreenType.simplified,
       isInvitingUser: store.state.isInvitingUser,
@@ -72,14 +72,13 @@ class ShareProjectContainer extends StatelessWidget {
       return false;
     }
 
-    return _getOtherActiveMembers(members, selfUserId).isNotEmpty;
+    return _getOtherMembers(members, selfUserId).isNotEmpty;
   }
 
-  List<MemberModel> _getOtherActiveMembers(
+  List<MemberModel> _getOtherMembers(
       List<MemberModel> members, String selfUserId) {
     return members
-        .where((item) =>
-            (item.status == MemberStatus.added || item.status == MemberStatus.pending) && item.userId != selfUserId)
+        .where((item) => item.userId != selfUserId)
         .toList();
   }
 

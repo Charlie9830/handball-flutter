@@ -22,7 +22,7 @@ enum AccountState { loggedOut, loggingIn, loggedIn, registering }
 enum ShareProjectScreenType { complete, simplified }
 enum RemoteUserResultStatus { found, notFound }
 enum MemberRole { member, owner }
-enum MemberStatus { pending, added, denied, left }
+enum MemberStatus { pending, added, denied, left, unjoined } // Unjoined denotes a member who has not signed up to the app yet.
 
 enum TaskMetadataUpdateType { created, completed, updated }
 

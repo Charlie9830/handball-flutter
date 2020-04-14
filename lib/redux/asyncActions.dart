@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:handball_flutter/SharedPreferencesKeys.dart';
@@ -78,6 +79,7 @@ import 'package:handball_flutter/utilities/extractProject.dart';
 import 'package:handball_flutter/utilities/firestoreReferenceGetters.dart';
 import 'package:handball_flutter/utilities/firestoreSubscribers.dart';
 import 'package:handball_flutter/utilities/isSameTime.dart';
+import 'package:handball_flutter/utilities/linkAccountToProject.dart';
 import 'package:handball_flutter/utilities/listSortingHelpers.dart';
 import 'package:handball_flutter/utilities/mergeLastUsedTaskList.dart';
 import 'package:handball_flutter/utilities/normalizeDate.dart';
@@ -96,6 +98,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 final FirebaseAuth auth = FirebaseAuth.instance;
 final CloudFunctionsLayer _cloudFunctionsLayer = CloudFunctionsLayer();
+
+bool _hasPendingLinkingCode = false;
 
 StreamSubscription<List<PurchaseDetails>> _purchaseUpdateStreamSubscription;
 
@@ -189,6 +193,9 @@ ThunkAction<AppState> initializeApp() {
     // Notifications.
     initializeLocalNotifications(store);
 
+    // Dynamic Links
+    _initializeDynamicLinks(store);
+
     // Quick Actions - Home screen shortcuts.
     QuickActionsLayer.initialize(store);
 
@@ -208,6 +215,56 @@ ThunkAction<AppState> initializeApp() {
     // Stripe.
     //StripeSource.setPublishableKey("pk_test_5utVgPAtC8r6wNUtFzlSZAnE00BhffRN0G");
   };
+}
+
+void _initializeDynamicLinks(Store<AppState> store) async {
+  // On startup check if we are booting up from a dynamic Link;
+  final PendingDynamicLinkData data =
+      await FirebaseDynamicLinks.instance.getInitialLink();
+  _handleDynamicLink(store, data?.link);
+
+  // Register callbacks if we are pulled from background to foreground via a dynamic link.
+  FirebaseDynamicLinks.instance.onLink(onSuccess: (linkData) async {
+    _handleDynamicLink(store, linkData?.link);
+    return;
+  }, onError: (error) async {
+    // TODO: Handle these gracefully.
+    print(error.message);
+    return;
+  });
+}
+
+void _handleDynamicLink(Store<AppState> store, Uri link) {
+  if (link == null) {
+    // No link recieved. Continue as you were.
+    return;
+  } else {
+    // Link Received.
+    print('Link Received');
+    print(link);
+
+    final isValid = link.hasQuery &&
+        link.queryParameters.containsKey('linkingCode') &&
+        link.queryParameters['linkingCode'] != null &&
+        link.queryParameters['linkingCode'] != '';
+
+    if (isValid) {
+      final linkingCode = link.queryParameters['linkingCode'];
+
+      store.dispatch(
+          SetLinkingCode(linkingCode: linkingCode));
+
+      if (store.state.user.isLoggedIn == true) {
+        // Logged in. We can handle the linking code now.
+        linkAccountToProject(store, _cloudFunctionsLayer, linkingCode, store.state.user.displayName, store.state.user.email);
+      }
+
+      else {
+        // Not logged in yet. Set a flag so that handleAuthStateChanged can call linkAccountToProject for us.
+        _hasPendingLinkingCode = true;
+      }
+    }
+  }
 }
 
 void _updateSplashScreen(FirebaseAuth auth, bool wasLoggedIn,
@@ -314,6 +371,12 @@ void handleAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
           userId: user.uid,
           email: user.email)));
 
+  if (_hasPendingLinkingCode == true) {
+    // We have booted up from a dynamicLink. But weren't logged in by the time handleDynamicLink was fired. So we must handle it here.
+    _hasPendingLinkingCode = false;
+    linkAccountToProject(store, _cloudFunctionsLayer, store.state.linkingCode, user.displayName, user.email);
+  }
+
   subscribeToDatabase(store, user.uid);
   _persistAuthState(true);
 
@@ -354,6 +417,18 @@ ThunkAction<AppState> showLogInDialog(BuildContext context) {
       // Log in was Successful.
       store.dispatch(SetSplashScreenState(state: SplashScreenState.home));
       homeScreenScaffoldKey?.currentState?.openDrawer();
+
+      // Attempt to link to a project the user has been invited to if we have a linkingCode.
+      if (store.state.linkingCode != null &&
+          store.state.linkingCode.isNotEmpty) {
+        linkAccountToProject(
+            store,
+            _cloudFunctionsLayer,
+            store.state.linkingCode,
+            store.state.user.displayName,
+            store.state.user.email);
+      }
+
       return;
     }
   };
@@ -632,12 +707,12 @@ ThunkAction<AppState> inviteUserToProject(
       print('Sending App and Project invite');
       await _cloudFunctionsLayer.sendAppAndProjectInvite(
         projectName: projectName,
+        projectId: sourceProjectId,
         sourceDisplayName: store.state.user.displayName,
         targetEmail: email,
       );
 
       store.dispatch(SetIsInvitingUser(isInvitingUser: false));
-      
     } else {
       // User was located in the directory.
       try {
@@ -1664,6 +1739,17 @@ ThunkAction<AppState> showSignUpDialog(BuildContext context) {
     if (dialogResult is SignUpDialogResult) {
       store.dispatch(
           InjectDisplayName(displayName: dialogResult.choosenDisplayName));
+
+      // Attempt to link any accounts if a linkingCode is available.
+      if (store.state.linkingCode != null &&
+          store.state.linkingCode.isNotEmpty) {
+        linkAccountToProject(
+            store,
+            _cloudFunctionsLayer,
+            store.state.linkingCode,
+            dialogResult.choosenDisplayName,
+            store.state.user.email);
+      }
 
       if (dialogResult.showTour == true) {
         // User would like to take a Tour.

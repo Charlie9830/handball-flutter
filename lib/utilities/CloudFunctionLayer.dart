@@ -15,6 +15,34 @@ class CloudFunctionsLayer {
   static const _changeDisplayNameFunctionName = 'changeDisplayName';
   static const _changeEmailAddressFunctionName = 'changeEmailAddress';
   static const _sendAppAndProjectInviteFunctionName = 'sendAppAndProjectInvite';
+  static const _linkAccountToProjectFunctionName = 'linkAccountToProject';
+
+  Future<void> linkAccountToProject({
+    @required String linkingCode,
+    @required String displayName,
+    @required String email,
+  }) async {
+    HttpsCallable callable = CloudFunctions.instance.getHttpsCallable(functionName: _linkAccountToProjectFunctionName);
+
+    try {
+      final response = await callable.call({
+        'linkingCode': linkingCode,
+        'displayName': displayName,
+        'email': email,
+      });
+
+      if (response.data['status'] == 'complete') {
+        return;
+      }
+
+      if (response.data['status'] == 'error') {
+        throw CloudFunctionsRejectionError(message: response.data['message']);
+      }
+    } on CloudFunctionsException catch (error) {
+      _handleCloudFunctionsException(error);
+    }
+  }
+
 
   Future<void> changeEmailAddress({
     @required String oldEmail,
@@ -177,6 +205,7 @@ class CloudFunctionsLayer {
 
   Future<void> sendAppAndProjectInvite({
     @required String projectName,
+    @required String projectId,
     @required String sourceDisplayName,
     @required String targetEmail,
   }) async {
@@ -185,6 +214,7 @@ class CloudFunctionsLayer {
     try {
       final response = await callable.call(<String, dynamic>{
         'projectName': projectName,
+        'projectId': projectId,
         'sourceDisplayName': sourceDisplayName,
         'targetEmail': targetEmail
       });
