@@ -21,24 +21,45 @@ class FirestoreStreamsContainer {
     requests.add(this.projectIds?.cancel());
     requests.add(this.invites?.cancel());
     requests.add(this.accountConfig?.cancel());
-    requests.addAll(this.projectSubscriptions.values.map((item) => item.cancelAll()));
+    requests.addAll(
+        this.projectSubscriptions.values.map((item) => item.cancelAll()));
 
-    Future.wait(requests.where((item) => item != null));
+    return Future.wait(requests.where((item) => item != null));
   }
 }
 
+// Contains a Project subscription broken into two components. The project property represents the project doc itself, the guts property represents
+// subscriptions to all the 'guts' of a project, ie the Tasks, TaskLists, Members etc. This is because during subscription handling we need a way to 
+// programatically subscribe and unsubscribe the 'guts' of a project whilst still listening to the project doc itself based on the state of project.isDeleted.
 class ProjectSubscriptionContainer {
   final String uid;
 
   StreamSubscription<DocumentSnapshot> project;
+  ProjectGutsSubscriptionContainer guts;
+
+  ProjectSubscriptionContainer({
+    @required this.uid,
+    this.project,
+    this.guts,
+  });
+
+  Future<void> cancelAll() {
+    List<Future<void>> requests = [];
+
+    requests.add(this.project?.cancel());
+    requests.add(this.guts?.cancelAll());
+
+    return Future.wait(requests.where((item) => item != null));
+  }
+}
+
+class ProjectGutsSubscriptionContainer {
   StreamSubscription<QuerySnapshot> taskLists;
   StreamSubscription<QuerySnapshot> incompletedTasks;
   StreamSubscription<QuerySnapshot> completedTasks;
   StreamSubscription<QuerySnapshot> members;
 
-  ProjectSubscriptionContainer({
-    @required this.uid,
-    this.project,
+  ProjectGutsSubscriptionContainer({
     this.taskLists,
     this.incompletedTasks,
     this.completedTasks,
@@ -48,7 +69,6 @@ class ProjectSubscriptionContainer {
   Future<void> cancelAll() {
     List<Future<void>> requests = [];
 
-    requests.add(this.project?.cancel());
     requests.add(this.taskLists?.cancel());
     requests.add(this.incompletedTasks?.cancel());
     requests.add(this.completedTasks?.cancel());

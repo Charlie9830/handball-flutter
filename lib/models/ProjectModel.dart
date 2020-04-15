@@ -1,21 +1,28 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:handball_flutter/utilities/coerceFirestoreTimestamp.dart';
 import 'package:meta/meta.dart';
 
 class ProjectModel {
   String uid;
   String projectName;
   String created;
+  bool isDeleted;
+  DateTime deletedOn;
 
   ProjectModel({
     @required this.uid,
     this.projectName,
     this.created,
+    this.isDeleted = false,
+    this.deletedOn,
   });
 
   ProjectModel.fromDoc(DocumentSnapshot doc) {
     this.uid = doc['uid'];
     this.projectName = doc['projectName'];
     this.created = doc['created'];
+    this.isDeleted = doc['isDeleted'] ?? false;
+    this.deletedOn = coerceFirestoreTimestamp(doc['deletedOn']);
   }
 
   Map<String, dynamic> toMap() {
@@ -23,6 +30,8 @@ class ProjectModel {
       'uid': this.uid,
       'projectName': this.projectName,
       'created': this.created,
+      'isDeleted': this.isDeleted,
+      'deletedOn': this.deletedOn == null ? null : Timestamp.fromDate(this.deletedOn)
     };
   }
 

@@ -165,11 +165,8 @@ void handleProjectIdsSnapshot(QuerySnapshot snapshot, Store<AppState> store) {
     final projectIdModel = ProjectIdModel.fromDoc(change.document);
     final projectId = projectIdModel.uid;
     final isArchived = projectIdModel.isArchived;
-    final isDeleted = projectIdModel.isDeleted;
 
-    if (change.type == DocumentChangeType.added &&
-        isArchived == false &&
-        isDeleted == false) {
+    if (change.type == DocumentChangeType.added && isArchived == false) {
       addProjectSubscription(projectId, store);
     }
 
@@ -178,9 +175,9 @@ void handleProjectIdsSnapshot(QuerySnapshot snapshot, Store<AppState> store) {
     }
 
     if (change.type == DocumentChangeType.modified) {
-      if (isArchived == true || isDeleted == true) {
+      if (isArchived == true) {
         removeProjectSubscription(projectId, store);
-      } else if (isArchived == false && isDeleted == false) {
+      } else {
         addProjectSubscription(projectId,
             store); // _addProjectSubscription will ignore if we have already added it.
       }
@@ -195,8 +192,38 @@ void handleProjectIdsSnapshot(QuerySnapshot snapshot, Store<AppState> store) {
 
 void handleProjectSnapshot(DocumentSnapshot doc, Store<AppState> store) {
   if (doc.exists) {
-    // Filtering of projects with isDeleted flag is handled by the Reducer.
-    store.dispatch(ReceiveProject(project: ProjectModel.fromDoc(doc)));
+    final project = ProjectModel.fromDoc(doc);
+    final projectId = project.uid;
+
+    // Added
+    if (store.state.projectsById.containsKey(projectId) == false) {
+      if (project.isDeleted != true) {
+        if (store.state.projectsById.containsKey(projectId) == false) {
+          firestoreStreams
+                  .projectSubscriptions[doc.documentID].guts.incompletedTasks =
+              subscribeToIncompletedTasks(
+                  projectId, notificationsPlugin, store);
+          firestoreStreams.projectSubscriptions[doc.documentID].guts.taskLists =
+              subscribeToTaskLists(projectId, store);
+          firestoreStreams.projectSubscriptions[doc.documentID].guts.members =
+              subscribeToMembers(projectId, store);
+        }
+        store.dispatch(ReceiveProject(project: project));
+      }
+    }
+
+    // Modified.
+    else {
+      if (store.state.projectsById[projectId].isDeleted != project.isDeleted) {
+        if (project.isDeleted == true) {
+          store.dispatch(RemoveProjectEntities(projectId: projectId));
+          firestoreStreams.projectSubscriptions[doc.documentID].guts
+              ?.cancelAll();
+        }
+      }
+    }
+  } else {
+    print('Project was Deleted');
   }
 }
 

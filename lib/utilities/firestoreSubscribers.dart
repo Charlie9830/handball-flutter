@@ -100,6 +100,21 @@ StreamSubscription<DocumentSnapshot> subscribeToProject(
       .listen((doc) => handleProjectSnapshot(doc, store));
 }
 
+void addProjectGutsSubscriptions(String projectId, Store<AppState> store) {
+  if (firestoreStreams.projectSubscriptions.containsKey(projectId) &&
+      firestoreStreams.projectSubscriptions[projectId] != null) {
+    final projectSubscriptionContainer =
+        firestoreStreams.projectSubscriptions[projectId];
+        
+    projectSubscriptionContainer.guts.incompletedTasks =
+        subscribeToIncompletedTasks(projectId, notificationsPlugin, store);
+    projectSubscriptionContainer.guts.taskLists =
+        subscribeToTaskLists(projectId, store);
+    projectSubscriptionContainer.guts.members =
+        subscribeToMembers(projectId, store);
+  }
+}
+
 void addProjectSubscription(String projectId, Store<AppState> store) {
   if (firestoreStreams.projectSubscriptions.containsKey(projectId) ||
       firestoreStreams.projectSubscriptions[projectId] != null) {
@@ -110,19 +125,23 @@ void addProjectSubscription(String projectId, Store<AppState> store) {
       ProjectSubscriptionContainer(
     uid: projectId,
     project: subscribeToProject(projectId, store),
-    members: subscribeToMembers(projectId, store),
-    taskLists: subscribeToTaskLists(projectId, store),
-    incompletedTasks:
-        subscribeToIncompletedTasks(projectId, notificationsPlugin, store),
+    guts:
+        ProjectGutsSubscriptionContainer(), // Guts will be populated later once we know we this project hasn't been flagged as isDeleted.
   );
+}
+
+void removeProjectGutsSubscriptions(
+    String projectId, Store<AppState> store) async {
+  if (firestoreStreams.projectSubscriptions.containsKey(projectId)) {
+    store.dispatch(RemoveProjectEntities(projectId: projectId));
+    await firestoreStreams.projectSubscriptions[projectId]?.guts?.cancelAll();
+  }
 }
 
 void removeProjectSubscription(String projectId, Store<AppState> store) async {
   if (firestoreStreams.projectSubscriptions.containsKey(projectId)) {
-    await firestoreStreams.projectSubscriptions[projectId]?.cancelAll();
-
-    firestoreStreams.projectSubscriptions.remove(projectId);
-
     store.dispatch(RemoveProjectEntities(projectId: projectId));
+    await firestoreStreams.projectSubscriptions[projectId]?.cancelAll();
+    firestoreStreams.projectSubscriptions.remove(projectId);
   }
 }

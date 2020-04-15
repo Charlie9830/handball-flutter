@@ -1699,7 +1699,7 @@ Future<void> _deleteProject(
         }
       });
 
-  var ref = getProjectIdsCollectionRef(userId).document(projectId);
+  var ref = getProjectsCollectionRef().document(projectId);
 
   try {
     var batch = Firestore.instance.batch();
@@ -2055,13 +2055,13 @@ ThunkAction<AppState> setShowCompletedTasks(
         SetShowCompletedTasks(showCompletedTasks: showCompletedTasks));
 
     if (showCompletedTasks == true) {
-      firestoreStreams.projectSubscriptions[projectId].completedTasks =
+      firestoreStreams.projectSubscriptions[projectId].guts.completedTasks =
           subscribeToCompletedTasks(projectId, store, notificationsPlugin);
 
       // _handleTasksSnapshot will be called for the query and handle everything from here.
 
     } else {
-      await firestoreStreams.projectSubscriptions[projectId]?.completedTasks
+      await firestoreStreams.projectSubscriptions[projectId]?.guts?.completedTasks
           ?.cancel();
 
       // _handleTasksSnapshot won't be called, so we need to Animated the Tasks out Manually.
