@@ -93,3 +93,8 @@ enum SplashScreenState {
   loggedOut,
   home,
 }
+
+enum DynamicLinkType {
+  invalid,
+  projectInvite,
+}

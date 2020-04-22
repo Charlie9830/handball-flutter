@@ -48,14 +48,6 @@ class SetSplashScreenState {
   });
 }
 
-class SetLinkingCode {
-  final String linkingCode;
-
-  SetLinkingCode({
-    this.linkingCode,
-  });
-}
-
 class ReceiveAccountConfig {
   final AccountConfigModel accountConfig;
 

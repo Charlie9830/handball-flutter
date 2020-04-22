@@ -447,8 +447,7 @@ AppState appReducer(AppState state, dynamic action) {
         activityFeed: initialAppState.activityFeed,
         enableState: state.enableState.copyWith(
           isLoggedIn: false,
-        ),
-        linkingCode: '');
+        ));
   }
 
   if (action is SetAccountState) {
@@ -615,13 +614,7 @@ AppState appReducer(AppState state, dynamic action) {
       splashScreenState: action.state,
     );
   }
-
-  if (action is SetLinkingCode) {
-    return state.copyWith(
-      linkingCode: action.linkingCode
-    );
-  }
-
+  
   return state;
 }
 

@@ -20,6 +20,7 @@ import 'package:handball_flutter/models/ArchivedProject.dart';
 import 'package:handball_flutter/models/Assignment.dart';
 import 'package:handball_flutter/models/ChecklistSettings.dart';
 import 'package:handball_flutter/models/Comment.dart';
+import 'package:handball_flutter/models/DynamicLink.dart';
 import 'package:handball_flutter/models/Member.dart';
 import 'package:handball_flutter/models/ProjectIdModel.dart';
 import 'package:handball_flutter/models/ProjectModel.dart';
@@ -98,8 +99,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 final FirebaseAuth auth = FirebaseAuth.instance;
 final CloudFunctionsLayer _cloudFunctionsLayer = CloudFunctionsLayer();
-
-bool _hasPendingLinkingCode = false;
+DynamicLinkModel pendingDynamicLink;
 
 StreamSubscription<List<PurchaseDetails>> _purchaseUpdateStreamSubscription;
 
@@ -221,11 +221,13 @@ void _initializeDynamicLinks(Store<AppState> store) async {
   // On startup check if we are booting up from a dynamic Link;
   final PendingDynamicLinkData data =
       await FirebaseDynamicLinks.instance.getInitialLink();
-  _handleDynamicLink(store, data?.link);
+  _handleDynamicLink(
+      store, store.state.user.displayName, store.state.user.email, DynamicLinkModel.fromLink(data.link));
 
   // Register callbacks if we are pulled from background to foreground via a dynamic link.
   FirebaseDynamicLinks.instance.onLink(onSuccess: (linkData) async {
-    _handleDynamicLink(store, linkData?.link);
+    _handleDynamicLink(store, store.state.user.displayName,
+        store.state.user.email, DynamicLinkModel.fromLink(linkData.link));
     return;
   }, onError: (error) async {
     // TODO: Handle these gracefully.
@@ -234,37 +236,28 @@ void _initializeDynamicLinks(Store<AppState> store) async {
   });
 }
 
-void _handleDynamicLink(Store<AppState> store, Uri link) {
-  if (link == null) {
-    // No link recieved. Continue as you were.
-    return;
-  } else {
-    // Link Received.
-    print('Link Received');
-    print(link);
-
-    final isValid = link.hasQuery &&
-        link.queryParameters.containsKey('linkingCode') &&
-        link.queryParameters['linkingCode'] != null &&
-        link.queryParameters['linkingCode'] != '';
-
-    if (isValid) {
-      final linkingCode = link.queryParameters['linkingCode'];
-
-      store.dispatch(
-          SetLinkingCode(linkingCode: linkingCode));
+void _handleDynamicLink(
+    Store<AppState> store, String displayName, String email, DynamicLinkModel dynamicLink) async {
+      if (dynamicLink == null || dynamicLink.isValid == false) {
+        return;
+      }
+  
+      // Link Received.
+      print('Link received Type is ${dynamicLink.type.toString()} ');
 
       if (store.state.user.isLoggedIn == true) {
         // Logged in. We can handle the linking code now.
-        linkAccountToProject(store, _cloudFunctionsLayer, linkingCode, store.state.user.displayName, store.state.user.email);
-      }
+        if (dynamicLink.type == DynamicLinkType.projectInvite) {
+          await linkAccountToProject(store, _cloudFunctionsLayer,
+              dynamicLink.linkingCode, displayName, email);
 
-      else {
-        // Not logged in yet. Set a flag so that handleAuthStateChanged can call linkAccountToProject for us.
-        _hasPendingLinkingCode = true;
+          // Handled so clear any Pending dynamic Links.
+          pendingDynamicLink = null;
+        }
+      } else {
+        // Not logged in yet. Store link in pendingDynamicLink so the onAuthStateChanged can handle it once we are logged in.
+        pendingDynamicLink = dynamicLink;
       }
-    }
-  }
 }
 
 void _updateSplashScreen(FirebaseAuth auth, bool wasLoggedIn,
@@ -371,10 +364,11 @@ void handleAuthStateChanged(Store<AppState> store, FirebaseUser user) async {
           userId: user.uid,
           email: user.email)));
 
-  if (_hasPendingLinkingCode == true) {
+  if (pendingDynamicLink != null && user.displayName != null && user.displayName != '') {
     // We have booted up from a dynamicLink. But weren't logged in by the time handleDynamicLink was fired. So we must handle it here.
-    _hasPendingLinkingCode = false;
-    linkAccountToProject(store, _cloudFunctionsLayer, store.state.linkingCode, user.displayName, user.email);
+    // If user.displayName is null or an empty String this is most likely from the user signing up, in that case we don't handle the dynamic link here
+    // as we won't have an up to date displayName. The handler will be called from the showSignUpDialog thunk.
+    _handleDynamicLink(store, user.displayName, user.email, pendingDynamicLink);
   }
 
   subscribeToDatabase(store, user.uid);
@@ -417,18 +411,6 @@ ThunkAction<AppState> showLogInDialog(BuildContext context) {
       // Log in was Successful.
       store.dispatch(SetSplashScreenState(state: SplashScreenState.home));
       homeScreenScaffoldKey?.currentState?.openDrawer();
-
-      // Attempt to link to a project the user has been invited to if we have a linkingCode.
-      if (store.state.linkingCode != null &&
-          store.state.linkingCode.isNotEmpty) {
-        linkAccountToProject(
-            store,
-            _cloudFunctionsLayer,
-            store.state.linkingCode,
-            store.state.user.displayName,
-            store.state.user.email);
-      }
-
       return;
     }
   };
@@ -1741,14 +1723,8 @@ ThunkAction<AppState> showSignUpDialog(BuildContext context) {
           InjectDisplayName(displayName: dialogResult.choosenDisplayName));
 
       // Attempt to link any accounts if a linkingCode is available.
-      if (store.state.linkingCode != null &&
-          store.state.linkingCode.isNotEmpty) {
-        linkAccountToProject(
-            store,
-            _cloudFunctionsLayer,
-            store.state.linkingCode,
-            dialogResult.choosenDisplayName,
-            store.state.user.email);
+      if (pendingDynamicLink != null) {
+        _handleDynamicLink(store, dialogResult.choosenDisplayName, store.state.user.email, pendingDynamicLink);
       }
 
       if (dialogResult.showTour == true) {
@@ -2061,7 +2037,8 @@ ThunkAction<AppState> setShowCompletedTasks(
       // _handleTasksSnapshot will be called for the query and handle everything from here.
 
     } else {
-      await firestoreStreams.projectSubscriptions[projectId]?.guts?.completedTasks
+      await firestoreStreams
+          .projectSubscriptions[projectId]?.guts?.completedTasks
           ?.cancel();
 
       // _handleTasksSnapshot won't be called, so we need to Animated the Tasks out Manually.
